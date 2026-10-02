@@ -11,19 +11,17 @@
             <ItemsStackPanel Orientation="Horizontal" />
         </ItemsPanelTemplate>
         <DataTemplate x:Key="PosterTemplate">
-            <Grid Width="160" Height="275" Margin="0,0,15,8">
+            <Grid Width="160" Height="286" Margin="0,0,24,8">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="225" />
+                    <RowDefinition Height="238" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <Border Style="{StaticResource SurfaceBorderStyle}" CornerRadius="10">
+                <Border Background="#241F36" CornerRadius="10">
                     <Image Source="{Binding Poster}" Stretch="UniformToFill" />
                 </Border>
-                <StackPanel Grid.Row="1" Margin="3,10,3,0">
-                    <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold"
+                <StackPanel Grid.Row="1" Margin="2,12,2,0">
+                    <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="SemiBold"
                                TextTrimming="CharacterEllipsis" MaxLines="1" />
-                    <TextBlock Text="{Binding Subtitle}" FontSize="12" Foreground="{StaticResource MutedTextBrush}"
-                               TextTrimming="CharacterEllipsis" MaxLines="1" Margin="0,3,0,0" />
                 </StackPanel>
             </Grid>
         </DataTemplate>
@@ -31,12 +29,11 @@
 
     <Grid XYFocusKeyboardNavigation="Enabled">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="238" />
+            <ColumnDefinition Width="88" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" Background="{StaticResource SidebarBrush}" Padding="18,24,14,18"
-                BorderBrush="{StaticResource SubtleBorderBrush}" BorderThickness="0,0,1,0">
+        <Border Grid.Column="0" Background="{StaticResource SidebarBrush}" Padding="10,18,10,16">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -44,94 +41,108 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <StackPanel>
-                    <Image Width="142" Height="48" HorizontalAlignment="Left" Margin="0,0,0,6"
+                <StackPanel HorizontalAlignment="Center">
+                    <Image Width="44" Height="44" HorizontalAlignment="Center"
                            Stretch="Uniform" AutomationProperties.Name="Stremio">
                         <Image.Source>
-                            <SvgImageSource UriSource="ms-appx:///Assets/StremioLogotypeDark.svg" />
+                            <SvgImageSource UriSource="ms-appx:///Assets/StremioSymbol.svg" />
                         </Image.Source>
                     </Image>
-                    <TextBlock Text="XBOX PROTOTYPE" FontSize="10" FontWeight="SemiBold"
-                               Foreground="{StaticResource AccentTextBrush}" CharacterSpacing="90" Margin="0,3,0,0" />
                 </StackPanel>
 
-                <ScrollViewer Grid.Row="1" Margin="0,20,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="BROWSE" FontSize="10" FontWeight="SemiBold" CharacterSpacing="100"
-                                   Foreground="{StaticResource MutedTextBrush}" Margin="12,0,0,6" />
-                        <Button x:Name="HomeButton" Content="Home" Style="{StaticResource SelectedNavButtonStyle}" Click="ShowHome" />
-                        <Button x:Name="DiscoverButton" Content="Discover" Style="{StaticResource NavButtonStyle}" Click="ShowDiscover" />
-                        <Button x:Name="LibraryNavButton" Content="My library" Style="{StaticResource NavButtonStyle}" Click="ShowLibrary" />
-                        <TextBlock Text="SETUP &amp; TEST" FontSize="10" FontWeight="SemiBold" CharacterSpacing="100"
-                                   Foreground="{StaticResource MutedTextBrush}" Margin="12,14,0,4" />
-                        <Button x:Name="PlaybackLabButton" Content="Playback lab" Style="{StaticResource NavButtonStyle}" Click="ShowPlaybackLab" />
-                        <Button x:Name="AddonsButton" Content="Stream add-ons" Style="{StaticResource NavButtonStyle}" Click="ShowAddons" />
+                <ScrollViewer Grid.Row="1" Margin="0,34,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Spacing="12" HorizontalAlignment="Center">
+                        <Button x:Name="HomeButton" ToolTipService.ToolTip="Home" Style="{StaticResource SelectedNavButtonStyle}" Click="ShowHome">
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE80F;" FontSize="27" />
+                        </Button>
+                        <Button x:Name="DiscoverButton" ToolTipService.ToolTip="Discover" Style="{StaticResource NavButtonStyle}" Click="ShowDiscover">
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE721;" FontSize="25" />
+                        </Button>
+                        <Button x:Name="LibraryNavButton" ToolTipService.ToolTip="My library" Style="{StaticResource NavButtonStyle}" Click="ShowLibrary">
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE8B7;" FontSize="25" />
+                        </Button>
+                        <Button x:Name="PlaybackLabButton" ToolTipService.ToolTip="Playback lab" Style="{StaticResource NavButtonStyle}" Click="ShowPlaybackLab">
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE768;" FontSize="25" />
+                        </Button>
+                        <Button x:Name="AddonsButton" ToolTipService.ToolTip="Stream add-ons" Style="{StaticResource NavButtonStyle}" Click="ShowAddons">
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE7FC;" FontSize="25" />
+                        </Button>
                         <Button x:Name="AccountButton" Style="{StaticResource NavButtonStyle}" Click="ShowAccount">
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <Border x:Name="ProfileInitialBadge" Width="24" Height="24" CornerRadius="12"
+                            <Grid>
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE77B;" FontSize="26" />
+                                <Border x:Name="ProfileInitialBadge" Width="23" Height="23" CornerRadius="12"
+                                        HorizontalAlignment="Right" VerticalAlignment="Bottom"
                                         Background="{StaticResource AccentBrush}" Visibility="Collapsed">
                                     <TextBlock x:Name="ProfileInitialText" HorizontalAlignment="Center" VerticalAlignment="Center"
                                                FontSize="11" FontWeight="SemiBold" />
                                 </Border>
-                                <TextBlock x:Name="AccountNavLabel" Text="Login" VerticalAlignment="Center" />
-                            </StackPanel>
+                                <TextBlock x:Name="AccountNavLabel" Text="Login" Visibility="Collapsed" />
+                            </Grid>
                         </Button>
-                        <Button x:Name="DiagnosticsButton" Content="Diagnostics" Style="{StaticResource NavButtonStyle}" Click="ShowDiagnostics" />
+                        <Button x:Name="DiagnosticsButton" ToolTipService.ToolTip="Diagnostics" Style="{StaticResource NavButtonStyle}" Click="ShowDiagnostics">
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE713;" FontSize="25" />
+                        </Button>
                     </StackPanel>
                 </ScrollViewer>
 
-                <StackPanel Grid.Row="2">
-                    <Border Style="{StaticResource SurfaceBorderStyle}" Padding="10,8">
-                        <StackPanel>
-                            <TextBlock Text="SYSTEM STATUS" FontSize="9" FontWeight="SemiBold" CharacterSpacing="80"
-                                       Foreground="{StaticResource MutedTextBrush}" />
-                            <TextBlock x:Name="NetworkStatusText" Text="Ready" FontSize="12" FontWeight="SemiBold"
-                                       Margin="0,5,0,0" TextWrapping="Wrap" />
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
+                <TextBlock x:Name="NetworkStatusText" Grid.Row="2" Text="Ready" Visibility="Collapsed" />
             </Grid>
         </Border>
 
-        <Grid Grid.Column="1" Padding="28,22,28,20">
+        <Grid Grid.Column="1" Padding="32,16,18,8">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <Grid Margin="0,0,0,16">
-                <StackPanel>
-                    <TextBlock Text="STREMIO ON XBOX" FontSize="10" FontWeight="SemiBold" CharacterSpacing="110"
-                               Foreground="{StaticResource AccentTextBrush}" Margin="2,0,0,3" />
-                    <TextBlock x:Name="PageTitle" Text="Home" FontSize="36" FontWeight="SemiBold" />
-                    <TextBlock x:Name="PageSubtitle" Text="Public Stremio catalogs" FontSize="14"
-                               Foreground="{StaticResource MutedTextBrush}" Margin="1,4,0,0" />
+            <Grid Margin="0,0,0,22">
+                <TextBox x:Name="SearchBox" Width="480" HorizontalAlignment="Center" VerticalAlignment="Center"
+                         Background="{StaticResource SearchBarBrush}" BorderBrush="Transparent"
+                         PlaceholderText="Search or paste link" KeyDown="SearchBoxKeyDown" />
+                <Button Width="46" Height="46" MinHeight="46" HorizontalAlignment="Center" Margin="420,0,0,0"
+                        Style="{StaticResource NavButtonStyle}" Click="Search" ToolTipService.ToolTip="Search">
+                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE721;" FontSize="21" />
+                </Button>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="18">
+                    <Button Style="{StaticResource NavButtonStyle}" ToolTipService.ToolTip="Full screen">
+                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE740;" FontSize="22" />
+                    </Button>
+                    <Button Style="{StaticResource NavButtonStyle}" Click="ShowAccount" ToolTipService.ToolTip="Profile">
+                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE77B;" FontSize="23" />
+                    </Button>
+                    <ProgressRing x:Name="BusyIndicator" Width="28" Height="28" IsActive="False" />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="12">
-                    <Border Background="{StaticResource AccentSoftBrush}" BorderBrush="{StaticResource AccentBrush}"
-                            BorderThickness="1" CornerRadius="16" Padding="14,7">
-                        <TextBlock Text="DEV MODE" FontSize="12" FontWeight="SemiBold"
-                                   Foreground="{StaticResource AccentTextBrush}" />
-                    </Border>
-                    <ProgressRing x:Name="BusyIndicator" Width="42" Height="42" IsActive="False" />
+                <StackPanel Visibility="Collapsed">
+                    <TextBlock x:Name="PageTitle" Text="Home" />
+                    <TextBlock x:Name="PageSubtitle" Text="Public Stremio catalogs" />
                 </StackPanel>
             </Grid>
 
             <Grid Grid.Row="1">
                 <ScrollViewer x:Name="HomePanel">
-                    <StackPanel Spacing="30">
+                    <StackPanel Spacing="38">
                         <StackPanel>
-                            <TextBlock Text="Popular movies" Style="{StaticResource SectionTitleStyle}" />
+                            <Grid Margin="0,0,12,0">
+                                <TextBlock Text="Movies - Popular" Style="{StaticResource SectionTitleStyle}" />
+                                <Button Content="See all  ›" Width="110" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                        Style="{StaticResource ShelfLinkButtonStyle}" Click="ShowDiscover" />
+                            </Grid>
                             <GridView x:Name="MovieGrid" IsItemClickEnabled="True" ItemClick="OpenItem"
                                       SelectionMode="None" ItemsPanel="{StaticResource HorizontalItemsPanel}"
-                                      ItemTemplate="{StaticResource PosterTemplate}" />
+                                      ItemTemplate="{StaticResource PosterTemplate}"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Disabled" />
                         </StackPanel>
 
                         <StackPanel>
-                            <TextBlock Text="Popular series" Style="{StaticResource SectionTitleStyle}" />
+                            <Grid Margin="0,0,12,0">
+                                <TextBlock Text="Series - Popular" Style="{StaticResource SectionTitleStyle}" />
+                                <Button Content="See all  ›" Width="110" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                        Style="{StaticResource ShelfLinkButtonStyle}" Click="ShowDiscover" />
+                            </Grid>
                             <GridView x:Name="SeriesGrid" IsItemClickEnabled="True" ItemClick="OpenItem"
                                       SelectionMode="None" ItemsPanel="{StaticResource HorizontalItemsPanel}"
-                                      ItemTemplate="{StaticResource PosterTemplate}" />
+                                      ItemTemplate="{StaticResource PosterTemplate}"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Disabled" />
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
@@ -141,15 +152,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Grid ColumnSpacing="14">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="180" />
-                        </Grid.ColumnDefinitions>
-                        <TextBox x:Name="SearchBox" PlaceholderText="Search movies and series"
-                                 KeyDown="SearchBoxKeyDown" />
-                        <Button Grid.Column="1" Content="Search" Style="{StaticResource PrimaryButtonStyle}" Click="Search" />
-                    </Grid>
+                    <TextBlock Text="Search results" Style="{StaticResource SectionTitleStyle}" />
                     <GridView x:Name="DiscoverGrid" Grid.Row="1" Margin="0,24,0,0"
                               IsItemClickEnabled="True" ItemClick="OpenItem" SelectionMode="None"
                               ItemTemplate="{StaticResource PosterTemplate}" />

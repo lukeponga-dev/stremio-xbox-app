@@ -111,6 +111,8 @@ public sealed partial class MainPage : Page
     private async Task SearchAsync()
     {
         if (string.IsNullOrWhiteSpace(SearchBox.Text)) return;
+        SetSelectedNavigation(DiscoverButton);
+        ShowPanel(DiscoverPanel, "Discover", "Search Cinemeta using the Stremio add-on protocol");
         BeginRequest("Searching…");
         try
         {
