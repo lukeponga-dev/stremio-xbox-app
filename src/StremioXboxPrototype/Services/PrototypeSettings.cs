@@ -9,6 +9,34 @@ public static class PrototypeSettings
     private const string StreamAddonsKey = "StreamAddons";
     private const string LibraryKey = "Library";
     private const string StreamingServiceUrlKey = "StreamingServiceUrl";
+    private const string ProfileEmailKey = "ProfileEmail";
+    private const string ProfileIdKey = "ProfileId";
+    private const string ProfileAvatarKey = "ProfileAvatar";
+    private const string ProfileAddonCountKey = "ProfileAddonCount";
+
+    public static AccountProfileCache? GetProfileCache()
+    {
+        var email = ApplicationData.Current.LocalSettings.Values[ProfileEmailKey] as string;
+        if (string.IsNullOrWhiteSpace(email)) return null;
+        var id = ApplicationData.Current.LocalSettings.Values[ProfileIdKey] as string ?? "";
+        var avatar = ApplicationData.Current.LocalSettings.Values[ProfileAvatarKey] as string;
+        var count = ApplicationData.Current.LocalSettings.Values[ProfileAddonCountKey] as int? ?? 0;
+        return new AccountProfileCache(email, id, avatar, count);
+    }
+
+    public static void SaveProfileCache(AccountProfileCache profile)
+    {
+        ApplicationData.Current.LocalSettings.Values[ProfileEmailKey] = profile.Email;
+        ApplicationData.Current.LocalSettings.Values[ProfileIdKey] = profile.Id;
+        ApplicationData.Current.LocalSettings.Values[ProfileAvatarKey] = profile.Avatar ?? "";
+        ApplicationData.Current.LocalSettings.Values[ProfileAddonCountKey] = profile.AddonCount;
+    }
+
+    public static void ClearProfileCache()
+    {
+        foreach (var key in new[] { ProfileEmailKey, ProfileIdKey, ProfileAvatarKey, ProfileAddonCountKey })
+            ApplicationData.Current.LocalSettings.Values.Remove(key);
+    }
 
     public static IReadOnlyList<AddonEndpoint> GetStreamAddons()
     {

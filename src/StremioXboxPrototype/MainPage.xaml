@@ -65,7 +65,16 @@
                                Foreground="{StaticResource MutedTextBrush}" Margin="12,18,0,6" />
                     <Button x:Name="PlaybackLabButton" Content="Playback lab" Style="{StaticResource NavButtonStyle}" Click="ShowPlaybackLab" />
                     <Button x:Name="AddonsButton" Content="Stream add-ons" Style="{StaticResource NavButtonStyle}" Click="ShowAddons" />
-                    <Button x:Name="AccountButton" Content="Account" Style="{StaticResource NavButtonStyle}" Click="ShowAccount" />
+                    <Button x:Name="AccountButton" Style="{StaticResource NavButtonStyle}" Click="ShowAccount">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border x:Name="ProfileInitialBadge" Width="30" Height="30" CornerRadius="15"
+                                    Background="{StaticResource AccentBrush}" Visibility="Collapsed">
+                                <TextBlock x:Name="ProfileInitialText" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           FontSize="14" FontWeight="SemiBold" />
+                            </Border>
+                            <TextBlock x:Name="AccountNavLabel" Text="Login" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                     <Button x:Name="DiagnosticsButton" Content="Diagnostics" Style="{StaticResource NavButtonStyle}" Click="ShowDiagnostics" />
                 </StackPanel>
 
@@ -145,7 +154,12 @@
                 </Grid>
 
                 <Grid x:Name="LibraryPanel" Visibility="Collapsed">
-                    <GridView x:Name="LibraryGrid" IsItemClickEnabled="True" ItemClick="OpenItem"
+                    <StackPanel VerticalAlignment="Top" Margin="0,0,0,16">
+                        <TextBlock Text="Local library" FontSize="20" FontWeight="SemiBold" />
+                        <TextBlock Text="Saved on this Xbox. Cloud library sync will appear here when the account API supports it."
+                                   Foreground="{StaticResource MutedTextBrush}" FontSize="15" />
+                    </StackPanel>
+                    <GridView x:Name="LibraryGrid" Margin="0,58,0,0" IsItemClickEnabled="True" ItemClick="OpenItem"
                               SelectionMode="None" ItemTemplate="{StaticResource PosterTemplate}" />
                     <TextBlock x:Name="EmptyLibraryText" Text="Your prototype library is empty. Add a title from its details page."
                                FontSize="22" Foreground="{StaticResource MutedTextBrush}"
@@ -201,25 +215,39 @@
 
                 <ScrollViewer x:Name="AccountPanel" Visibility="Collapsed">
                     <StackPanel MaxWidth="760" HorizontalAlignment="Left" Spacing="18">
-                        <TextBlock Text="Connect directly to Stremio at api.strem.io. Your password is sent only to Stremio for login; the returned session key is stored in Windows Credential Locker and verified when the app starts."
-                                   FontSize="20" TextWrapping="Wrap" />
-                        <Button Content="Continue with Facebook" Style="{StaticResource PrimaryButtonStyle}"
-                                Width="300" Click="SignInWithFacebook" />
-                        <TextBlock Text="Facebook sign-in opens Stremio's secure sign-in page in Microsoft Edge. Finish there, then return to this app. Your Facebook password is never entered into this app."
-                                   FontSize="17" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
-                        <TextBlock Text="Or sign in with email" FontSize="20" FontWeight="SemiBold" />
-                        <TextBox x:Name="AccountEmailBox" Header="Stremio email" InputScope="EmailSmtpAddress" />
-                        <PasswordBox x:Name="AccountPasswordBox" Header="Password" />
-                        <StackPanel Orientation="Horizontal" Spacing="14">
+                        <StackPanel x:Name="SignedOutAccountContent" Spacing="18">
+                            <TextBlock Text="Connect directly to Stremio at api.strem.io. Your password is sent only to Stremio for login; the returned session key is stored in Windows Credential Locker and verified when the app starts."
+                                       FontSize="20" TextWrapping="Wrap" />
+                            <Button Content="Continue with Facebook" Style="{StaticResource PrimaryButtonStyle}"
+                                    Width="300" Click="SignInWithFacebook" />
+                            <TextBlock Text="Facebook sign-in opens Stremio's secure sign-in page in Microsoft Edge. Finish there, then return to this app. Your Facebook password is never entered into this app."
+                                       FontSize="17" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
+                            <TextBlock Text="Or sign in with email" FontSize="20" FontWeight="SemiBold" />
+                            <TextBox x:Name="AccountEmailBox" Header="Stremio email" InputScope="EmailSmtpAddress" />
+                            <PasswordBox x:Name="AccountPasswordBox" Header="Password" />
                             <Button Content="Sign in and sync" Style="{StaticResource PrimaryButtonStyle}"
                                     Width="240" Click="SignInAndSync" />
-                            <Button Content="Sync add-ons" Style="{StaticResource TvButtonStyle}"
+                        </StackPanel>
+                        <StackPanel x:Name="SignedInProfileContent" Visibility="Collapsed" Spacing="18">
+                            <TextBlock Text="Your Stremio profile" FontSize="26" FontWeight="SemiBold" />
+                            <Border Style="{StaticResource SurfaceBorderStyle}" Padding="18">
+                                <StackPanel Spacing="8">
+                                    <TextBlock x:Name="ProfileEmailText" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="ProfileIdText" FontSize="15" Foreground="{StaticResource MutedTextBrush}" />
+                                    <TextBlock x:Name="ProfileAddonCountText" FontSize="15" Foreground="{StaticResource MutedTextBrush}" />
+                                </StackPanel>
+                            </Border>
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                            <Button x:Name="SyncAddonsButton" Content="Sync add-ons" Style="{StaticResource TvButtonStyle}"
                                     Width="210" Click="SyncAccountAddons" />
                             <Button Content="Sign out" Style="{StaticResource TvButtonStyle}"
                                     Width="160" Click="SignOut" />
+                            </StackPanel>
                         </StackPanel>
-                        <TextBlock x:Name="AccountStatusText" Text="Not signed in" FontSize="19"
-                                   Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
+                        <Border x:Name="AccountStatusBanner" Background="{StaticResource PanelBrush}" CornerRadius="10" Padding="14,10">
+                            <TextBlock x:Name="AccountStatusText" Text="Not signed in" FontSize="19"
+                                       Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
 

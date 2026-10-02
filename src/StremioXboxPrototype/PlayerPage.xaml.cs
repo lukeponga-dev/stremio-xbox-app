@@ -29,6 +29,8 @@ public sealed partial class PlayerPage : Page
         Player.MediaPlayer.MediaEnded += MediaEnded;
         Player.MediaPlayer.PlaybackSession.BufferingStarted += BufferingStarted;
         Player.MediaPlayer.PlaybackSession.BufferingEnded += BufferingEnded;
+        Player.MediaPlayer.IsMuted = false;
+        Player.MediaPlayer.Volume = 1;
         _openTimer.Start();
         DiagnosticsService.Current.Info("player", $"Open {_request.Uri}");
         Player.Source = MediaSource.CreateFromUri(_request.Uri);
@@ -54,6 +56,9 @@ public sealed partial class PlayerPage : Page
         {
             await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
+                Player.MediaPlayer.IsMuted = false;
+                Player.MediaPlayer.Volume = 1;
+                Player.MediaPlayer.Play();
                 StatusText.Text = $"Playing · opened in {elapsed} ms · {_request?.Source}";
                 var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
                 timer.Tick += (_, _) =>

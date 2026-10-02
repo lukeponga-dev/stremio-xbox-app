@@ -87,6 +87,8 @@ public sealed class StremioUser
 
 public sealed record StremioAccountSession(string Email, string AuthKey);
 
+public sealed record AccountProfileCache(string Email, string Id, string? Avatar, int AddonCount);
+
 public sealed record StremioFacebookLoginAttempt(string State, Uri LoginUri);
 
 public sealed class StremioAddonCollectionEnvelope

@@ -6,6 +6,7 @@ using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
+using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 
 namespace StremioXboxPrototype;
@@ -18,6 +19,8 @@ public sealed partial class MainPage : Page
     private CancellationTokenSource? _request;
     private readonly DispatcherTimer _memoryTimer = new() { Interval = TimeSpan.FromSeconds(2) };
     private Control? _lastFocusedItem;
+    private bool _isSignedIn;
+    private bool _isSyncing;
 
     public ObservableCollection<DiagnosticEntry> Diagnostics => DiagnosticsService.Current.Entries;
 
@@ -48,22 +51,26 @@ public sealed partial class MainPage : Page
 
     private async void PageLoaded(object sender, RoutedEventArgs e)
     {
+        var cachedProfile = PrototypeSettings.GetProfileCache();
+        if (cachedProfile is not null) UpdateAccountNavigation(true, cachedProfile.Email, cachedProfile.Id, cachedProfile.AddonCount, cachedProfile.Avatar);
         try
         {
             var session = await _accountClient.RestoreSessionAsync();
             if (session is not null)
             {
                 AccountEmailBox.Text = session.Email;
-                AccountStatusText.Text = $"Signed in as {session.Email}. Session verified by Stremio.";
+                SetAccountStatus($"Signed in as {session.Email}. Session verified by Stremio.", AccountStatus.Success);
+                UpdateAccountNavigation(true, session.Email, cachedProfile?.Id, cachedProfile?.AddonCount ?? 0, cachedProfile?.Avatar);
             }
             else
             {
-                AccountStatusText.Text = "Not signed in";
+                SetAccountStatus("Not signed in", AccountStatus.Neutral);
+                UpdateAccountNavigation(false);
             }
         }
         catch (Exception exception)
         {
-            AccountStatusText.Text = "Saved sign-in could not be verified. Check your connection, then try Sync add-ons.";
+            SetAccountStatus("Saved sign-in could not be verified. Check your connection, then try Sync add-ons.", AccountStatus.Error);
             DiagnosticsService.Current.Warn("account", "Session verification failed: " + exception.Message);
         }
         HomeButton.Focus(FocusState.Programmatic);
@@ -222,7 +229,7 @@ public sealed partial class MainPage : Page
     {
         if (string.IsNullOrWhiteSpace(AccountEmailBox.Text) || string.IsNullOrEmpty(AccountPasswordBox.Password))
         {
-            AccountStatusText.Text = "Enter your Stremio email and password.";
+            SetAccountStatus("Enter your Stremio email and password.", AccountStatus.Error);
             return;
         }
 
@@ -231,17 +238,20 @@ public sealed partial class MainPage : Page
         {
             var login = await _accountClient.LoginAsync(AccountEmailBox.Text, AccountPasswordBox.Password, _request!.Token);
             AccountPasswordBox.Password = "";
-            AccountStatusText.Text = $"Signed in as {login.User?.Email ?? AccountEmailBox.Text}. Syncing add-ons…";
+            UpdateAccountNavigation(true, login.User?.Email ?? AccountEmailBox.Text, login.User?.Id, 0, login.User?.Avatar);
+            SetAccountStatus($"Signed in as {login.User?.Email ?? AccountEmailBox.Text}. Syncing add-ons…", AccountStatus.Neutral);
+            _isSyncing = true;
+            SyncAddonsButton.IsEnabled = false;
             await SyncAccountAddonsAsync(login.AuthKey, _request.Token);
         }
         catch (OperationCanceledException) { }
         catch (Exception exception)
         {
             AccountPasswordBox.Password = "";
-            AccountStatusText.Text = "Sign-in failed: " + exception.Message;
+            SetAccountStatus("Sign-in failed: " + exception.Message, AccountStatus.Error);
             DiagnosticsService.Current.Error("account", exception.Message);
         }
-        finally { EndRequest(); }
+        finally { _isSyncing = false; SyncAddonsButton.IsEnabled = true; EndRequest(); }
     }
 
     private async void SignInWithFacebook(object sender, RoutedEventArgs e)
@@ -250,47 +260,54 @@ public sealed partial class MainPage : Page
         try
         {
             var attempt = _accountClient.CreateFacebookLoginAttempt();
-            AccountStatusText.Text = "Complete Facebook sign-in in Microsoft Edge, then return to this app.";
+            SetAccountStatus("Complete Facebook sign-in in Microsoft Edge, then return to this app.", AccountStatus.Neutral);
             if (!await Launcher.LaunchUriAsync(attempt.LoginUri))
                 throw new InvalidOperationException("Xbox could not open the Stremio Facebook sign-in page.");
 
             var login = await _accountClient.CompleteFacebookLoginAsync(attempt.State, _request!.Token);
             AccountEmailBox.Text = login.User?.Email ?? "";
-            AccountStatusText.Text = $"Signed in as {login.User?.Email ?? "Facebook user"}. Syncing add-ons…";
+            UpdateAccountNavigation(true, login.User?.Email ?? "Facebook user", login.User?.Id, 0, login.User?.Avatar);
+            SetAccountStatus($"Signed in as {login.User?.Email ?? "Facebook user"}. Syncing add-ons…", AccountStatus.Neutral);
+            _isSyncing = true;
+            SyncAddonsButton.IsEnabled = false;
             await SyncAccountAddonsAsync(login.AuthKey, _request.Token);
         }
         catch (OperationCanceledException) { }
         catch (Exception exception)
         {
-            AccountStatusText.Text = "Facebook sign-in failed: " + exception.Message;
+            SetAccountStatus("Facebook sign-in failed: " + exception.Message, AccountStatus.Error);
             DiagnosticsService.Current.Error("account", exception.Message);
         }
-        finally { EndRequest(); }
+        finally { _isSyncing = false; SyncAddonsButton.IsEnabled = true; EndRequest(); }
     }
 
     private async void SyncAccountAddons(object sender, RoutedEventArgs e)
     {
+        if (_isSyncing) return;
         var session = _accountClient.TryGetSession();
         if (session is null)
         {
-            AccountStatusText.Text = "Sign in first.";
+            SetAccountStatus("Sign in first.", AccountStatus.Error);
             return;
         }
 
         BeginRequest("Syncing Stremio add-ons…");
+        _isSyncing = true;
+        SyncAddonsButton.IsEnabled = false;
         try
         {
             var user = await _accountClient.GetUserAsync(session.AuthKey, _request!.Token);
             AccountEmailBox.Text = user.Email;
+            UpdateAccountNavigation(true, user.Email, user.Id, PrototypeSettings.GetProfileCache()?.AddonCount ?? 0, user.Avatar);
             await SyncAccountAddonsAsync(session.AuthKey, _request.Token);
         }
         catch (OperationCanceledException) { }
         catch (Exception exception)
         {
-            AccountStatusText.Text = "Sync failed: " + exception.Message;
+            SetAccountStatus("Sync failed: " + exception.Message, AccountStatus.Error);
             DiagnosticsService.Current.Error("account", exception.Message);
         }
-        finally { EndRequest(); }
+        finally { _isSyncing = false; SyncAddonsButton.IsEnabled = true; EndRequest(); }
     }
 
     private async Task SyncAccountAddonsAsync(string authKey, CancellationToken cancellationToken)
@@ -312,12 +329,23 @@ public sealed partial class MainPage : Page
 
         PrototypeSettings.SetStreamAddons(streamAddons);
         AddonUrlsBox.Text = PrototypeSettings.GetStreamAddonText();
-        AccountStatusText.Text = $"Connected. Synced {streamAddons.Count} stream add-on(s) from {descriptors.Count} account add-on(s).";
+        var profile = PrototypeSettings.GetProfileCache();
+        PrototypeSettings.SaveProfileCache(new AccountProfileCache(AccountEmailBox.Text, profile?.Id ?? "", profile?.Avatar, streamAddons.Count));
+        UpdateAccountNavigation(true, AccountEmailBox.Text, profile?.Id, streamAddons.Count);
+        SetAccountStatus($"Connected. Synced {streamAddons.Count} stream add-on(s) from {descriptors.Count} account add-on(s).", AccountStatus.Success);
         DiagnosticsService.Current.Info("account", AccountStatusText.Text);
     }
 
     private async void SignOut(object sender, RoutedEventArgs e)
     {
+        var confirmation = new ContentDialog
+        {
+            Title = "Sign out of Stremio?",
+            Content = "You will need to sign in again to sync your account add-ons.",
+            PrimaryButtonText = "Sign out",
+            CloseButtonText = "Cancel"
+        };
+        if (await confirmation.ShowAsync() != ContentDialogResult.Primary) return;
         var session = _accountClient.TryGetSession();
         if (session is not null)
         {
@@ -325,7 +353,11 @@ public sealed partial class MainPage : Page
             catch (Exception exception) { DiagnosticsService.Current.Warn("account", "Remote logout failed: " + exception.Message); }
         }
         AccountPasswordBox.Password = "";
-        AccountStatusText.Text = "Signed out.";
+        PrototypeSettings.ClearProfileCache();
+        UpdateAccountNavigation(false);
+        SetAccountStatus("Signed out.", AccountStatus.Neutral);
+        SetSelectedNavigation(HomeButton);
+        ShowPanel(HomePanel, "Home", "Movies and series from public Stremio catalogs");
     }
 
     private void ShowHome(object sender, RoutedEventArgs e)
@@ -364,8 +396,41 @@ public sealed partial class MainPage : Page
     private void ShowAccount(object sender, RoutedEventArgs e)
     {
         SetSelectedNavigation(AccountButton);
-        ShowPanel(AccountPanel, "Stremio account", "Sign in and synchronize your configured add-ons");
+        ShowPanel(AccountPanel, _isSignedIn ? "Profile" : "Login",
+            _isSignedIn ? "Manage your signed-in Stremio account" : "Sign in and synchronize your configured add-ons");
     }
+
+    private void UpdateAccountNavigation(bool isSignedIn, string? email = null, string? id = null, int addonCount = 0, string? avatar = null)
+    {
+        _isSignedIn = isSignedIn;
+        AccountNavLabel.Text = isSignedIn ? "Profile" : "Login";
+        ProfileInitialBadge.Visibility = isSignedIn ? Visibility.Visible : Visibility.Collapsed;
+        ProfileInitialText.Text = isSignedIn && !string.IsNullOrWhiteSpace(email) ? email[..1].ToUpperInvariant() : "";
+        SignedOutAccountContent.Visibility = isSignedIn ? Visibility.Collapsed : Visibility.Visible;
+        SignedInProfileContent.Visibility = isSignedIn ? Visibility.Visible : Visibility.Collapsed;
+        ProfileEmailText.Text = isSignedIn && !string.IsNullOrWhiteSpace(email) ? email : "";
+        ProfileIdText.Text = isSignedIn && !string.IsNullOrWhiteSpace(id) ? $"Account ID: {id}" : "Account ID: available after verification";
+        ProfileAddonCountText.Text = isSignedIn ? $"Synced stream add-ons: {addonCount}" : "";
+        if (isSignedIn && !string.IsNullOrWhiteSpace(email))
+            PrototypeSettings.SaveProfileCache(new AccountProfileCache(email, id ?? "", avatar, addonCount));
+    }
+
+    private void SetAccountStatus(string message, AccountStatus status)
+    {
+        AccountStatusText.Text = message;
+        var (background, foreground) = status switch
+        {
+            AccountStatus.Success => ("#1A3B2A", "#A7F3C5"),
+            AccountStatus.Error => ("#4A1D28", "#FFC1C7"),
+            _ => ("#202431", "#A6A8B6")
+        };
+        AccountStatusBanner.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255,
+            Convert.ToByte(background.Substring(1, 2), 16), Convert.ToByte(background.Substring(3, 2), 16), Convert.ToByte(background.Substring(5, 2), 16)));
+        AccountStatusText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255,
+            Convert.ToByte(foreground.Substring(1, 2), 16), Convert.ToByte(foreground.Substring(3, 2), 16), Convert.ToByte(foreground.Substring(5, 2), 16)));
+    }
+
+    private enum AccountStatus { Neutral, Success, Error }
 
     private void ShowDiagnostics(object sender, RoutedEventArgs e)
     {
