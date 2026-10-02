@@ -6,7 +6,7 @@
   IgnorableNamespaces="uap mp">
 
   <Identity Name="Stremio.Xbox.FeasibilityPrototype"
-            Publisher="CN=lukegStremio Xbox Prototype"
+            Publisher="CN=lukeglukegStremio Xbox Prototype"
             Version="0.1.0.0" />
 
   <mp:PhoneIdentity PhoneProductId="6b9fc68c-b81e-4f5a-bf55-1de70bd11f2f"
@@ -14,7 +14,7 @@
 
   <Properties>
     <DisplayName>Stremio Xbox Prototype</DisplayName>
-    <PublisherDisplayName>Prototype</PublisherDisplayName>
+    <PublisherDisplayName>Stremio Xbox Prototype</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
