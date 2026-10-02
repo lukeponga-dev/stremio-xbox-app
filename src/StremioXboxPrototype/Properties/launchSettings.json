@@ -1,0 +1,15 @@
+{
+  "profiles": {
+    "StremioXboxPrototype": {
+      "commandName": "MsixPackage",
+      "hotReloadEnabled": false,
+      "remoteDebugEnabled": false,
+      "authenticationMode": "None",
+      "remoteDebugMachine": "xboxone"
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    }
+  }
+}
