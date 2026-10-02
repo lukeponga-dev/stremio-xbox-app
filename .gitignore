@@ -1,0 +1,17 @@
+.vs/
+.dotnet-cli/
+.nuget-packages/
+**/bin/
+**/obj/
+AppPackages/
+*.appx
+*.appxbundle
+*.msix
+*.msixbundle
+*.cer
+*.pfx
+*.p12
+SigningTemp/
+.signing-temp/
+*.user
+
