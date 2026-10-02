@@ -75,6 +75,12 @@ For a Device Portal package, use Visual Studio's **Publish → Create App Packag
 
 A Debug MSIX can be produced without NativeAOT. Release packaging enables NativeAOT and therefore requires the C++ linker workload.
 
+## Xbox release gate
+
+The checked-in package is configured for Xbox Dev Mode deployment: it is x64, controller-first, has internet/private-network capabilities, uses TV-safe page padding, and exposes platform transport controls. The player also supports **B** to return and **X** to mute or unmute audio.
+
+Before distribution beyond Dev Mode, replace the placeholder identity, certificates, and artwork; complete age ratings and Store policy review; and pass every item in [docs/validation.md](docs/validation.md) on the supported Xbox hardware tiers. The app must not be described as Store-ready until those external release requirements are complete.
+
 ## Exercise the prototype
 
 The Home and Discover screens work without account credentials. Playback can be tested in two ways:

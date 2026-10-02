@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseUwp>true</UseUwp>
-    <Platforms>x64</Platforms>
+    <Platforms>x64;AnyCPU</Platforms>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <DefaultLanguage>en-US</DefaultLanguage>
     <PublishAot Condition="'$(Configuration)' == 'Release'">true</PublishAot>

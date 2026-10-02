@@ -22,6 +22,9 @@ Record the OS build, app commit, network, display mode, and exact media URL or a
 | Back returns without losing context | 100% |  |  |
 | Focus restores to the previously opened card | 100% |  |  |
 | Search usable with platform text entry | 100% |  |  |
+| Login/profile state is readable at TV distance | 100% |  |  |
+| Profile sync cannot be started twice | 100% |  |  |
+| Sign out confirms and returns to Home | 100% |  |  |
 | One failed add-on does not block other results | 100% |  |  |
 | Large catalog remains responsive | Agreed threshold |  |  |
 
@@ -39,6 +42,8 @@ Run eligible rows in both Edge and the prototype under comparable conditions.
 | DASH | H.264 | AAC | Clear |  |  |  |  |  |  |
 | DASH | HEVC | Surround | PlayReady |  |  |  |  |  |  |
 | HLS/DASH | Any | Any | Widevine |  | Expected unsupported |  |  |  |  |
+
+Also verify that X toggles mute/unmute, B returns from playback, and console system volume is audible before recording an audio failure.
 
 For every applicable row, also test pause, resume, repeated seek, audio-track selection, embedded subtitles, external subtitles, expired URLs, network loss, app suspension, and loss of an external streaming service.
 

@@ -92,6 +92,7 @@ public sealed partial class DetailsPage : Page
 
         _request?.Cancel();
         _request = new CancellationTokenSource();
+        var cancellationToken = _request.Token;
         BusyIndicator.IsActive = true;
         StreamStatusText.Text = $"Querying {addons.Count} add-on(s)…";
         var videoId = (EpisodePicker.SelectedItem as VideoItem)?.Id ?? _item.Id;
@@ -100,7 +101,7 @@ public sealed partial class DetailsPage : Page
         {
             try
             {
-                return await _client.GetStreamsAsync(addon, _item.Type, videoId, _request.Token);
+                return await _client.GetStreamsAsync(addon, _item.Type, videoId, cancellationToken);
             }
             catch (OperationCanceledException) { return Array.Empty<StreamItem>(); }
             catch (Exception exception)
@@ -108,11 +109,21 @@ public sealed partial class DetailsPage : Page
                 DiagnosticsService.Current.Warn("streams", $"{addon.Name}: {exception.Message}");
                 return Array.Empty<StreamItem>();
             }
-        }).ToArray();
+        }).ToList();
 
-        var results = await Task.WhenAll(requests);
-        var streams = results.SelectMany(value => value).ToList();
-        StreamList.ItemsSource = streams;
+        var streams = new List<StreamItem>();
+        while (requests.Count > 0)
+        {
+            var completed = await Task.WhenAny(requests);
+            requests.Remove(completed);
+            streams.AddRange(await completed);
+            var ordered = streams.OrderByDescending(stream => stream.Resolution.Kind == StreamResolutionKind.NativeDirect)
+                .ThenBy(stream => stream.Name ?? stream.Title ?? stream.Provider)
+                .ToList();
+            StreamList.ItemsSource = ordered;
+            StreamStatusText.Text = $"{ordered.Count} stream(s) found. Checking {requests.Count} provider(s)…";
+        }
+
         BusyIndicator.IsActive = false;
         StreamStatusText.Text = streams.Count == 0
             ? "No streams returned. Each provider failed independently or had no result."

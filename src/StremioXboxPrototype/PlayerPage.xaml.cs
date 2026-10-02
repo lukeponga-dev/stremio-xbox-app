@@ -3,6 +3,7 @@ using StremioXboxPrototype.Models;
 using StremioXboxPrototype.Services;
 using Windows.Media.Core;
 using Windows.Media.Playback;
+using Windows.System;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
@@ -34,6 +35,7 @@ public sealed partial class PlayerPage : Page
         _openTimer.Start();
         DiagnosticsService.Current.Info("player", $"Open {_request.Uri}");
         Player.Source = MediaSource.CreateFromUri(_request.Uri);
+        Player.Focus(FocusState.Programmatic);
     }
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
@@ -89,4 +91,22 @@ public sealed partial class PlayerPage : Page
     private void MediaEnded(MediaPlayer sender, object args) => DiagnosticsService.Current.Info("player", "Playback ended");
     private void BufferingStarted(MediaPlaybackSession sender, object args) => DiagnosticsService.Current.Info("player", "Buffering started");
     private void BufferingEnded(MediaPlaybackSession sender, object args) => DiagnosticsService.Current.Info("player", "Buffering ended");
+
+    private void PlayerPageKeyDown(object sender, Windows.UI.Xaml.Input.KeyRoutedEventArgs e)
+    {
+        if (e.Key == VirtualKey.GamepadB || e.Key == VirtualKey.Escape)
+        {
+            if (Frame.CanGoBack) Frame.GoBack();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key != VirtualKey.GamepadX) return;
+        Player.MediaPlayer.IsMuted = !Player.MediaPlayer.IsMuted;
+        ControllerHintText.Text = Player.MediaPlayer.IsMuted ? "B  Back     X  Unmute" : "B  Back     X  Mute";
+        StatusOverlay.Visibility = Visibility.Visible;
+        StatusText.Text = Player.MediaPlayer.IsMuted ? "Audio muted" : "Audio on";
+        DiagnosticsService.Current.Info("player", Player.MediaPlayer.IsMuted ? "Audio muted" : "Audio unmuted");
+        e.Handled = true;
+    }
 }
