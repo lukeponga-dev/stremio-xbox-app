@@ -9,7 +9,10 @@ namespace StremioXboxPrototype.Services;
 
 public sealed class StremioStreamingServiceClient
 {
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(12) };
+    private static readonly HttpClient Http = new(new HttpClientHandler { AllowAutoRedirect = false })
+    {
+        Timeout = TimeSpan.FromSeconds(20)
+    };
     private static readonly ConcurrentDictionary<string, (Uri PlaybackUri, DateTimeOffset Expires)> PreparedTorrentCache = new();
 
     public async Task TestAsync(Uri serviceUrl, CancellationToken cancellationToken = default)
@@ -22,7 +25,7 @@ public sealed class StremioStreamingServiceClient
     public async Task<Uri> ResolveTorrentAsync(Uri serviceUrl, StreamItem stream,
         CancellationToken cancellationToken = default)
     {
-        var infoHash = stream.InfoHash?.Trim().ToLowerInvariant();
+        var infoHash = GetInfoHash(stream);
         if (string.IsNullOrWhiteSpace(infoHash) ||
             (infoHash.Length != 40 && infoHash.Length != 64) ||
             infoHash.Any(character => !Uri.IsHexDigit(character)))
@@ -40,12 +43,9 @@ public sealed class StremioStreamingServiceClient
         var sources = new List<string> { $"dht:{infoHash}" };
         foreach (var encodedSource in stream.Sources.Where(value => !string.IsNullOrWhiteSpace(value)))
         {
-            var source = Uri.UnescapeDataString(encodedSource.Trim());
-            sources.Add(source.StartsWith("dht:", StringComparison.OrdinalIgnoreCase) ||
-                        source.StartsWith("tracker:", StringComparison.OrdinalIgnoreCase)
-                ? source
-                : "tracker:" + source);
+            AddPeerSource(sources, encodedSource);
         }
+        foreach (var tracker in GetMagnetTrackers(GetTorrentUri(stream))) AddPeerSource(sources, tracker);
 
         var request = new StremioTorrentCreateRequest
         {
@@ -58,7 +58,7 @@ public sealed class StremioStreamingServiceClient
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"Stremio Service could not prepare the stream (HTTP {(int)response.StatusCode}).");
 
-        var playbackUri = new Uri(root, $"{infoHash}/{fileIndex}?external=1");
+        var playbackUri = await GetPlaybackUriAsync(root, infoHash, fileIndex, cancellationToken);
         PreparedTorrentCache[cacheKey] = (playbackUri, DateTimeOffset.UtcNow.AddMinutes(15));
         DiagnosticsService.Current.Info("streaming-service", $"Torrent prepared in {timer.ElapsedMilliseconds} ms");
         return playbackUri;
@@ -69,5 +69,63 @@ public sealed class StremioStreamingServiceClient
         if (value.Scheme != Uri.UriSchemeHttp && value.Scheme != Uri.UriSchemeHttps)
             throw new ArgumentException("The Stremio Service URL must use HTTP or HTTPS.", nameof(value));
         return new Uri(value.AbsoluteUri.TrimEnd('/') + "/");
+    }
+
+    private static string? GetInfoHash(StreamItem stream)
+    {
+        var value = stream.InfoHash?.Trim();
+        if (string.IsNullOrWhiteSpace(value) && Uri.TryCreate(GetTorrentUri(stream), UriKind.Absolute, out var magnetUri) &&
+            string.Equals(magnetUri.Scheme, "magnet", StringComparison.OrdinalIgnoreCase))
+        {
+            var hashValue = GetMagnetValues(magnetUri).FirstOrDefault(pair =>
+                pair.Key.Equals("xt", StringComparison.OrdinalIgnoreCase) &&
+                pair.Value.StartsWith("urn:btih:", StringComparison.OrdinalIgnoreCase)).Value;
+            if (!string.IsNullOrWhiteSpace(hashValue)) value = hashValue["urn:btih:".Length..];
+        }
+        return value?.ToLowerInvariant();
+    }
+
+    private static IEnumerable<string> GetMagnetTrackers(string? value)
+    {
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var magnetUri) ||
+            !string.Equals(magnetUri.Scheme, "magnet", StringComparison.OrdinalIgnoreCase)) return Array.Empty<string>();
+        return GetMagnetValues(magnetUri).Where(pair => pair.Key.Equals("tr", StringComparison.OrdinalIgnoreCase))
+            .Select(pair => pair.Value);
+    }
+
+    private static string? GetTorrentUri(StreamItem stream) =>
+        string.IsNullOrWhiteSpace(stream.Url) ? stream.ExternalUrl : stream.Url;
+
+    private static IEnumerable<KeyValuePair<string, string>> GetMagnetValues(Uri magnetUri) =>
+        magnetUri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries).Select(part =>
+        {
+            var separator = part.IndexOf('=');
+            var key = separator < 0 ? part : part[..separator];
+            var value = separator < 0 ? "" : part[(separator + 1)..];
+            return new KeyValuePair<string, string>(Uri.UnescapeDataString(key), Uri.UnescapeDataString(value));
+        });
+
+    private static void AddPeerSource(ICollection<string> sources, string value)
+    {
+        var source = Uri.UnescapeDataString(value.Trim());
+        if (string.IsNullOrWhiteSpace(source)) return;
+        if (source.StartsWith("magnet:", StringComparison.OrdinalIgnoreCase)) return;
+        sources.Add(source.StartsWith("dht:", StringComparison.OrdinalIgnoreCase) ||
+                    source.StartsWith("tracker:", StringComparison.OrdinalIgnoreCase)
+            ? source
+            : "tracker:" + source);
+    }
+
+    private static async Task<Uri> GetPlaybackUriAsync(Uri root, string infoHash, int fileIndex,
+        CancellationToken cancellationToken)
+    {
+        var externalUri = new Uri(root, $"{infoHash}/{fileIndex}?external=1");
+        using var request = new HttpRequestMessage(HttpMethod.Get, externalUri);
+        using var response = await Http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        if ((int)response.StatusCode is >= 300 and < 400 && response.Headers.Location is not null)
+            return response.Headers.Location.IsAbsoluteUri ? response.Headers.Location : new Uri(root, response.Headers.Location);
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException($"Stremio Service could not open the prepared torrent (HTTP {(int)response.StatusCode}).");
+        return new Uri(root, $"{infoHash}/{fileIndex}");
     }
 }

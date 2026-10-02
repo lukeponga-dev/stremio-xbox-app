@@ -11,18 +11,18 @@
             <ItemsStackPanel Orientation="Horizontal" />
         </ItemsPanelTemplate>
         <DataTemplate x:Key="PosterTemplate">
-            <Grid Width="190" Height="326" Margin="0,0,18,8">
+            <Grid Width="160" Height="275" Margin="0,0,15,8">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="268" />
+                    <RowDefinition Height="225" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <Border Style="{StaticResource SurfaceBorderStyle}" CornerRadius="12">
+                <Border Style="{StaticResource SurfaceBorderStyle}" CornerRadius="10">
                     <Image Source="{Binding Poster}" Stretch="UniformToFill" />
                 </Border>
                 <StackPanel Grid.Row="1" Margin="3,10,3,0">
-                    <TextBlock Text="{Binding Name}" FontSize="18" FontWeight="SemiBold"
+                    <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold"
                                TextTrimming="CharacterEllipsis" MaxLines="1" />
-                    <TextBlock Text="{Binding Subtitle}" FontSize="14" Foreground="{StaticResource MutedTextBrush}"
+                    <TextBlock Text="{Binding Subtitle}" FontSize="12" Foreground="{StaticResource MutedTextBrush}"
                                TextTrimming="CharacterEllipsis" MaxLines="1" Margin="0,3,0,0" />
                 </StackPanel>
             </Grid>
@@ -35,7 +35,7 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" Background="{StaticResource SidebarBrush}" Padding="24,32,18,24"
+        <Border Grid.Column="0" Background="{StaticResource SidebarBrush}" Padding="18,24,14,18"
                 BorderBrush="{StaticResource SubtleBorderBrush}" BorderThickness="0,0,1,0">
             <Grid>
                 <Grid.RowDefinitions>
@@ -45,45 +45,47 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel>
-                    <Image Width="168" Height="57" HorizontalAlignment="Left" Margin="0,0,0,8"
+                    <Image Width="142" Height="48" HorizontalAlignment="Left" Margin="0,0,0,6"
                            Stretch="Uniform" AutomationProperties.Name="Stremio">
                         <Image.Source>
                             <SvgImageSource UriSource="ms-appx:///Assets/StremioLogotypeDark.svg" />
                         </Image.Source>
                     </Image>
-                    <TextBlock Text="XBOX PROTOTYPE" FontSize="12" FontWeight="SemiBold"
-                               Foreground="{StaticResource AccentTextBrush}" CharacterSpacing="90" Margin="0,4,0,0" />
+                    <TextBlock Text="XBOX PROTOTYPE" FontSize="10" FontWeight="SemiBold"
+                               Foreground="{StaticResource AccentTextBrush}" CharacterSpacing="90" Margin="0,3,0,0" />
                 </StackPanel>
 
-                <StackPanel Grid.Row="1" Margin="0,32,0,0" Spacing="6">
-                    <TextBlock Text="BROWSE" FontSize="12" FontWeight="SemiBold" CharacterSpacing="100"
-                               Foreground="{StaticResource MutedTextBrush}" Margin="12,0,0,6" />
-                    <Button x:Name="HomeButton" Content="Home" Style="{StaticResource SelectedNavButtonStyle}" Click="ShowHome" />
-                    <Button x:Name="DiscoverButton" Content="Discover" Style="{StaticResource NavButtonStyle}" Click="ShowDiscover" />
-                    <Button x:Name="LibraryNavButton" Content="My library" Style="{StaticResource NavButtonStyle}" Click="ShowLibrary" />
-                    <TextBlock Text="SETUP &amp; TEST" FontSize="12" FontWeight="SemiBold" CharacterSpacing="100"
-                               Foreground="{StaticResource MutedTextBrush}" Margin="12,18,0,6" />
-                    <Button x:Name="PlaybackLabButton" Content="Playback lab" Style="{StaticResource NavButtonStyle}" Click="ShowPlaybackLab" />
-                    <Button x:Name="AddonsButton" Content="Stream add-ons" Style="{StaticResource NavButtonStyle}" Click="ShowAddons" />
-                    <Button x:Name="AccountButton" Style="{StaticResource NavButtonStyle}" Click="ShowAccount">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <Border x:Name="ProfileInitialBadge" Width="30" Height="30" CornerRadius="15"
-                                    Background="{StaticResource AccentBrush}" Visibility="Collapsed">
-                                <TextBlock x:Name="ProfileInitialText" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                           FontSize="14" FontWeight="SemiBold" />
-                            </Border>
-                            <TextBlock x:Name="AccountNavLabel" Text="Login" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <Button x:Name="DiagnosticsButton" Content="Diagnostics" Style="{StaticResource NavButtonStyle}" Click="ShowDiagnostics" />
-                </StackPanel>
+                <ScrollViewer Grid.Row="1" Margin="0,20,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="BROWSE" FontSize="10" FontWeight="SemiBold" CharacterSpacing="100"
+                                   Foreground="{StaticResource MutedTextBrush}" Margin="12,0,0,6" />
+                        <Button x:Name="HomeButton" Content="Home" Style="{StaticResource SelectedNavButtonStyle}" Click="ShowHome" />
+                        <Button x:Name="DiscoverButton" Content="Discover" Style="{StaticResource NavButtonStyle}" Click="ShowDiscover" />
+                        <Button x:Name="LibraryNavButton" Content="My library" Style="{StaticResource NavButtonStyle}" Click="ShowLibrary" />
+                        <TextBlock Text="SETUP &amp; TEST" FontSize="10" FontWeight="SemiBold" CharacterSpacing="100"
+                                   Foreground="{StaticResource MutedTextBrush}" Margin="12,14,0,4" />
+                        <Button x:Name="PlaybackLabButton" Content="Playback lab" Style="{StaticResource NavButtonStyle}" Click="ShowPlaybackLab" />
+                        <Button x:Name="AddonsButton" Content="Stream add-ons" Style="{StaticResource NavButtonStyle}" Click="ShowAddons" />
+                        <Button x:Name="AccountButton" Style="{StaticResource NavButtonStyle}" Click="ShowAccount">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Border x:Name="ProfileInitialBadge" Width="24" Height="24" CornerRadius="12"
+                                        Background="{StaticResource AccentBrush}" Visibility="Collapsed">
+                                    <TextBlock x:Name="ProfileInitialText" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               FontSize="11" FontWeight="SemiBold" />
+                                </Border>
+                                <TextBlock x:Name="AccountNavLabel" Text="Login" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="DiagnosticsButton" Content="Diagnostics" Style="{StaticResource NavButtonStyle}" Click="ShowDiagnostics" />
+                    </StackPanel>
+                </ScrollViewer>
 
                 <StackPanel Grid.Row="2">
-                    <Border Style="{StaticResource SurfaceBorderStyle}" Padding="12,10">
+                    <Border Style="{StaticResource SurfaceBorderStyle}" Padding="10,8">
                         <StackPanel>
-                            <TextBlock Text="SYSTEM STATUS" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80"
+                            <TextBlock Text="SYSTEM STATUS" FontSize="9" FontWeight="SemiBold" CharacterSpacing="80"
                                        Foreground="{StaticResource MutedTextBrush}" />
-                            <TextBlock x:Name="NetworkStatusText" Text="Ready" FontSize="14" FontWeight="SemiBold"
+                            <TextBlock x:Name="NetworkStatusText" Text="Ready" FontSize="12" FontWeight="SemiBold"
                                        Margin="0,5,0,0" TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
@@ -91,18 +93,18 @@
             </Grid>
         </Border>
 
-        <Grid Grid.Column="1" Padding="38,30,38,26">
+        <Grid Grid.Column="1" Padding="28,22,28,20">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <Grid Margin="0,0,0,22">
+            <Grid Margin="0,0,0,16">
                 <StackPanel>
-                    <TextBlock Text="STREMIO ON XBOX" FontSize="12" FontWeight="SemiBold" CharacterSpacing="110"
-                               Foreground="{StaticResource AccentTextBrush}" Margin="2,0,0,5" />
-                    <TextBlock x:Name="PageTitle" Text="Home" FontSize="42" FontWeight="SemiBold" />
-                    <TextBlock x:Name="PageSubtitle" Text="Public Stremio catalogs" FontSize="17"
+                    <TextBlock Text="STREMIO ON XBOX" FontSize="10" FontWeight="SemiBold" CharacterSpacing="110"
+                               Foreground="{StaticResource AccentTextBrush}" Margin="2,0,0,3" />
+                    <TextBlock x:Name="PageTitle" Text="Home" FontSize="36" FontWeight="SemiBold" />
+                    <TextBlock x:Name="PageSubtitle" Text="Public Stremio catalogs" FontSize="14"
                                Foreground="{StaticResource MutedTextBrush}" Margin="1,4,0,0" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="12">

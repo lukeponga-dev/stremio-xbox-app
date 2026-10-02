@@ -97,19 +97,7 @@ public sealed partial class DetailsPage : Page
         StreamStatusText.Text = $"Querying {addons.Count} add-on(s)…";
         var videoId = (EpisodePicker.SelectedItem as VideoItem)?.Id ?? _item.Id;
 
-        var requests = addons.Select(async addon =>
-        {
-            try
-            {
-                return await _client.GetStreamsAsync(addon, _item.Type, videoId, cancellationToken);
-            }
-            catch (OperationCanceledException) { return Array.Empty<StreamItem>(); }
-            catch (Exception exception)
-            {
-                DiagnosticsService.Current.Warn("streams", $"{addon.Name}: {exception.Message}");
-                return Array.Empty<StreamItem>();
-            }
-        }).ToList();
+        var requests = addons.Select(addon => GetStreamsFromAddonAsync(addon, _item.Type, videoId, cancellationToken)).ToList();
 
         var streams = new List<StreamItem>();
         while (requests.Count > 0)
@@ -130,6 +118,21 @@ public sealed partial class DetailsPage : Page
             : $"{streams.Count} streams: {streams.Count(s => s.Resolution.Kind == StreamResolutionKind.NativeDirect)} native-direct.";
     }
 
+    private async Task<IReadOnlyList<StreamItem>> GetStreamsFromAddonAsync(AddonEndpoint addon, string type,
+        string videoId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _client.GetStreamsAsync(addon, type, videoId, cancellationToken);
+        }
+        catch (OperationCanceledException) { return Array.Empty<StreamItem>(); }
+        catch (Exception exception)
+        {
+            DiagnosticsService.Current.Warn("streams", $"{addon.Name}: {exception.Message}");
+            return Array.Empty<StreamItem>();
+        }
+    }
+
     private async void OpenStream(object sender, ItemClickEventArgs e)
     {
         if (e.ClickedItem is not StreamItem stream || _item is null) return;
@@ -139,8 +142,7 @@ public sealed partial class DetailsPage : Page
             return;
         }
 
-        if (stream.Resolution.Kind == StreamResolutionKind.RequiresStreamingService &&
-            !string.IsNullOrWhiteSpace(stream.InfoHash))
+        if (stream.Resolution.Kind == StreamResolutionKind.RequiresStreamingService)
         {
             var serviceUrl = PrototypeSettings.GetStreamingServiceUrl();
             if (serviceUrl is null)

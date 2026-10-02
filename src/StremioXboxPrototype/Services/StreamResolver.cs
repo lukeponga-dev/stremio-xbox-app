@@ -6,6 +6,14 @@ public static class StreamResolver
 {
     public static StreamResolution Resolve(StreamItem stream)
     {
+        var torrentUri = string.IsNullOrWhiteSpace(stream.Url) ? stream.ExternalUrl : stream.Url;
+        if (!string.IsNullOrWhiteSpace(torrentUri) &&
+            Uri.TryCreate(torrentUri, UriKind.Absolute, out var magnetUri) &&
+            string.Equals(magnetUri.Scheme, "magnet", StringComparison.OrdinalIgnoreCase))
+        {
+            return StreamResolution.Service("Streaming service: magnet torrent source");
+        }
+
         if (!string.IsNullOrWhiteSpace(stream.Url) &&
             Uri.TryCreate(stream.Url, UriKind.Absolute, out var uri) &&
             (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))

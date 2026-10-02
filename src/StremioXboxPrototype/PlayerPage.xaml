@@ -7,27 +7,27 @@
                             AutoPlay="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
 
         <Border x:Name="StatusOverlay" Background="#EC0E101A" BorderBrush="#458F5BFF"
-                BorderThickness="1" CornerRadius="14" Padding="20,18"
-                HorizontalAlignment="Left" VerticalAlignment="Top" Margin="42" MaxWidth="760">
+                BorderThickness="1" CornerRadius="12" Padding="16,14"
+                HorizontalAlignment="Left" VerticalAlignment="Top" Margin="32" MaxWidth="640">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="6" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <Border Background="{StaticResource AccentBrush}" CornerRadius="3" />
-                <StackPanel Grid.Column="1" Margin="16,0,0,0">
-                    <TextBlock Text="NOW PLAYING" FontSize="11" FontWeight="SemiBold" CharacterSpacing="100"
-                               Foreground="{StaticResource AccentTextBrush}" Margin="0,0,0,5" />
-                    <TextBlock x:Name="TitleText" FontSize="26" FontWeight="SemiBold" />
-                    <TextBlock x:Name="StatusText" Text="Opening media…" FontSize="16" Margin="0,6,0,0"
+                <StackPanel Grid.Column="1" Margin="13,0,0,0">
+                    <TextBlock Text="NOW PLAYING" FontSize="9" FontWeight="SemiBold" CharacterSpacing="100"
+                               Foreground="{StaticResource AccentTextBrush}" Margin="0,0,0,4" />
+                    <TextBlock x:Name="TitleText" FontSize="22" FontWeight="SemiBold" />
+                    <TextBlock x:Name="StatusText" Text="Opening media…" FontSize="13" Margin="0,5,0,0"
                            Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
                 </StackPanel>
             </Grid>
         </Border>
 
-        <Border Background="#C6080A12" CornerRadius="10" Padding="14,8" Margin="42"
+        <Border Background="#C6080A12" CornerRadius="8" Padding="11,6" Margin="32"
                 HorizontalAlignment="Right" VerticalAlignment="Bottom">
-            <TextBlock x:Name="ControllerHintText" Text="B  Back     X  Mute" FontSize="16"
+            <TextBlock x:Name="ControllerHintText" Text="B  Back     X  Mute" FontSize="13"
                        FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" />
         </Border>
     </Grid>
