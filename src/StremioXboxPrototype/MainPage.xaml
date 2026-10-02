@@ -45,12 +45,12 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel>
-                    <Border Width="44" Height="44" Background="{StaticResource AccentBrush}" CornerRadius="12"
-                            HorizontalAlignment="Left" Margin="0,0,0,12">
-                        <TextBlock Text="S" FontSize="25" FontWeight="Bold" HorizontalAlignment="Center"
-                                   VerticalAlignment="Center" />
-                    </Border>
-                    <TextBlock Text="STREMIO" FontSize="27" FontWeight="Bold" CharacterSpacing="70" />
+                    <Image Width="168" Height="57" HorizontalAlignment="Left" Margin="0,0,0,8"
+                           Stretch="Uniform" AutomationProperties.Name="Stremio">
+                        <Image.Source>
+                            <SvgImageSource UriSource="ms-appx:///Assets/StremioLogotypeDark.svg" />
+                        </Image.Source>
+                    </Image>
                     <TextBlock Text="XBOX PROTOTYPE" FontSize="12" FontWeight="SemiBold"
                                Foreground="{StaticResource AccentTextBrush}" CharacterSpacing="90" Margin="0,4,0,0" />
                 </StackPanel>
@@ -180,7 +180,14 @@
                                 Width="230" Click="SaveAddons" />
                         <TextBlock x:Name="AddonSaveStatus" FontSize="18" Foreground="{StaticResource MutedTextBrush}" />
                         <Border Height="1" Background="#40FFFFFF" Margin="0,12" />
-                        <TextBlock Text="External Stremio Service" FontSize="25" FontWeight="SemiBold" />
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Image Width="38" Height="38" Stretch="Uniform" AutomationProperties.Name="Stremio Service">
+                                <Image.Source>
+                                    <SvgImageSource UriSource="ms-appx:///Assets/StremioSymbol.svg" />
+                                </Image.Source>
+                            </Image>
+                            <TextBlock Text="External Stremio Service" FontSize="25" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        </StackPanel>
                         <TextBlock Text="Required for torrent-backed streams. Run Stremio Service on another device and enter an address the Xbox can reach, such as http://192.168.1.20:11470/. Do not use 127.0.0.1—that points to the Xbox."
                                    FontSize="19" TextWrapping="Wrap" />
                         <TextBox x:Name="StreamingServiceUrlBox" Header="Streaming service URL"
