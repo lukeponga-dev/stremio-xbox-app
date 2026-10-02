@@ -3,9 +3,9 @@
     "StremioXboxPrototype": {
       "commandName": "MsixPackage",
       "hotReloadEnabled": false,
-      "remoteDebugEnabled": false,
-      "authenticationMode": "None",
-      "remoteDebugMachine": "xboxone"
+      "remoteDebugEnabled": true,
+      "authenticationMode": "Universal",
+      "remoteDebugMachine": "192.168.1.102"
     },
     "WSL": {
       "commandName": "WSL2",
