@@ -11,17 +11,19 @@
             <ItemsStackPanel Orientation="Horizontal" />
         </ItemsPanelTemplate>
         <DataTemplate x:Key="PosterTemplate">
-            <Grid Width="180" Height="305" Margin="8">
+            <Grid Width="190" Height="326" Margin="0,0,18,8">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="244" />
+                    <RowDefinition Height="268" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <Border Background="{StaticResource PanelBrush}" CornerRadius="8">
+                <Border Style="{StaticResource SurfaceBorderStyle}" CornerRadius="12">
                     <Image Source="{Binding Poster}" Stretch="UniformToFill" />
                 </Border>
-                <StackPanel Grid.Row="1" Margin="2,8,2,0">
-                    <TextBlock Text="{Binding Name}" FontSize="18" TextTrimming="CharacterEllipsis" />
-                    <TextBlock Text="{Binding Subtitle}" FontSize="14" Foreground="{StaticResource MutedTextBrush}" />
+                <StackPanel Grid.Row="1" Margin="3,10,3,0">
+                    <TextBlock Text="{Binding Name}" FontSize="18" FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis" MaxLines="1" />
+                    <TextBlock Text="{Binding Subtitle}" FontSize="14" Foreground="{StaticResource MutedTextBrush}"
+                               TextTrimming="CharacterEllipsis" MaxLines="1" Margin="0,3,0,0" />
                 </StackPanel>
             </Grid>
         </DataTemplate>
@@ -29,11 +31,12 @@
 
     <Grid XYFocusKeyboardNavigation="Enabled">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="260" />
+            <ColumnDefinition Width="238" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" Background="#0B1620" Padding="28,38,20,28">
+        <Border Grid.Column="0" Background="{StaticResource SidebarBrush}" Padding="24,32,18,24"
+                BorderBrush="{StaticResource SubtleBorderBrush}" BorderThickness="0,0,1,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -42,88 +45,82 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel>
-                    <TextBlock Text="STREMIO" FontSize="30" FontWeight="Bold" />
-                    <TextBlock Text="XBOX LAB" FontSize="14" Foreground="{StaticResource AccentBrush}" />
+                    <Border Width="44" Height="44" Background="{StaticResource AccentBrush}" CornerRadius="12"
+                            HorizontalAlignment="Left" Margin="0,0,0,12">
+                        <TextBlock Text="S" FontSize="25" FontWeight="Bold" HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="STREMIO" FontSize="27" FontWeight="Bold" CharacterSpacing="70" />
+                    <TextBlock Text="XBOX PROTOTYPE" FontSize="12" FontWeight="SemiBold"
+                               Foreground="{StaticResource AccentTextBrush}" CharacterSpacing="90" Margin="0,4,0,0" />
                 </StackPanel>
 
-                <StackPanel Grid.Row="1" Margin="0,46,0,0" Spacing="10">
-                    <Button x:Name="HomeButton" Content="Home" Style="{StaticResource TvButtonStyle}" Click="ShowHome" />
-                    <Button Content="Discover" Style="{StaticResource TvButtonStyle}" Click="ShowDiscover" />
-                    <Button Content="Library" Style="{StaticResource TvButtonStyle}" Click="ShowLibrary" />
-                    <Button Content="Playback lab" Style="{StaticResource TvButtonStyle}" Click="ShowPlaybackLab" />
-                    <Button Content="Add-ons" Style="{StaticResource TvButtonStyle}" Click="ShowAddons" />
-                    <Button Content="Account" Style="{StaticResource TvButtonStyle}" Click="ShowAccount" />
-                    <Button Content="Diagnostics" Style="{StaticResource TvButtonStyle}" Click="ShowDiagnostics" />
+                <StackPanel Grid.Row="1" Margin="0,32,0,0" Spacing="6">
+                    <TextBlock Text="BROWSE" FontSize="12" FontWeight="SemiBold" CharacterSpacing="100"
+                               Foreground="{StaticResource MutedTextBrush}" Margin="12,0,0,6" />
+                    <Button x:Name="HomeButton" Content="Home" Style="{StaticResource SelectedNavButtonStyle}" Click="ShowHome" />
+                    <Button x:Name="DiscoverButton" Content="Discover" Style="{StaticResource NavButtonStyle}" Click="ShowDiscover" />
+                    <Button x:Name="LibraryNavButton" Content="My library" Style="{StaticResource NavButtonStyle}" Click="ShowLibrary" />
+                    <TextBlock Text="SETUP &amp; TEST" FontSize="12" FontWeight="SemiBold" CharacterSpacing="100"
+                               Foreground="{StaticResource MutedTextBrush}" Margin="12,18,0,6" />
+                    <Button x:Name="PlaybackLabButton" Content="Playback lab" Style="{StaticResource NavButtonStyle}" Click="ShowPlaybackLab" />
+                    <Button x:Name="AddonsButton" Content="Stream add-ons" Style="{StaticResource NavButtonStyle}" Click="ShowAddons" />
+                    <Button x:Name="AccountButton" Content="Account" Style="{StaticResource NavButtonStyle}" Click="ShowAccount" />
+                    <Button x:Name="DiagnosticsButton" Content="Diagnostics" Style="{StaticResource NavButtonStyle}" Click="ShowDiagnostics" />
                 </StackPanel>
 
                 <StackPanel Grid.Row="2">
-                    <TextBlock Text="FEASIBILITY BUILD" FontSize="12" Foreground="{StaticResource MutedTextBrush}" />
-                    <TextBlock x:Name="NetworkStatusText" Text="Ready" FontSize="14" Margin="0,6,0,0" TextWrapping="Wrap" />
+                    <Border Style="{StaticResource SurfaceBorderStyle}" Padding="12,10">
+                        <StackPanel>
+                            <TextBlock Text="SYSTEM STATUS" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80"
+                                       Foreground="{StaticResource MutedTextBrush}" />
+                            <TextBlock x:Name="NetworkStatusText" Text="Ready" FontSize="14" FontWeight="SemiBold"
+                                       Margin="0,5,0,0" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <Grid Grid.Column="1" Padding="42,34,42,30">
+        <Grid Grid.Column="1" Padding="38,30,38,26">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <Grid>
+            <Grid Margin="0,0,0,22">
                 <StackPanel>
-                    <TextBlock x:Name="PageTitle" Text="Home" FontSize="40" FontWeight="SemiBold" />
-                    <TextBlock x:Name="PageSubtitle" Text="Public Stremio catalogs" FontSize="18"
-                               Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,24" />
+                    <TextBlock Text="STREMIO ON XBOX" FontSize="12" FontWeight="SemiBold" CharacterSpacing="110"
+                               Foreground="{StaticResource AccentTextBrush}" Margin="2,0,0,5" />
+                    <TextBlock x:Name="PageTitle" Text="Home" FontSize="42" FontWeight="SemiBold" />
+                    <TextBlock x:Name="PageSubtitle" Text="Public Stremio catalogs" FontSize="17"
+                               Foreground="{StaticResource MutedTextBrush}" Margin="1,4,0,0" />
                 </StackPanel>
-                <ProgressRing x:Name="BusyIndicator" Width="48" Height="48"
-                              HorizontalAlignment="Right" IsActive="False" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="12">
+                    <Border Background="{StaticResource AccentSoftBrush}" BorderBrush="{StaticResource AccentBrush}"
+                            BorderThickness="1" CornerRadius="16" Padding="14,7">
+                        <TextBlock Text="DEV MODE" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{StaticResource AccentTextBrush}" />
+                    </Border>
+                    <ProgressRing x:Name="BusyIndicator" Width="42" Height="42" IsActive="False" />
+                </StackPanel>
             </Grid>
 
             <Grid Grid.Row="1">
                 <ScrollViewer x:Name="HomePanel">
                     <StackPanel Spacing="30">
                         <StackPanel>
-                            <TextBlock Text="Popular movies" FontSize="26" FontWeight="SemiBold" Margin="0,0,0,14" />
+                            <TextBlock Text="Popular movies" Style="{StaticResource SectionTitleStyle}" />
                             <GridView x:Name="MovieGrid" IsItemClickEnabled="True" ItemClick="OpenItem"
-                                      SelectionMode="None" ItemsPanel="{StaticResource HorizontalItemsPanel}">
-                                <GridView.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid Width="170" Height="285" Margin="0,0,18,0">
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="230" />
-                                                <RowDefinition Height="*" />
-                                            </Grid.RowDefinitions>
-                                            <Border Background="{StaticResource PanelBrush}" CornerRadius="8">
-                                                <Image Source="{Binding Poster}" Stretch="UniformToFill" />
-                                            </Border>
-                                            <TextBlock Grid.Row="1" Text="{Binding Name}" FontSize="18" Margin="2,8,2,0"
-                                                       TextTrimming="CharacterEllipsis" MaxLines="2" />
-                                        </Grid>
-                                    </DataTemplate>
-                                </GridView.ItemTemplate>
-                            </GridView>
+                                      SelectionMode="None" ItemsPanel="{StaticResource HorizontalItemsPanel}"
+                                      ItemTemplate="{StaticResource PosterTemplate}" />
                         </StackPanel>
 
                         <StackPanel>
-                            <TextBlock Text="Popular series" FontSize="26" FontWeight="SemiBold" Margin="0,0,0,14" />
+                            <TextBlock Text="Popular series" Style="{StaticResource SectionTitleStyle}" />
                             <GridView x:Name="SeriesGrid" IsItemClickEnabled="True" ItemClick="OpenItem"
-                                      SelectionMode="None" ItemsPanel="{StaticResource HorizontalItemsPanel}">
-                                <GridView.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid Width="170" Height="285" Margin="0,0,18,0">
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="230" />
-                                                <RowDefinition Height="*" />
-                                            </Grid.RowDefinitions>
-                                            <Border Background="{StaticResource PanelBrush}" CornerRadius="8">
-                                                <Image Source="{Binding Poster}" Stretch="UniformToFill" />
-                                            </Border>
-                                            <TextBlock Grid.Row="1" Text="{Binding Name}" FontSize="18" Margin="2,8,2,0"
-                                                       TextTrimming="CharacterEllipsis" MaxLines="2" />
-                                        </Grid>
-                                    </DataTemplate>
-                                </GridView.ItemTemplate>
-                            </GridView>
+                                      SelectionMode="None" ItemsPanel="{StaticResource HorizontalItemsPanel}"
+                                      ItemTemplate="{StaticResource PosterTemplate}" />
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>

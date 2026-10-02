@@ -328,31 +328,64 @@ public sealed partial class MainPage : Page
         AccountStatusText.Text = "Signed out.";
     }
 
-    private void ShowHome(object sender, RoutedEventArgs e) => ShowPanel(HomePanel, "Home", "Public Stremio catalogs");
-    private void ShowDiscover(object sender, RoutedEventArgs e) => ShowPanel(DiscoverPanel, "Discover", "Search Cinemeta using the add-on protocol");
+    private void ShowHome(object sender, RoutedEventArgs e)
+    {
+        SetSelectedNavigation(HomeButton);
+        ShowPanel(HomePanel, "Home", "Movies and series from public Stremio catalogs");
+    }
+
+    private void ShowDiscover(object sender, RoutedEventArgs e)
+    {
+        SetSelectedNavigation(DiscoverButton);
+        ShowPanel(DiscoverPanel, "Discover", "Search Cinemeta using the Stremio add-on protocol");
+    }
 
     private void ShowLibrary(object sender, RoutedEventArgs e)
     {
         var items = PrototypeSettings.GetLibrary();
         LibraryGrid.ItemsSource = items;
         EmptyLibraryText.Visibility = items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        ShowPanel(LibraryPanel, "Library", "Locally persisted prototype favorites");
+        SetSelectedNavigation(LibraryNavButton);
+        ShowPanel(LibraryPanel, "My library", "Titles saved locally on this Xbox prototype");
     }
 
-    private void ShowPlaybackLab(object sender, RoutedEventArgs e) =>
-        ShowPanel(PlaybackLabPanel, "Playback lab", "Direct-stream feasibility and measurements");
+    private void ShowPlaybackLab(object sender, RoutedEventArgs e)
+    {
+        SetSelectedNavigation(PlaybackLabButton);
+        ShowPanel(PlaybackLabPanel, "Playback lab", "Test a direct stream through the native Xbox media pipeline");
+    }
 
-    private void ShowAddons(object sender, RoutedEventArgs e) =>
-        ShowPanel(AddonsPanel, "Stream add-ons", "Configure providers without bundling any content source");
+    private void ShowAddons(object sender, RoutedEventArgs e)
+    {
+        SetSelectedNavigation(AddonsButton);
+        ShowPanel(AddonsPanel, "Stream add-ons", "Connect providers and an optional external Stremio Service");
+    }
 
-    private void ShowAccount(object sender, RoutedEventArgs e) =>
-        ShowPanel(AccountPanel, "Stremio account", "Official account API and add-on synchronization");
+    private void ShowAccount(object sender, RoutedEventArgs e)
+    {
+        SetSelectedNavigation(AccountButton);
+        ShowPanel(AccountPanel, "Stremio account", "Sign in and synchronize your configured add-ons");
+    }
 
     private void ShowDiagnostics(object sender, RoutedEventArgs e)
     {
+        SetSelectedNavigation(DiagnosticsButton);
         ShowPanel(DiagnosticsPanel, "Diagnostics", "Bounded in-memory event log");
         UpdateMemory();
         _memoryTimer.Start();
+    }
+
+    private void SetSelectedNavigation(Button selected)
+    {
+        foreach (var button in new[]
+                 {
+                     HomeButton, DiscoverButton, LibraryNavButton, PlaybackLabButton,
+                     AddonsButton, AccountButton, DiagnosticsButton
+                 })
+        {
+            button.Style = (Style)Application.Current.Resources[
+                ReferenceEquals(button, selected) ? "SelectedNavButtonStyle" : "NavButtonStyle"];
+        }
     }
 
     private void ShowPanel(UIElement panel, string title, string subtitle)
