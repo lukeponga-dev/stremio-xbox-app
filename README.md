@@ -24,6 +24,7 @@ The Rust core is not binary-linked yet because upstream has no supported UWP/.NE
 - Native direct playback with `MediaPlayerElement` and platform transport controls.
 - A direct-URL playback lab with a known public test asset.
 - Controller-oriented XY focus, visible platform focus, Back navigation, and focus restoration.
+- Full-screen TV layout with labelled navigation, larger poster cards and text, and a visible server connection status. The app uses the complete display bounds, with spacing inside the content area.
 - A small local favorites library.
 - Bounded diagnostics for requests, playback startup, buffering, failures, lifecycle, and memory usage.
 - Internet and private-network capabilities for later external-service testing.
@@ -77,7 +78,7 @@ A Debug MSIX can be produced without NativeAOT. Release packaging enables Native
 
 ## Xbox release gate
 
-The checked-in package is configured for Xbox Dev Mode deployment: it is x64, controller-first, has internet/private-network capabilities, uses TV-safe page padding, and exposes platform transport controls. The player also supports **B** to return and **X** to mute or unmute audio.
+The checked-in package is configured for Xbox Dev Mode deployment: it is x64, controller-first, has internet/private-network capabilities, uses the full display with internal content spacing, and exposes platform transport controls. The player also supports **B** to return and **X** to mute or unmute audio.
 
 Before distribution beyond Dev Mode, replace the placeholder identity, certificates, and artwork; complete age ratings and Store policy review; and pass every item in [docs/validation.md](docs/validation.md) on the supported Xbox hardware tiers. The app must not be described as Store-ready until those external release requirements are complete.
 
@@ -89,6 +90,12 @@ The Home and Discover screens work without account credentials. Playback can be 
 2. Open **Add-ons**, enter one HTTPS Stremio add-on manifest URL per line, save, open a catalog title, and choose **Find streams**.
 
 The prototype never executes add-on code. It sends native-direct HTTP(S) URLs straight to the Xbox player. Torrent-backed streams can be played through an explicitly configured external Stremio Service reachable from the Xbox; the app does not run a torrent engine on the console. Archives, proxy-header streams, and external pages remain classified but unavailable.
+
+### Connect the streaming server
+
+Open **Server** in the left navigation. The default address is `http://192.168.1.103:32768/`. The app checks it on startup using Stremio's `/settings` endpoint and displays the connection state in the header. **Connect and save** validates the response and remembers a changed address; **Disconnect server** disables server playback until you reconnect. A failed connection test preserves the previously saved address.
+
+Keep Stremio Service running and ensure the Xbox can reach the server on the same network. A streaming server supplies playback, while **Add-ons** or account synchronization supplies stream providers. Open a title and choose **Find streams** after configuring providers. Native direct streams also work when the server is unavailable.
 
 ## Validation
 

@@ -17,6 +17,7 @@ public sealed partial class MainPage : Page
     private readonly StremioAccountClient _accountClient = new();
     private readonly StremioStreamingServiceClient _streamingServiceClient = new();
     private CancellationTokenSource? _request;
+    private CancellationTokenSource? _serverRequest;
     private readonly DispatcherTimer _memoryTimer = new() { Interval = TimeSpan.FromSeconds(2) };
     private Control? _lastFocusedItem;
     private bool _isSignedIn;
@@ -46,11 +47,13 @@ public sealed partial class MainPage : Page
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         _request?.Cancel();
+        _serverRequest?.Cancel();
         base.OnNavigatedFrom(e);
     }
 
     private async void PageLoaded(object sender, RoutedEventArgs e)
     {
+        _ = CheckSavedServerAsync();
         var cachedProfile = PrototypeSettings.GetProfileCache();
         if (cachedProfile is not null) UpdateAccountNavigation(true, cachedProfile.Email, cachedProfile.Id, cachedProfile.AddonCount, cachedProfile.Avatar);
         try
@@ -203,28 +206,77 @@ public sealed partial class MainPage : Page
     private async void SaveStreamingService(object sender, RoutedEventArgs e)
     {
         if (!Uri.TryCreate(StreamingServiceUrlBox.Text.Trim(), UriKind.Absolute, out var uri) ||
-            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps) ||
+            !string.IsNullOrEmpty(uri.UserInfo) || !string.IsNullOrEmpty(uri.Query) || !string.IsNullOrEmpty(uri.Fragment))
         {
             StreamingServiceStatus.Text = "Enter an absolute HTTP or HTTPS Stremio Service URL.";
             return;
         }
 
-        BeginRequest("Testing Stremio Service…");
+        await ConnectServerAsync(uri, save: true);
+    }
+
+    private async Task CheckSavedServerAsync()
+    {
+        var uri = PrototypeSettings.GetStreamingServiceUrl();
+        if (uri is null)
+        {
+            ServerStatusButton.Content = "Server: disconnected";
+            StreamingServiceStatus.Text = "Enter your server address to connect.";
+            return;
+        }
+        await ConnectServerAsync(uri, save: false);
+    }
+
+    private async Task ConnectServerAsync(Uri uri, bool save)
+    {
+        _serverRequest?.Cancel();
+        var request = new CancellationTokenSource();
+        _serverRequest = request;
+        ConnectServerButton.IsEnabled = false;
+        ServerStatusButton.Content = "Server: checking…";
+        StreamingServiceStatus.Text = $"Connecting to {uri.Host}:{uri.Port}…";
         try
         {
-            await _streamingServiceClient.TestAsync(uri, _request!.Token);
-            PrototypeSettings.SetStreamingServiceUrl(uri);
+            var version = await _streamingServiceClient.TestAsync(uri, request.Token);
+            request.Token.ThrowIfCancellationRequested();
+            if (save) PrototypeSettings.SetStreamingServiceUrl(uri);
             StreamingServiceUrlBox.Text = PrototypeSettings.GetStreamingServiceUrlText();
-            StreamingServiceStatus.Text = $"Connected to {uri.Host}. Torrent-backed streams can now be selected.";
+            ServerStatusButton.Content = "Server: connected";
+            StreamingServiceStatus.Text = $"Connected to {uri.Host}:{uri.Port} · Stremio {version}. Ready to stream.";
             DiagnosticsService.Current.Info("streaming-service", $"Connected to {uri.Host}");
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException) when (request.IsCancellationRequested) { }
         catch (Exception exception)
         {
-            StreamingServiceStatus.Text = "Service unavailable: " + exception.Message;
+            ServerStatusButton.Content = "Server: unavailable";
+            StreamingServiceStatus.Text = $"Cannot reach {uri.Host}:{uri.Port}. Check that Stremio is running, both devices are on the same network, and port {uri.Port} is allowed. " + exception.Message;
             DiagnosticsService.Current.Error("streaming-service", exception.Message);
         }
-        finally { EndRequest(); }
+        finally
+        {
+            if (ReferenceEquals(_serverRequest, request))
+            {
+                _serverRequest = null;
+                ConnectServerButton.IsEnabled = true;
+            }
+            request.Dispose();
+        }
+    }
+
+    private void DisconnectServer(object sender, RoutedEventArgs e)
+    {
+        _serverRequest?.Cancel();
+        PrototypeSettings.ClearStreamingServiceUrl();
+        StreamingServiceUrlBox.Text = "";
+        ServerStatusButton.Content = "Server: disconnected";
+        StreamingServiceStatus.Text = "Disconnected. Enter a server address to reconnect.";
+    }
+
+    private void ShowServer(object sender, RoutedEventArgs e)
+    {
+        SetSelectedNavigation(ServerButton);
+        ShowPanel(ServerPanel, "Stremio server", "Connect your TV to your streaming server");
     }
 
     private async void SignInAndSync(object sender, RoutedEventArgs e)
@@ -392,7 +444,7 @@ public sealed partial class MainPage : Page
     private void ShowAddons(object sender, RoutedEventArgs e)
     {
         SetSelectedNavigation(AddonsButton);
-        ShowPanel(AddonsPanel, "Stream add-ons", "Connect providers and an optional external Stremio Service");
+        ShowPanel(AddonsPanel, "Stream add-ons", "Add providers or sync them from your Stremio account");
     }
 
     private void ShowAccount(object sender, RoutedEventArgs e)
@@ -447,7 +499,7 @@ public sealed partial class MainPage : Page
         foreach (var button in new[]
                  {
                      HomeButton, DiscoverButton, LibraryNavButton, PlaybackLabButton,
-                     AddonsButton, AccountButton, DiagnosticsButton
+                     AddonsButton, AccountButton, ServerButton, DiagnosticsButton
                  })
         {
             button.Style = (Style)Application.Current.Resources[
@@ -460,7 +512,7 @@ public sealed partial class MainPage : Page
         _request?.Cancel();
         _memoryTimer.Stop();
         foreach (var candidate in new UIElement[]
-                 { HomePanel, DiscoverPanel, LibraryPanel, PlaybackLabPanel, AddonsPanel, AccountPanel, DiagnosticsPanel })
+                 { HomePanel, DiscoverPanel, LibraryPanel, PlaybackLabPanel, AddonsPanel, ServerPanel, AccountPanel, DiagnosticsPanel })
         {
             candidate.Visibility = ReferenceEquals(candidate, panel) ? Visibility.Visible : Visibility.Collapsed;
         }
@@ -487,10 +539,17 @@ public sealed partial class MainPage : Page
 
     private void BackRequested(object? sender, BackRequestedEventArgs e)
     {
+        if (!ReferenceEquals(Frame.Content, this)) return;
         if (Frame.CanGoBack)
         {
             e.Handled = true;
             Frame.GoBack();
+        }
+        else if (HomePanel.Visibility != Visibility.Visible)
+        {
+            e.Handled = true;
+            ShowHome(this, new RoutedEventArgs());
+            HomeButton.Focus(FocusState.Programmatic);
         }
     }
 

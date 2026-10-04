@@ -1,5 +1,6 @@
 using Windows.ApplicationModel.Activation;
 using Windows.System.Profile;
+using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
@@ -10,6 +11,7 @@ sealed partial class App : Application
     public App()
     {
         InitializeComponent();
+        ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.FullScreen;
 
         // RequiresPointerMode is an Xbox-specific setting. Assigning it while
         // debugging the package on desktop Windows can fail during activation.
@@ -46,5 +48,8 @@ sealed partial class App : Application
         }
 
         Window.Current.Activate();
+        var view = ApplicationView.GetForCurrentView();
+        view.SetDesiredBoundsMode(ApplicationViewBoundsMode.UseCoreWindow);
+        view.TryEnterFullScreenMode();
     }
 }

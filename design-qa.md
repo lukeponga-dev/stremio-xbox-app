@@ -1,5 +1,15 @@
 # Design QA
 
+## TV update — 5 October 2026
+
+Follow-up: the app now requests full-screen mode at launch and uses core-window bounds to remove the platform's visible-bounds inset. The main-page outer padding has been removed, so the sidebar reaches the screen edges. Content uses 24px horizontal spacing, and settings panels and the details description expand to the available width. Full-screen appearance on Xbox still needs runtime verification.
+
+The TV request supersedes the compact desktop reference below. Navigation now has visible labels, posters measure 184 × 276 with 20px titles, inputs have a 60px minimum height, and the main page has 48px horizontal / 36px vertical screen-edge padding. Search and server status occupy separate header rows without overlapping controls. Details stream rows stretch to the available width instead of forcing a 700px minimum. Controller Back returns from a main-page section to Home.
+
+The default server is `http://192.168.1.103:32768/`. A dedicated Server screen supports connection validation, saving, disconnecting, startup checks, and visible errors. The production connection client successfully read Stremio 4.22.0 from this server. Response acceptance, invalid JSON/schema, HTTP failure, and cancellation checks passed in a temporary console harness. Visual Studio MSBuild completed the x64 Debug build; existing signing-certificate warnings remain.
+
+Runtime visual inspection and controller navigation on Xbox remain unverified. The desktop-reference findings below describe the previous layout.
+
 ## Comparison target
 
 - Source visual truth: `C:\Users\lukeg\Downloads\stremio-ui.png`

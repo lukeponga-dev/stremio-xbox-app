@@ -15,11 +15,20 @@ public sealed class StremioStreamingServiceClient
     };
     private static readonly ConcurrentDictionary<string, (Uri PlaybackUri, DateTimeOffset Expires)> PreparedTorrentCache = new();
 
-    public async Task TestAsync(Uri serviceUrl, CancellationToken cancellationToken = default)
+    public async Task<string> TestAsync(Uri serviceUrl, CancellationToken cancellationToken = default)
     {
         using var response = await Http.GetAsync(new Uri(Normalize(serviceUrl), "settings"), cancellationToken);
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"Stremio Service returned HTTP {(int)response.StatusCode}.");
+        using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var settings = await JsonDocument.ParseAsync(body, cancellationToken: cancellationToken);
+        var values = settings.RootElement;
+        if (values.ValueKind == JsonValueKind.Object && values.TryGetProperty("values", out var nested)) values = nested;
+        if (values.ValueKind != JsonValueKind.Object ||
+            !values.TryGetProperty("serverVersion", out var version) ||
+            version.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(version.GetString()))
+            throw new InvalidDataException("This address did not return Stremio server settings. Check the address and port.");
+        return version.GetString()!;
     }
 
     public async Task<Uri> ResolveTorrentAsync(Uri serviceUrl, StreamItem stream,

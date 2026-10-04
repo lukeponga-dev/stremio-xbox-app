@@ -6,6 +6,7 @@ namespace StremioXboxPrototype.Services;
 
 public static class PrototypeSettings
 {
+    public const string DefaultStreamingServiceUrl = "http://192.168.1.103:32768/";
     private const string StreamAddonsKey = "StreamAddons";
     private const string LibraryKey = "Library";
     private const string StreamingServiceUrlKey = "StreamingServiceUrl";
@@ -61,7 +62,7 @@ public static class PrototypeSettings
         SetStreamAddonText(string.Join(Environment.NewLine, addons.Select(addon => addon.ManifestUri.AbsoluteUri)));
 
     public static string GetStreamingServiceUrlText() =>
-        ApplicationData.Current.LocalSettings.Values[StreamingServiceUrlKey] as string ?? "";
+        ApplicationData.Current.LocalSettings.Values[StreamingServiceUrlKey] as string ?? DefaultStreamingServiceUrl;
 
     public static Uri? GetStreamingServiceUrl()
     {
@@ -73,6 +74,9 @@ public static class PrototypeSettings
 
     public static void SetStreamingServiceUrl(Uri uri) =>
         ApplicationData.Current.LocalSettings.Values[StreamingServiceUrlKey] = uri.AbsoluteUri.TrimEnd('/') + "/";
+
+    public static void ClearStreamingServiceUrl() =>
+        ApplicationData.Current.LocalSettings.Values[StreamingServiceUrlKey] = "";
 
     public static IReadOnlyList<MetaItem> GetLibrary()
     {

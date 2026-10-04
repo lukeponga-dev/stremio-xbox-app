@@ -150,7 +150,7 @@ public sealed partial class DetailsPage : Page
                 await new ContentDialog
                 {
                     Title = "Stremio Service required",
-                    Content = "Configure a reachable Stremio Service URL on the Add-ons screen, then select this stream again.",
+                    Content = "Connect to your Stremio server on the Server screen, then select this stream again.",
                     CloseButtonText = "OK"
                 }.ShowAsync();
                 return;
