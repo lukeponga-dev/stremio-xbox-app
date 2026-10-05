@@ -8,7 +8,7 @@
 
         <Border x:Name="StatusOverlay" Background="#EC0E101A" BorderBrush="#458F5BFF"
                 BorderThickness="1" CornerRadius="14" Padding="20,18"
-                HorizontalAlignment="Left" VerticalAlignment="Top" Margin="42" MaxWidth="760">
+                HorizontalAlignment="Left" VerticalAlignment="Top" Margin="48,32" MaxWidth="760">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="6" />
@@ -25,7 +25,7 @@
             </Grid>
         </Border>
 
-        <Border Background="#C6080A12" CornerRadius="10" Padding="14,8" Margin="42"
+        <Border Background="#C6080A12" CornerRadius="10" Padding="14,8" Margin="48,32"
                 HorizontalAlignment="Right" VerticalAlignment="Bottom">
             <TextBlock x:Name="ControllerHintText" Text="B  Back     X  Mute" FontSize="20"
                        FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" />

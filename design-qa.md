@@ -2,14 +2,17 @@
 
 ## TV update — 5 October 2026
 
-Follow-up: the app now requests full-screen mode at launch and uses core-window bounds to remove the platform's visible-bounds inset. The main-page outer padding has been removed, so the sidebar reaches the screen edges. Content uses 24px horizontal spacing, and settings panels and the details description expand to the available width. Full-screen appearance on Xbox still needs runtime verification.
+The current TV brief supersedes the compact desktop reference below.
 
-The TV request supersedes the compact desktop reference below. Navigation now has visible labels, posters measure 184 × 276 with 20px titles, inputs have a 60px minimum height, and the main page has 48px horizontal / 36px vertical screen-edge padding. Search and server status occupy separate header rows without overlapping controls. Details stream rows stretch to the available width instead of forcing a 700px minimum. Controller Back returns from a main-page section to Home.
+- Search is a compact header action. Discover owns the text field, controller keyboard, optional Windows voice recognition, search results, and friendly empty/error messages. Keyboard rows scroll when the available height is small.
+- Home, Discover, Library, and Add-ons are primary navigation. Playback Lab, Server, Diagnostics, and Settings occupy the lower Developer / Advanced group. The sidebar scrolls when necessary.
+- Poster artwork keeps a 2:3 ratio with rounded corners and titles underneath. Focus adds a white border, violet halo, 6% scale, and year/rating/runtime metadata when supplied by Cinemeta. Metadata requests are delayed, cancelled on focus changes, and cached. Settings can disable animation.
+- Main and detail content have 48px horizontal / 32px vertical safe spacing; playback overlays share those insets. Shelves adapt their card width to leave a 20% next-card cue at the initial scroll position.
+- Home has poster skeletons, empty and retry states, and a friendly reconnect notice when the playback server is unavailable. Catalog counts and technical server errors are confined to Diagnostics and Server.
 
-The default server is `http://192.168.1.103:32768/`. A dedicated Server screen supports connection validation, saving, disconnecting, startup checks, and visible errors. The production connection client successfully read Stremio 4.22.0 from this server. Response acceptance, invalid JSON/schema, HTTP failure, and cancellation checks passed in a temporary console harness. Visual Studio MSBuild completed the x64 Debug build; existing signing-certificate warnings remain.
+Validation: the x64 Debug build passed. A temporary console harness exercised the production shelf-sizing helper across 960, 1280, 1920, 2560, and 3840px display widths, checking the 20% cue and focus allowance. Metadata deserialization, library round trips, and missing-metadata fallback passed. Live Cinemeta metadata for The Matrix returned year 1999, rating 8.7, and runtime 136 min. The configured server remains http://192.168.1.103:32768/.
 
-Runtime visual inspection and controller navigation on Xbox remain unverified. The desktop-reference findings below describe the previous layout.
-
+Xbox runtime visuals, controller navigation, keyboard input, speech/microphone permissions, and playback still require device validation. Existing packaging-certificate warnings remain. The desktop-reference findings below describe an earlier layout.
 ## Comparison target
 
 - Source visual truth: `C:\Users\lukeg\Downloads\stremio-ui.png`

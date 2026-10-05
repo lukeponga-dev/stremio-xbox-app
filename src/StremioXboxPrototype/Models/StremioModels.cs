@@ -226,11 +226,26 @@ public sealed class MetaItem
     [JsonPropertyName("releaseInfo")]
     public string? ReleaseInfo { get; set; }
 
+    [JsonPropertyName("imdbRating")]
+    public string? ImdbRating { get; set; }
+
+    [JsonPropertyName("runtime")]
+    public string? Runtime { get; set; }
+
     [JsonPropertyName("videos")]
     public List<VideoItem> Videos { get; set; } = new();
 
     [JsonIgnore]
     public string Subtitle => string.IsNullOrWhiteSpace(ReleaseInfo) ? Type : $"{Type} · {ReleaseInfo}";
+
+    [JsonIgnore]
+    public string CardMetadata => string.Join(" · ", new[]
+    {
+        ReleaseInfo,
+        string.IsNullOrWhiteSpace(ImdbRating) ? null : $"★ {ImdbRating}",
+        Runtime
+    }.Where(value => !string.IsNullOrWhiteSpace(value))) is { Length: > 0 } details
+        ? details : "Details unavailable";
 }
 
 public sealed class VideoItem

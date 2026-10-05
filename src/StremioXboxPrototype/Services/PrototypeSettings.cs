@@ -10,6 +10,13 @@ public static class PrototypeSettings
     private const string StreamAddonsKey = "StreamAddons";
     private const string LibraryKey = "Library";
     private const string StreamingServiceUrlKey = "StreamingServiceUrl";
+    private const string PosterAnimationsKey = "PosterAnimations";
+
+    public static bool GetPosterAnimationsEnabled() =>
+        ApplicationData.Current.LocalSettings.Values[PosterAnimationsKey] as bool? ?? true;
+
+    public static void SetPosterAnimationsEnabled(bool enabled) =>
+        ApplicationData.Current.LocalSettings.Values[PosterAnimationsKey] = enabled;
     private const string ProfileEmailKey = "ProfileEmail";
     private const string ProfileIdKey = "ProfileId";
     private const string ProfileAvatarKey = "ProfileAvatar";

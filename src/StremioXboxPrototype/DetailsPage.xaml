@@ -14,7 +14,7 @@
             </Rectangle.Fill>
         </Rectangle>
 
-        <Grid Padding="24,20,24,16">
+        <Grid Padding="48,32">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="240" />
                 <ColumnDefinition Width="*" />

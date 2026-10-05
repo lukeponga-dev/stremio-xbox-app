@@ -85,7 +85,7 @@ public sealed partial class DetailsPage : Page
         var addons = PrototypeSettings.GetStreamAddons();
         if (addons.Count == 0)
         {
-            StreamStatusText.Text = "No stream add-ons configured. Add manifest URLs from the Add-ons screen, or use Playback lab for a direct URL.";
+            StreamStatusText.Text = "Add a provider from Add-ons, or sign in to sync your Stremio providers.";
             StreamList.ItemsSource = null;
             return;
         }
@@ -94,7 +94,7 @@ public sealed partial class DetailsPage : Page
         _request = new CancellationTokenSource();
         var cancellationToken = _request.Token;
         BusyIndicator.IsActive = true;
-        StreamStatusText.Text = $"Querying {addons.Count} add-on(s)…";
+        StreamStatusText.Text = "Finding streams from your providers…";
         var videoId = (EpisodePicker.SelectedItem as VideoItem)?.Id ?? _item.Id;
 
         var requests = addons.Select(addon => GetStreamsFromAddonAsync(addon, _item.Type, videoId, cancellationToken)).ToList();
@@ -114,8 +114,8 @@ public sealed partial class DetailsPage : Page
 
         BusyIndicator.IsActive = false;
         StreamStatusText.Text = streams.Count == 0
-            ? "No streams returned. Each provider failed independently or had no result."
-            : $"{streams.Count} streams: {streams.Count(s => s.Resolution.Kind == StreamResolutionKind.NativeDirect)} native-direct.";
+            ? "No streams found. Try another title, or check your providers in Add-ons."
+            : $"Choose from {streams.Count} streams.";
     }
 
     private async Task<IReadOnlyList<StreamItem>> GetStreamsFromAddonAsync(AddonEndpoint addon, string type,
@@ -149,8 +149,8 @@ public sealed partial class DetailsPage : Page
             {
                 await new ContentDialog
                 {
-                    Title = "Stremio Service required",
-                    Content = "Connect to your Stremio server on the Server screen, then select this stream again.",
+                    Title = "Connect your playback server",
+                    Content = "Open Server under Developer / Advanced, connect your server, then try this stream again.",
                     CloseButtonText = "OK"
                 }.ShowAsync();
                 return;
@@ -174,7 +174,7 @@ public sealed partial class DetailsPage : Page
                 await new ContentDialog
                 {
                     Title = "Could not prepare stream",
-                    Content = exception.Message + " Check that the service is running and reachable from the Xbox.",
+                    Content = "Check that your playback server is running. Reconnect from Server under Developer / Advanced, then try again or choose another stream.",
                     CloseButtonText = "Choose another stream"
                 }.ShowAsync();
             }

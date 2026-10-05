@@ -22,6 +22,14 @@ Record the OS build, app commit, network, display mode, and exact media URL or a
 | Back returns without losing context | 100% |  |  |
 | Focus restores to the previously opened card | 100% |  |  |
 | Search usable with platform text entry | 100% |  |  |
+| Controller keyboard supports letters, space, delete, clear, and Done | 100% |  |  |
+| Voice search handles success, cancellation, missing microphone, and denied permission | Friendly recovery |  |  |
+| Focused posters show border, 6% zoom, and available metadata without clipping | 100% |  |  |
+| Reduced-motion setting survives restart and preserves focus border | 100% |  |  |
+| Safe margins and lower Advanced navigation remain reachable | 100% |  |  |
+| Shelves show a deliberate next-card cue; horizontal focus reveals the whole selected card | Approximately 20% cue |  |  |
+| Home loading skeletons, empty results, and retry state | Friendly recovery |  |  |
+| Offline server reconnect notice preserves public catalog browsing | 100% |  |  |
 | Login/profile state is readable at TV distance | 100% |  |  |
 | Profile sync cannot be started twice | 100% |  |  |
 | Sign out confirms and returns to Home | 100% |  |  |

@@ -24,7 +24,10 @@ The Rust core is not binary-linked yet because upstream has no supported UWP/.NE
 - Native direct playback with `MediaPlayerElement` and platform transport controls.
 - A direct-URL playback lab with a known public test asset.
 - Controller-oriented XY focus, visible platform focus, Back navigation, and focus restoration.
-- Full-screen TV layout with labelled navigation, larger poster cards and text, and a visible server connection status. The app uses the complete display bounds, with spacing inside the content area.
+- Full-screen TV layout with a compact Search button, dedicated Discover search, controller keyboard, and optional Windows voice recognition.
+- Rounded 2:3 poster cards, titles underneath, a bright focus border and 6% zoom, and year/rating/runtime metadata on focus when available. Settings can disable focus animation.
+- Home/Discover/Library/Add-ons navigation, with Playback Lab, Server, Diagnostics, and Settings grouped under Developer / Advanced. Catalog counts and technical server information stay in those tools.
+- TV-safe margins, scrollable navigation/content, and shelves sized to show roughly 20% of the next card. Home has loading skeletons, empty/error recovery, and an offline playback-server reconnect notice.
 - A small local favorites library.
 - Bounded diagnostics for requests, playback startup, buffering, failures, lifecycle, and memory usage.
 - Internet and private-network capabilities for later external-service testing.
@@ -93,7 +96,7 @@ The prototype never executes add-on code. It sends native-direct HTTP(S) URLs st
 
 ### Connect the streaming server
 
-Open **Server** in the left navigation. The default address is `http://192.168.1.103:32768/`. The app checks it on startup using Stremio's `/settings` endpoint and displays the connection state in the header. **Connect and save** validates the response and remembers a changed address; **Disconnect server** disables server playback until you reconnect. A failed connection test preserves the previously saved address.
+Open **Server** under **Developer / Advanced** in the left navigation. The default address is `http://192.168.1.103:32768/`. The app checks it on startup using Stremio's `/settings` endpoint; detailed status stays on the Server screen. Home shows a friendly reconnect notice only when disconnected or unreachable. **Connect and save** validates the response and remembers a changed address; **Disconnect server** disables server playback until you reconnect. A failed connection test preserves the previously saved address.
 
 Keep Stremio Service running and ensure the Xbox can reach the server on the same network. A streaming server supplies playback, while **Add-ons** or account synchronization supplies stream providers. Open a title and choose **Find streams** after configuring providers. Native direct streams also work when the server is unavailable.
 

@@ -12,7 +12,7 @@
         <SolidColorBrush x:Key="AccentBrush" Color="#7650F5" />
         <SolidColorBrush x:Key="AccentSoftBrush" Color="#2B2747" />
         <SolidColorBrush x:Key="AccentTextBrush" Color="#B69DFF" />
-        <SolidColorBrush x:Key="MutedTextBrush" Color="#BCB8CD" />
+        <SolidColorBrush x:Key="MutedTextBrush" Color="#A5A1B7" />
         <SolidColorBrush x:Key="SubtleBorderBrush" Color="#383350" />
 
         <Style TargetType="Page">
@@ -35,17 +35,40 @@
             <Setter Property="FocusVisualPrimaryThickness" Value="3" />
             <Setter Property="FocusVisualSecondaryThickness" Value="2" />
             <Setter Property="FocusVisualMargin" Value="3" />
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
+        </Style>
+        <Style TargetType="Button" BasedOn="{StaticResource TvButtonStyle}" />
+        <Style x:Key="HeaderButtonStyle" TargetType="Button" BasedOn="{StaticResource TvButtonStyle}">
+            <Setter Property="MinHeight" Value="48" />
+            <Setter Property="Padding" Value="16,8" />
+            <Setter Property="FontSize" Value="18" />
+        </Style>
+        <Style x:Key="KeyboardKeyButtonStyle" TargetType="Button" BasedOn="{StaticResource TvButtonStyle}">
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
         </Style>
         <Style x:Key="NavButtonStyle" TargetType="Button" BasedOn="{StaticResource TvButtonStyle}">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="Width" Value="180" />
-            <Setter Property="MinHeight" Value="60" />
-            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Width" Value="148" />
+            <Setter Property="MinHeight" Value="52" />
+            <Setter Property="Padding" Value="8,6" />
             <Setter Property="HorizontalContentAlignment" Value="Left" />
-            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontSize" Value="16" />
         </Style>
         <Style x:Key="SelectedNavButtonStyle" TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource AccentTextBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+        </Style>
+        <Style x:Key="AdvancedNavButtonStyle" TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+        </Style>
+        <Style x:Key="SelectedAdvancedNavButtonStyle" TargetType="Button" BasedOn="{StaticResource AdvancedNavButtonStyle}">
             <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
             <Setter Property="Foreground" Value="{StaticResource AccentTextBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
@@ -56,7 +79,7 @@
             <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
             <Setter Property="MinHeight" Value="52" />
             <Setter Property="Padding" Value="6,0" />
-            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontSize" Value="18" />
             <Setter Property="HorizontalContentAlignment" Value="Right" />
         </Style>
         <Style x:Key="PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource TvButtonStyle}">
@@ -65,7 +88,7 @@
             <Setter Property="HorizontalContentAlignment" Value="Center" />
         </Style>
         <Style x:Key="SectionTitleStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="27" />
+            <Setter Property="FontSize" Value="24" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Margin" Value="0,0,0,18" />
         </Style>
@@ -80,14 +103,26 @@
             <Setter Property="MinHeight" Value="60" />
             <Setter Property="Padding" Value="18,8" />
             <Setter Property="CornerRadius" Value="24" />
+
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
             <Setter Property="FocusVisualPrimaryBrush" Value="White" />
             <Setter Property="FocusVisualSecondaryBrush" Value="{StaticResource AccentBrush}" />
+            <Setter Property="FocusVisualPrimaryThickness" Value="3" />
+            <Setter Property="FocusVisualSecondaryThickness" Value="2" />
         </Style>
         <Style TargetType="PasswordBox">
             <Setter Property="FontSize" Value="20" />
             <Setter Property="MinHeight" Value="60" />
+
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
+            <Setter Property="FocusVisualPrimaryBrush" Value="White" />
+            <Setter Property="FocusVisualSecondaryBrush" Value="{StaticResource AccentBrush}" />
+            <Setter Property="FocusVisualPrimaryThickness" Value="3" />
+            <Setter Property="FocusVisualSecondaryThickness" Value="2" />
         </Style>
         <Style TargetType="GridViewItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
             <Setter Property="UseSystemFocusVisuals" Value="True" />
             <Setter Property="FocusVisualPrimaryBrush" Value="White" />
             <Setter Property="FocusVisualSecondaryBrush" Value="{StaticResource AccentBrush}" />
@@ -96,9 +131,26 @@
         </Style>
         <Style TargetType="ListViewItem">
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+
             <Setter Property="UseSystemFocusVisuals" Value="True" />
             <Setter Property="FocusVisualPrimaryBrush" Value="White" />
             <Setter Property="FocusVisualSecondaryBrush" Value="{StaticResource AccentBrush}" />
+            <Setter Property="FocusVisualPrimaryThickness" Value="3" />
+            <Setter Property="FocusVisualSecondaryThickness" Value="2" />
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
+            <Setter Property="FocusVisualPrimaryBrush" Value="White" />
+            <Setter Property="FocusVisualSecondaryBrush" Value="{StaticResource AccentBrush}" />
+            <Setter Property="FocusVisualPrimaryThickness" Value="3" />
+            <Setter Property="FocusVisualSecondaryThickness" Value="2" />
+        </Style>
+        <Style TargetType="ToggleSwitch">
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
+            <Setter Property="FocusVisualPrimaryBrush" Value="White" />
+            <Setter Property="FocusVisualSecondaryBrush" Value="{StaticResource AccentBrush}" />
+            <Setter Property="FocusVisualPrimaryThickness" Value="3" />
+            <Setter Property="FocusVisualSecondaryThickness" Value="2" />
         </Style>
     </Application.Resources>
 </Application>
