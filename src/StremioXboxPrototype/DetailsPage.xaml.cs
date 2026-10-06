@@ -149,10 +149,9 @@ public sealed partial class DetailsPage : Page
         PrototypeSettings.GetStreamingServiceUrl() is not null;
 
     private static List<StreamItem> OrderAndDeduplicateStreams(IEnumerable<StreamItem> streams) => streams
+        .OrderByDescending(stream => StreamSeederCount.Read(stream.AdditionalSources, stream.Description, stream.Title, stream.Name))
         .GroupBy(StreamIdentity, StringComparer.OrdinalIgnoreCase)
         .Select(group => group.First())
-        .OrderByDescending(stream => stream.Resolution.Kind == StreamResolutionKind.NativeDirect)
-        .ThenBy(stream => stream.Name ?? stream.Title ?? stream.Provider)
         .ToList();
 
     private static string StreamIdentity(StreamItem stream)
@@ -178,9 +177,10 @@ public sealed partial class DetailsPage : Page
         }
     }
 
-    private async void PlayStream(object sender, RoutedEventArgs e)
+    private async void PlayStream(object sender, ItemClickEventArgs e)
     {
-        if (sender is not FrameworkElement { DataContext: StreamItem stream } || _item is null || _isOpeningStream) return;
+        if (e.ClickedItem is not StreamItem stream || _item is null || _isOpeningStream) return;
+        DiagnosticsService.Current.Info("streams", $"Selected source from {stream.Provider}: {stream.Resolution.Kind}");
         _isOpeningStream = true;
         StreamList.IsEnabled = false;
         LoadStreamsButton.IsEnabled = false;
@@ -190,8 +190,7 @@ public sealed partial class DetailsPage : Page
 
         if (stream.Resolution.Kind == StreamResolutionKind.NativeDirect && stream.Resolution.PlaybackUri is not null)
         {
-            if (!Frame.Navigate(typeof(PlayerPage), new PlaybackRequest(stream.Resolution.PlaybackUri, _item.Name, stream.Provider)))
-                ResetStreamOpening();
+            OpenPlayer(new PlaybackRequest(stream.Resolution.PlaybackUri, _item.Name, stream.Provider));
             return;
         }
 
@@ -210,8 +209,7 @@ public sealed partial class DetailsPage : Page
                 return;
             }
 
-            if (!Frame.Navigate(typeof(PlayerPage), new StreamPlaybackRequest(stream, serviceUrl, _item.Name)))
-                ResetStreamOpening();
+            OpenPlayer(new StreamPlaybackRequest(stream, serviceUrl, _item.Name));
             return;
         }
 
@@ -222,6 +220,21 @@ public sealed partial class DetailsPage : Page
             CloseButtonText = "Choose another stream"
         }.ShowAsync();
         ResetStreamOpening();
+    }
+
+    private void OpenPlayer(object request)
+    {
+        try
+        {
+            if (Frame.Navigate(typeof(PlayerPage), request)) return;
+            throw new InvalidOperationException("The player page could not be opened.");
+        }
+        catch (Exception exception)
+        {
+            ResetStreamOpening();
+            StreamStatusText.Text = "Could not open player: " + exception.Message;
+            DiagnosticsService.Current.Error("player-navigation", exception.ToString());
+        }
     }
 
     private void ResetStreamOpening()
