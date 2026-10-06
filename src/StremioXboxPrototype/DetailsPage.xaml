@@ -53,13 +53,12 @@
                         <TextBlock x:Name="StreamStatusText" FontSize="20" Foreground="{StaticResource MutedTextBrush}"
                                    TextWrapping="Wrap" VerticalAlignment="Center" />
                     </StackPanel>
-                    <ListView x:Name="StreamList" SelectionMode="None">
+                    <ListView x:Name="StreamList" SelectionMode="None" IsItemClickEnabled="True"
+                              ItemClick="PlayStream" IsFocusEngagementEnabled="False">
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <Button Click="PlayStream" Style="{StaticResource TvButtonStyle}" Margin="0,5"
-                                        Padding="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-                                        AutomationProperties.Name="{Binding DisplayName}">
-                                    <Border Style="{StaticResource SurfaceBorderStyle}" Padding="18,16" HorizontalAlignment="Stretch">
+                                    <Border Style="{StaticResource SurfaceBorderStyle}" Padding="18,16" Margin="0,5"
+                                            HorizontalAlignment="Stretch" AutomationProperties.Name="{Binding DisplayName}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -73,7 +72,6 @@
                                             </Border>
                                         </Grid>
                                     </Border>
-                                </Button>
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
