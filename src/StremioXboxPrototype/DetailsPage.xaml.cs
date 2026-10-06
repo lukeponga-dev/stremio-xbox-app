@@ -13,6 +13,7 @@ public sealed partial class DetailsPage : Page
     private readonly StremioStreamingServiceClient _streamingServiceClient = new();
     private MetaItem? _item;
     private CancellationTokenSource? _request;
+    private bool _streamsLoaded;
 
     public DetailsPage() => InitializeComponent();
 
@@ -23,7 +24,7 @@ public sealed partial class DetailsPage : Page
         if (_item is null) return;
         ApplyItem(_item);
         UpdateLibraryButton();
-        LoadStreamsButton.Focus(FocusState.Programmatic);
+        LibraryButton.Focus(FocusState.Programmatic);
 
         try
         {
@@ -38,6 +39,8 @@ public sealed partial class DetailsPage : Page
         {
             DiagnosticsService.Current.Warn("details", "Metadata enrichment failed: " + exception.Message);
         }
+
+        await LoadStreamsAsync();
     }
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
@@ -76,7 +79,7 @@ public sealed partial class DetailsPage : Page
     private async void LoadStreams(object sender, RoutedEventArgs e) => await LoadStreamsAsync();
     private async void EpisodeChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (StreamList.Items.Count > 0) await LoadStreamsAsync();
+        if (_streamsLoaded) await LoadStreamsAsync();
     }
 
     private async Task LoadStreamsAsync()
@@ -87,35 +90,76 @@ public sealed partial class DetailsPage : Page
         {
             StreamStatusText.Text = "Add a provider from Add-ons, or sign in to sync your Stremio providers.";
             StreamList.ItemsSource = null;
+            _streamsLoaded = false;
             return;
         }
 
         _request?.Cancel();
-        _request = new CancellationTokenSource();
-        var cancellationToken = _request.Token;
+        var request = new CancellationTokenSource();
+        _request = request;
+        var cancellationToken = request.Token;
         BusyIndicator.IsActive = true;
-        StreamStatusText.Text = "Finding streams from your providers…";
+        LoadStreamsButton.IsEnabled = false;
+        StreamStatusText.Text = $"Checking {addons.Count} provider(s) for playable streams…";
+        StreamList.ItemsSource = null;
         var videoId = (EpisodePicker.SelectedItem as VideoItem)?.Id ?? _item.Id;
 
         var requests = addons.Select(addon => GetStreamsFromAddonAsync(addon, _item.Type, videoId, cancellationToken)).ToList();
 
         var streams = new List<StreamItem>();
-        while (requests.Count > 0)
+        try
         {
-            var completed = await Task.WhenAny(requests);
-            requests.Remove(completed);
-            streams.AddRange(await completed);
-            var ordered = streams.OrderByDescending(stream => stream.Resolution.Kind == StreamResolutionKind.NativeDirect)
-                .ThenBy(stream => stream.Name ?? stream.Title ?? stream.Provider)
-                .ToList();
-            StreamList.ItemsSource = ordered;
-            StreamStatusText.Text = $"{ordered.Count} stream(s) found. Checking {requests.Count} provider(s)…";
-        }
+            while (requests.Count > 0)
+            {
+                var completed = await Task.WhenAny(requests);
+                requests.Remove(completed);
+                cancellationToken.ThrowIfCancellationRequested();
+                streams.AddRange((await completed).Where(IsPlayable));
+                cancellationToken.ThrowIfCancellationRequested();
 
-        BusyIndicator.IsActive = false;
-        StreamStatusText.Text = streams.Count == 0
-            ? "No streams found. Try another title, or check your providers in Add-ons."
-            : $"Choose from {streams.Count} streams.";
+                var ordered = OrderAndDeduplicateStreams(streams);
+                StreamList.ItemsSource = ordered;
+                StreamStatusText.Text = $"{ordered.Count} playable stream(s) found. Checking {requests.Count} provider(s)…";
+            }
+
+            var playable = OrderAndDeduplicateStreams(streams);
+            StreamList.ItemsSource = playable;
+            _streamsLoaded = true;
+            StreamStatusText.Text = playable.Count == 0
+                ? "No playable streams found. Try another episode or check your providers in Add-ons."
+                : $"{playable.Count} playable stream(s) ready.";
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            if (ReferenceEquals(_request, request))
+            {
+                BusyIndicator.IsActive = false;
+                LoadStreamsButton.IsEnabled = true;
+                _request = null;
+            }
+            request.Dispose();
+        }
+    }
+
+    private static bool IsPlayable(StreamItem stream) =>
+        stream.Resolution.Kind == StreamResolutionKind.NativeDirect ||
+        stream.Resolution.Kind == StreamResolutionKind.RequiresStreamingService &&
+        PrototypeSettings.GetStreamingServiceUrl() is not null;
+
+    private static List<StreamItem> OrderAndDeduplicateStreams(IEnumerable<StreamItem> streams) => streams
+        .GroupBy(StreamIdentity, StringComparer.OrdinalIgnoreCase)
+        .Select(group => group.First())
+        .OrderByDescending(stream => stream.Resolution.Kind == StreamResolutionKind.NativeDirect)
+        .ThenBy(stream => stream.Name ?? stream.Title ?? stream.Provider)
+        .ToList();
+
+    private static string StreamIdentity(StreamItem stream)
+    {
+        if (stream.Resolution.PlaybackUri is not null) return stream.Resolution.PlaybackUri.AbsoluteUri;
+        if (!string.IsNullOrWhiteSpace(stream.InfoHash)) return $"torrent:{stream.InfoHash}:{stream.FileIndex}";
+        if (!string.IsNullOrWhiteSpace(stream.Url)) return stream.Url;
+        return $"{stream.Provider}:{stream.Name}:{stream.Title}:{stream.Description}";
     }
 
     private async Task<IReadOnlyList<StreamItem>> GetStreamsFromAddonAsync(AddonEndpoint addon, string type,

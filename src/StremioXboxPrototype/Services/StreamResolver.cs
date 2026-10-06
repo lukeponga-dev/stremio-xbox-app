@@ -22,7 +22,7 @@ public static class StreamResolver
         {
             if (stream.BehaviorHints?.NotWebReady == true || stream.BehaviorHints?.ProxyHeaders is not null)
             {
-                return StreamResolution.Service("Streaming service: proxy or headers required");
+                return StreamResolution.Unsupported("Proxy or request headers are not supported");
             }
 
             return StreamResolution.Direct(uri);
@@ -40,7 +40,7 @@ public static class StreamResolver
             stream.TgzUrls.Count > 0 ||
             stream.TarUrls.Count > 0)
         {
-            return StreamResolution.Service("Streaming service: packaged source");
+            return StreamResolution.Unsupported("Archive and Usenet sources are not supported");
         }
 
         if (!string.IsNullOrWhiteSpace(stream.YouTubeId))
