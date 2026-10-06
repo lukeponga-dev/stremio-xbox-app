@@ -53,23 +53,27 @@
                         <TextBlock x:Name="StreamStatusText" FontSize="20" Foreground="{StaticResource MutedTextBrush}"
                                    TextWrapping="Wrap" VerticalAlignment="Center" />
                     </StackPanel>
-                    <ListView x:Name="StreamList" IsItemClickEnabled="True" ItemClick="OpenStream" SelectionMode="None">
+                    <ListView x:Name="StreamList" SelectionMode="None">
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <Border Style="{StaticResource SurfaceBorderStyle}" Padding="18,16" Margin="0,5" HorizontalAlignment="Stretch">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="180" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{Binding DisplayName}" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" />
-                                        <Border Grid.Column="1" Background="{StaticResource AccentSoftBrush}" CornerRadius="13"
-                                                Padding="12,6" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding ResolutionLabel}" FontSize="20" FontWeight="SemiBold"
-                                                       Foreground="{StaticResource AccentTextBrush}" TextWrapping="Wrap" />
-                                        </Border>
-                                    </Grid>
-                                </Border>
+                                <Button Click="PlayStream" Style="{StaticResource TvButtonStyle}" Margin="0,5"
+                                        Padding="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                        AutomationProperties.Name="{Binding DisplayName}">
+                                    <Border Style="{StaticResource SurfaceBorderStyle}" Padding="18,16" HorizontalAlignment="Stretch">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="180" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding DisplayName}" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                            <Border Grid.Column="1" Background="{StaticResource AccentSoftBrush}" CornerRadius="13"
+                                                    Padding="12,6" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding ResolutionLabel}" FontSize="20" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource AccentTextBrush}" TextWrapping="Wrap" />
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                </Button>
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>

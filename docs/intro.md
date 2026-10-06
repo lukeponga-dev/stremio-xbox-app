@@ -17,7 +17,7 @@ For example, to change the sidebar wording, edit the button `Content` values nea
 
 ```csharp
 public const string DefaultStreamingServiceUrl =
-    "https://watchstream-stremio-server.onrender.com/";
+    "http://192.168.1.105:11470/";
 ```
 
 in `PrototypeSettings.cs`. Existing users who previously saved another server may keep their saved address until they reconnect or reset the app.

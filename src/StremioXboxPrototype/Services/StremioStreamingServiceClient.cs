@@ -13,7 +13,9 @@ public sealed class StremioStreamingServiceClient
     // playback URL, so automatic redirect following must remain disabled.
     private static readonly HttpClient Http = new(new HttpClientHandler { AllowAutoRedirect = false })
     {
-        Timeout = TimeSpan.FromSeconds(20)
+        // Connection checks and torrent preparation have different time limits.
+        // Individual operations apply bounded cancellation tokens below.
+        Timeout = Timeout.InfiniteTimeSpan
     };
     // Preparing a torrent is expensive. Reuse its playback URL briefly, keyed by
     // server, hash, and selected file, while keeping the cache process-local.
@@ -21,7 +23,9 @@ public sealed class StremioStreamingServiceClient
 
     public async Task<string> TestAsync(Uri serviceUrl, CancellationToken cancellationToken = default)
     {
-        using var response = await Http.GetAsync(new Uri(Normalize(serviceUrl), "settings"), cancellationToken);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(25));
+        using var response = await Http.GetAsync(new Uri(Normalize(serviceUrl), "settings"), timeout.Token);
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"Stremio Service returned HTTP {(int)response.StatusCode}.");
         using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -45,6 +49,9 @@ public sealed class StremioStreamingServiceClient
             throw new InvalidDataException("The add-on returned an invalid torrent info hash.");
 
         var root = Normalize(serviceUrl);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromMinutes(2));
+        var operationToken = timeout.Token;
         var fileIndex = stream.FileIndex ?? -1;
         var cacheKey = $"{root.AbsoluteUri}|{infoHash}|{fileIndex}";
         if (PreparedTorrentCache.TryGetValue(cacheKey, out var cached) && cached.Expires > DateTimeOffset.UtcNow)
@@ -67,11 +74,30 @@ public sealed class StremioStreamingServiceClient
         var json = JsonSerializer.Serialize(request, StremioJsonContext.Default.StremioTorrentCreateRequest);
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
         var timer = Stopwatch.StartNew();
-        using var response = await Http.PostAsync(new Uri(root, $"{infoHash}/create"), content, cancellationToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await Http.PostAsync(new Uri(root, $"{infoHash}/create"), content, operationToken);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new TimeoutException("The streaming service could not find torrent metadata within two minutes. Try another source with more peers.");
+        }
+        using (response)
+        {
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"Stremio Service could not prepare the stream (HTTP {(int)response.StatusCode}).");
+        }
 
-        var playbackUri = await GetPlaybackUriAsync(root, infoHash, fileIndex, cancellationToken);
+        Uri playbackUri;
+        try
+        {
+            playbackUri = await GetPlaybackUriAsync(root, infoHash, fileIndex, operationToken);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new TimeoutException("The streaming service prepared the torrent but did not return a playback URL in time. Try another source.");
+        }
         PreparedTorrentCache[cacheKey] = (playbackUri, DateTimeOffset.UtcNow.AddMinutes(15));
         DiagnosticsService.Current.Info("streaming-service", $"Torrent prepared in {timer.ElapsedMilliseconds} ms");
         return playbackUri;
@@ -138,7 +164,22 @@ public sealed class StremioStreamingServiceClient
         using var request = new HttpRequestMessage(HttpMethod.Get, externalUri);
         using var response = await Http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         if ((int)response.StatusCode is >= 300 and < 400 && response.Headers.Location is not null)
-            return response.Headers.Location.IsAbsoluteUri ? response.Headers.Location : new Uri(root, response.Headers.Location);
+        {
+            var location = response.Headers.Location;
+            if (!location.IsAbsoluteUri) return new Uri(root, location);
+
+            // Hosted Stremio servers commonly advertise their container/LAN
+            // address in Location. Keep the returned path, but route playback
+            // through the public server address that the Xbox can reach.
+            if (!string.Equals(location.Host, root.Host, StringComparison.OrdinalIgnoreCase) ||
+                location.Port != root.Port || location.Scheme != root.Scheme)
+            {
+                DiagnosticsService.Current.Info("streaming-service",
+                    $"Rewrote private playback redirect from {location.Host} to {root.Host}");
+                return new Uri(root, location.PathAndQuery.TrimStart('/'));
+            }
+            return location;
+        }
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"Stremio Service could not open the prepared torrent (HTTP {(int)response.StatusCode}).");
         return new Uri(root, $"{infoHash}/{fileIndex}");

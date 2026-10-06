@@ -135,9 +135,9 @@ The prototype never executes add-on code. It sends native-direct HTTP(S) URLs st
 
 ### Connect the streaming server
 
-Open **Server** under **Developer / Advanced** in the left navigation. The default address is the hosted Render service at `https://watchstream-stremio-server.onrender.com/`. The app checks it on startup using Stremio's `/settings` endpoint; detailed status stays on the Server screen. Home shows a friendly reconnect notice only when disconnected or unreachable. **Connect and save** validates the response and remembers a changed address; **Disconnect server** disables server playback until you reconnect. A failed connection test preserves the previously saved address. Existing installs that still use the previous `192.168.1.103:32768` default migrate automatically.
+Open **Server** under **Developer / Advanced** in the left navigation. The default address is the local Stremio service at `http://192.168.1.105:11470/`. The app checks it on startup using Stremio's `/settings` endpoint; detailed status stays on the Server screen. Home shows a friendly reconnect notice only when disconnected or unreachable. **Connect and save** validates the response and remembers a changed address; **Disconnect server** disables server playback until you reconnect. A failed connection test preserves the previously saved address. Existing installs using the previous Render or `192.168.1.103:32768` defaults migrate automatically; custom addresses and explicit disconnection are preserved.
 
-The free Render service can take about a minute to wake after being idle. A streaming server supplies playback, while **Add-ons** or account synchronization supplies stream providers. Open a title and choose **Find streams** after configuring providers. Native direct streams also work when the server is unavailable.
+Keep the local server running and the Xbox on the same network. A streaming server supplies playback, while **Add-ons** or account synchronization supplies stream providers. Opening a title loads sources automatically after configuring providers; select a source to play it. Native direct streams also work when the server is unavailable.
 
 ## Validation
 

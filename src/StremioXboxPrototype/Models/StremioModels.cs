@@ -412,3 +412,4 @@ public sealed record StreamResolution(StreamResolutionKind Kind, string Label, U
 public sealed record AddonEndpoint(string Name, Uri ManifestUri);
 
 public sealed record PlaybackRequest(Uri Uri, string Title, string Source);
+public sealed record StreamPlaybackRequest(StreamItem Stream, Uri ServiceUri, string Title);

@@ -10,16 +10,17 @@ namespace StremioXboxPrototype;
 public sealed partial class DetailsPage : Page
 {
     private readonly StremioAddonClient _client = new();
-    private readonly StremioStreamingServiceClient _streamingServiceClient = new();
     private MetaItem? _item;
     private CancellationTokenSource? _request;
     private bool _streamsLoaded;
+    private bool _isOpeningStream;
 
     public DetailsPage() => InitializeComponent();
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
+        ResetStreamOpening();
         _item = e.Parameter as MetaItem;
         if (_item is null) return;
         ApplyItem(_item);
@@ -177,12 +178,20 @@ public sealed partial class DetailsPage : Page
         }
     }
 
-    private async void OpenStream(object sender, ItemClickEventArgs e)
+    private async void PlayStream(object sender, RoutedEventArgs e)
     {
-        if (e.ClickedItem is not StreamItem stream || _item is null) return;
+        if (sender is not FrameworkElement { DataContext: StreamItem stream } || _item is null || _isOpeningStream) return;
+        _isOpeningStream = true;
+        StreamList.IsEnabled = false;
+        LoadStreamsButton.IsEnabled = false;
+        StreamStatusText.Text = stream.Resolution.Kind == StreamResolutionKind.NativeDirect
+            ? "Opening stream…"
+            : "Preparing stream through Stremio Service…";
+
         if (stream.Resolution.Kind == StreamResolutionKind.NativeDirect && stream.Resolution.PlaybackUri is not null)
         {
-            Frame.Navigate(typeof(PlayerPage), new PlaybackRequest(stream.Resolution.PlaybackUri, _item.Name, stream.Provider));
+            if (!Frame.Navigate(typeof(PlayerPage), new PlaybackRequest(stream.Resolution.PlaybackUri, _item.Name, stream.Provider)))
+                ResetStreamOpening();
             return;
         }
 
@@ -197,31 +206,12 @@ public sealed partial class DetailsPage : Page
                     Content = "Open Server under Developer / Advanced, connect your server, then try this stream again.",
                     CloseButtonText = "OK"
                 }.ShowAsync();
+                ResetStreamOpening();
                 return;
             }
 
-            BusyIndicator.IsActive = true;
-            StreamStatusText.Text = "Preparing stream through Stremio Service…";
-            try
-            {
-                _request?.Cancel();
-                _request = new CancellationTokenSource();
-                var playbackUri = await _streamingServiceClient.ResolveTorrentAsync(serviceUrl, stream, _request.Token);
-                Frame.Navigate(typeof(PlayerPage), new PlaybackRequest(playbackUri, _item.Name, stream.Provider + " via Stremio Service"));
-            }
-            catch (OperationCanceledException) { }
-            catch (Exception exception)
-            {
-                BusyIndicator.IsActive = false;
-                StreamStatusText.Text = "Stream preparation failed.";
-                DiagnosticsService.Current.Error("streaming-service", exception.Message);
-                await new ContentDialog
-                {
-                    Title = "Could not prepare stream",
-                    Content = "Check that your playback server is running. Reconnect from Server under Developer / Advanced, then try again or choose another stream.",
-                    CloseButtonText = "Choose another stream"
-                }.ShowAsync();
-            }
+            if (!Frame.Navigate(typeof(PlayerPage), new StreamPlaybackRequest(stream, serviceUrl, _item.Name)))
+                ResetStreamOpening();
             return;
         }
 
@@ -231,5 +221,13 @@ public sealed partial class DetailsPage : Page
             Content = stream.Resolution.Label + ". This prototype deliberately does not process torrents, archives, external pages, or proxy-header streams on the console.",
             CloseButtonText = "Choose another stream"
         }.ShowAsync();
+        ResetStreamOpening();
+    }
+
+    private void ResetStreamOpening()
+    {
+        _isOpeningStream = false;
+        StreamList.IsEnabled = true;
+        LoadStreamsButton.IsEnabled = true;
     }
 }

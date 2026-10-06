@@ -6,7 +6,8 @@ namespace StremioXboxPrototype.Services;
 
 public static class PrototypeSettings
 {
-    public const string DefaultStreamingServiceUrl = "https://watchstream-stremio-server.onrender.com/";
+    public const string DefaultStreamingServiceUrl = "http://192.168.1.105:11470/";
+    private const string PreviousHostedStreamingServiceUrl = "https://watchstream-stremio-server.onrender.com/";
     private const string LegacyStreamingServiceUrl = "http://192.168.1.103:32768/";
     private const string StreamAddonsKey = "StreamAddons";
     private const string LibraryKey = "Library";
@@ -72,11 +73,12 @@ public static class PrototypeSettings
     public static string GetStreamingServiceUrlText()
     {
         var saved = ApplicationData.Current.LocalSettings.Values[StreamingServiceUrlKey] as string;
-        if (string.IsNullOrWhiteSpace(saved)) return DefaultStreamingServiceUrl;
+        if (saved is null) return DefaultStreamingServiceUrl;
 
-        // Migrate installs that inherited the development LAN address. Keeping
-        // this here makes the change automatic without erasing other settings.
-        if (string.Equals(saved.TrimEnd('/') + "/", LegacyStreamingServiceUrl, StringComparison.OrdinalIgnoreCase))
+        // Migrate previous defaults while preserving custom servers and an explicit disconnect.
+        var normalized = saved.Trim().TrimEnd('/') + "/";
+        if (string.Equals(normalized, LegacyStreamingServiceUrl, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(normalized, PreviousHostedStreamingServiceUrl, StringComparison.OrdinalIgnoreCase))
         {
             ApplicationData.Current.LocalSettings.Values[StreamingServiceUrlKey] = DefaultStreamingServiceUrl;
             return DefaultStreamingServiceUrl;
