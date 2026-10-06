@@ -74,6 +74,8 @@ public static class PrototypeSettings
         var saved = ApplicationData.Current.LocalSettings.Values[StreamingServiceUrlKey] as string;
         if (string.IsNullOrWhiteSpace(saved)) return DefaultStreamingServiceUrl;
 
+        // Migrate installs that inherited the development LAN address. Keeping
+        // this here makes the change automatic without erasing other settings.
         if (string.Equals(saved.TrimEnd('/') + "/", LegacyStreamingServiceUrl, StringComparison.OrdinalIgnoreCase))
         {
             ApplicationData.Current.LocalSettings.Values[StreamingServiceUrlKey] = DefaultStreamingServiceUrl;

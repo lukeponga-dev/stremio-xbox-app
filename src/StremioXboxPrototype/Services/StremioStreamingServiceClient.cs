@@ -9,10 +9,14 @@ namespace StremioXboxPrototype.Services;
 
 public sealed class StremioStreamingServiceClient
 {
+    // Redirects are inspected explicitly when the service returns the prepared
+    // playback URL, so automatic redirect following must remain disabled.
     private static readonly HttpClient Http = new(new HttpClientHandler { AllowAutoRedirect = false })
     {
         Timeout = TimeSpan.FromSeconds(20)
     };
+    // Preparing a torrent is expensive. Reuse its playback URL briefly, keyed by
+    // server, hash, and selected file, while keeping the cache process-local.
     private static readonly ConcurrentDictionary<string, (Uri PlaybackUri, DateTimeOffset Expires)> PreparedTorrentCache = new();
 
     public async Task<string> TestAsync(Uri serviceUrl, CancellationToken cancellationToken = default)
@@ -128,6 +132,8 @@ public sealed class StremioStreamingServiceClient
     private static async Task<Uri> GetPlaybackUriAsync(Uri root, string infoHash, int fileIndex,
         CancellationToken cancellationToken)
     {
+        // external=1 asks Stremio Service for a redirect to the URL intended for
+        // a separate media player. Some versions stream directly instead.
         var externalUri = new Uri(root, $"{infoHash}/{fileIndex}?external=1");
         using var request = new HttpRequestMessage(HttpMethod.Get, externalUri);
         using var response = await Http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);

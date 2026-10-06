@@ -70,6 +70,8 @@ public sealed partial class MainPage : Page
         if (_startupCompleted) return;
         _startupCompleted = true;
         HomeButton.Focus(FocusState.Programmatic);
+        // Catalog and server checks are independent, so start both without making
+        // the first screen wait for a sleeping hosted server.
         _ = LoadHomeAsync();
         _ = CheckSavedServerAsync();
         var cachedProfile = PrototypeSettings.GetProfileCache();
@@ -104,6 +106,8 @@ public sealed partial class MainPage : Page
         HomeShelves.Visibility = HomeUnavailablePanel.Visibility = Visibility.Collapsed;
         try
         {
+            // Load both shelves together. Each request is still isolated inside
+            // StremioAddonClient, while this page owns cancellation and UI state.
             var movies = _client.GetCatalogAsync("movie", cancellationToken: request.Token);
             var series = _client.GetCatalogAsync("series", cancellationToken: request.Token);
             await Task.WhenAll(movies, series);
@@ -129,6 +133,8 @@ public sealed partial class MainPage : Page
         }
         finally
         {
+            // A newer navigation or refresh may already own _request. Only the
+            // request that is still current may hide the shared loading state.
             if (ReferenceEquals(_request, request))
             {
                 HomeLoadingPanel.Visibility = Visibility.Collapsed;
@@ -192,6 +198,8 @@ public sealed partial class MainPage : Page
 
     private void BuildSearchKeyboard()
     {
+        // Build the compact TV keyboard in code so every key receives identical
+        // controller focus behavior without a large repeated XAML declaration.
         foreach (var keys in new[] { "1234567890", "QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM" })
         {
             var row = new Grid();
@@ -500,6 +508,8 @@ public sealed partial class MainPage : Page
 
     private async Task ConnectServerAsync(Uri uri, bool save)
     {
+        // A new attempt supersedes the previous one. This prevents a slow server
+        // response from overwriting the status of a more recent connection.
         _serverRequest?.Cancel();
         var request = new CancellationTokenSource();
         _serverRequest = request;
@@ -510,6 +520,8 @@ public sealed partial class MainPage : Page
         {
             var version = await _streamingServiceClient.TestAsync(uri, request.Token);
             request.Token.ThrowIfCancellationRequested();
+            // Persist a user-entered address only after it proves that it exposes
+            // the Stremio Service settings endpoint.
             if (save) PrototypeSettings.SetStreamingServiceUrl(uri);
             StreamingServiceUrlBox.Text = PrototypeSettings.GetStreamingServiceUrlText();
             ServerConnectionState.Text = "Server: connected";
@@ -813,6 +825,8 @@ public sealed partial class MainPage : Page
 
     private void SetSelectedNavigation(Button selected)
     {
+        // Main and advanced items use separate visual styles, but both groups
+        // receive the same unmistakable selected state for controller users.
         foreach (var button in new[]
                  {
                      HomeButton, DiscoverButton, LibraryNavButton, PlaybackLabButton,
@@ -829,6 +843,8 @@ public sealed partial class MainPage : Page
 
     private void ShowPanel(UIElement panel, string title, string subtitle)
     {
+        // Requests, animations, speech, and diagnostic polling belong to the
+        // visible panel. Stop them before transferring focus to another panel.
         _request?.Cancel();
         _memoryTimer.Stop();
         BusyIndicator.IsActive = false;
@@ -853,6 +869,8 @@ public sealed partial class MainPage : Page
 
     private void BeginRequest(string status)
     {
+        // One foreground catalog/account operation owns the shared progress UI.
+        // Cancelling here also prevents stale results appearing after navigation.
         _request?.Cancel();
         _request = new CancellationTokenSource();
         BusyIndicator.IsActive = true;

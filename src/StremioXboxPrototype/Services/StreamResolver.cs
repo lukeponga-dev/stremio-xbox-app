@@ -6,6 +6,8 @@ public static class StreamResolver
 {
     public static StreamResolution Resolve(StreamItem stream)
     {
+        // Classification order matters: magnet URLs and HTTP URLs requiring
+        // proxy headers must reach the server instead of the native player.
         var torrentUri = string.IsNullOrWhiteSpace(stream.Url) ? stream.ExternalUrl : stream.Url;
         if (!string.IsNullOrWhiteSpace(torrentUri) &&
             Uri.TryCreate(torrentUri, UriKind.Absolute, out var magnetUri) &&
@@ -43,6 +45,8 @@ public static class StreamResolver
 
         if (!string.IsNullOrWhiteSpace(stream.YouTubeId))
         {
+            // The UWP player does not embed web players; callers may offer an
+            // explicit handoff for sources that require an external experience.
             return StreamResolution.External("External player: YouTube");
         }
 

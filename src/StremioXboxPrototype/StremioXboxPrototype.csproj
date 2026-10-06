@@ -2,6 +2,9 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <!-- The UWP XAML and MSIX targets also read the explicit platform version
+         during command-line packaging. Keep it aligned with TargetFramework. -->
+    <TargetPlatformVersion>10.0.26100.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -17,7 +20,6 @@
     <!-- Packaging certificates are developer-local and intentionally excluded
          from source control. Use Visual Studio's Publish flow to select one. -->
     <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
-    <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
     <!-- UWP AppContainer launch can deny Visual Studio the process handle that
          its Hot Reload session requests. Disable the unsupported session path. -->
     <SupportsHotReload>false</SupportsHotReload>
@@ -25,6 +27,11 @@
     <AssemblyName>StremioXboxPrototype</AssemblyName>
     <UseWindowsForms>False</UseWindowsForms>
     <PackageCertificateKeyFile>StremioXboxPrototype_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <!-- Developer certificates stay outside source control. Sign automatically
+         when one is present; Store builds are emitted unsigned and re-signed by
+         Microsoft after acceptance. -->
+    <AppxPackageSigningEnabled Condition="Exists('$(PackageCertificateKeyFile)')">true</AppxPackageSigningEnabled>
+    <AppxPackageSigningEnabled Condition="!Exists('$(PackageCertificateKeyFile)')">false</AppxPackageSigningEnabled>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>

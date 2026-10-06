@@ -57,6 +57,26 @@ From a Developer PowerShell prompt:
 msbuild .\StremioXboxPrototype.sln /restore /p:Platform=x64 /p:Configuration=Debug
 ```
 
+## Build a Microsoft Store update
+
+Visual Studio may show the generic .NET Publish window for this SDK-style UWP
+project. Azure, ClickOnce, Docker, and Folder profiles do not create a Store
+package. Use the checked-in packaging script instead:
+
+```powershell
+.\tools\Build-StorePackage.ps1
+```
+
+Open and build the solution once in Visual Studio before the first script run so
+NuGet dependencies are restored by the UWP-aware project system.
+
+Before running it, increase the four-part `Identity Version` in
+`src\StremioXboxPrototype\Package.appxmanifest`. The version must be higher than
+the package already in Partner Center, the first number must be at least 1, and
+the fourth number must remain 0. The script builds Release/x64, creates a unique
+folder under `src\StremioXboxPrototype\AppPackages`, and prints the `.msixupload`
+or `.msix` file to upload in Partner Center.
+
 The project is x64-only because current Xbox UWP development and submission no longer supports x86.
 
 ## Run on Windows

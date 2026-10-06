@@ -22,6 +22,7 @@ Global
 		{25902579-1D1A-45F6-BE62-68651C11EBF2}.Release|Any CPU.Deploy.0 = Release|Any CPU
 		{25902579-1D1A-45F6-BE62-68651C11EBF2}.Release|x64.ActiveCfg = Release|x64
 		{25902579-1D1A-45F6-BE62-68651C11EBF2}.Release|x64.Build.0 = Release|x64
+		{25902579-1D1A-45F6-BE62-68651C11EBF2}.Release|x64.Deploy.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -39,6 +39,8 @@ public sealed partial class PosterCard : UserControl
         if (Uri.TryCreate(item?.Poster, UriKind.Absolute, out var uri) &&
             (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
         {
+            // Decode near the card's two-times display width for a sharp TV image
+            // without retaining the full source poster in memory.
             var image = new BitmapImage(uri) { DecodePixelWidth = 432 };
             var brush = new ImageBrush { ImageSource = image, Stretch = Stretch.UniformToFill };
             image.ImageFailed += (_, _) =>
@@ -61,6 +63,7 @@ public sealed partial class PosterCard : UserControl
     {
         Width = width;
         PosterFrame.Width = width - 24;
+        // Posters use a consistent 2:3 ratio at every responsive shelf width.
         PosterFrame.Height = (width - 24) * 1.5;
         PosterRow.Height = new GridLength(PosterFrame.Height);
         Height = PosterFrame.Height + 122;
@@ -68,6 +71,8 @@ public sealed partial class PosterCard : UserControl
 
     public void SetFocused(bool focused)
     {
+        // Border and metadata appear even when motion is disabled, so the remote
+        // focus position is never communicated by animation alone.
         IsPosterFocused = focused;
         FocusOutline.Opacity = focused ? 1 : 0;
         FocusGlow.Opacity = focused ? 1 : 0;
