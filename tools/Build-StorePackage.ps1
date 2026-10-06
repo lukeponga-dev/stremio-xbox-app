@@ -39,12 +39,18 @@ $outputDirectory = Join-Path $packageRoot "StoreUpload_${packageVersion}_$stamp"
 New-Item -ItemType Directory -Path $outputDirectory | Out-Null
 
 Write-Host "Building watchstream $packageVersion for Microsoft Store (Release, x64)..."
+# Restore Release-specific Native AOT targets even after a Debug build. Publish
+# produces the executable before packaging and supplies the native payload.
 & $msbuildPath $solutionPath `
-    '/t:Rebuild' `
+    '/restore' `
+    '/t:Publish' `
     '/m' `
     '/p:Configuration=Release' `
     '/p:Platform=x64' `
-    '/p:GenerateAppxPackageOnBuild=true' `
+    '/p:GenerateAppxPackageOnBuild=false' `
+    '/p:PublishAppxPackage=true' `
+    '/p:IncludePublishItemsOutputGroup=true' `
+    '/verbosity:minimal' `
     '/p:UapAppxPackageBuildMode=StoreOnly' `
     '/p:AppxBundle=Never' `
     '/p:AppxPackageSigningEnabled=false' `
@@ -63,6 +69,38 @@ $result = if ($upload) { $upload } else { $msix }
 if (-not $result) {
     throw "The build completed but no .msixupload or .msix was found in $outputDirectory."
 }
+
+if (-not $msix) {
+    throw 'No MSIX payload was found for validating the Store upload.'
+}
+
+# A successful archive build alone does not prove that Native AOT ran. Reject
+# a desktop managed-runtime payload before presenting it as an Xbox release.
+$packageArchive = [System.IO.Compression.ZipFile]::OpenRead($msix.FullName)
+try {
+    $manifestEntry = $packageArchive.GetEntry('AppxManifest.xml')
+    if (-not $manifestEntry) { throw 'The MSIX payload has no app manifest.' }
+    $manifestReader = [System.IO.StreamReader]::new($manifestEntry.Open())
+    try { [xml]$builtManifest = $manifestReader.ReadToEnd() }
+    finally { $manifestReader.Dispose() }
+
+    if ($builtManifest.Package.Identity.Version -ne $packageVersion.ToString()) {
+        throw 'The MSIX payload version does not match the source manifest.'
+    }
+    if ($builtManifest.Package.Identity.Name -ne $manifest.Package.Identity.Name -or
+        $builtManifest.Package.Identity.Publisher -ne $manifest.Package.Identity.Publisher -or
+        $builtManifest.Package.Identity.ProcessorArchitecture -ne 'x64') {
+        throw 'The MSIX payload identity or architecture does not match this release.'
+    }
+    $executable = $builtManifest.Package.Applications.Application.Executable
+    if (-not $packageArchive.GetEntry($executable)) {
+        throw "The MSIX payload is missing its executable: $executable."
+    }
+    if ($packageArchive.Entries.FullName -match '(^|/)(coreclr|hostfxr)\.dll$') {
+        throw 'The package contains a managed runtime instead of the expected Native AOT release.'
+    }
+}
+finally { $packageArchive.Dispose() }
 
 Write-Host ''
 Write-Host 'Store package created successfully:' -ForegroundColor Green
