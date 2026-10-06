@@ -25,7 +25,8 @@ The Rust core is not binary-linked yet because upstream has no supported UWP/.NE
 - A direct-URL playback lab with a known public test asset.
 - Controller-oriented XY focus, visible platform focus, Back navigation, and focus restoration.
 - Full-screen TV layout with a compact Search button, dedicated Discover search, controller keyboard, and optional Windows voice recognition.
-- Rounded 2:3 poster cards, titles underneath, a bright focus border and 6% zoom, and year/rating/runtime metadata on focus when available. Settings can disable focus animation.
+- Larger Home shelf cards with rounded 2:3 artwork, titles underneath, a white focus border and 3% zoom, and year/rating/runtime metadata on focus when available. Settings can disable focus animation.
+- Continue Watching appears above popular titles after catalog playback, with progress bars and time remaining. Progress saves every 15 seconds and on leaving playback; choosing a fresh source resumes the saved movie or episode when seekable. Finished titles (95% watched or playback ended) leave the shelf. History is local, bounded to twelve titles, and stores no stream URLs; playback-lab streams are excluded.
 - Home/Discover/Library/Add-ons navigation, with Playback Lab, Server, Diagnostics, and Settings grouped under Developer / Advanced. Catalog counts and technical server information stay in those tools.
 - TV-safe margins, scrollable navigation/content, and shelves sized to show roughly 20% of the next card. Home has loading skeletons, empty/error recovery, and an offline playback-server reconnect notice.
 - A small local favorites library.

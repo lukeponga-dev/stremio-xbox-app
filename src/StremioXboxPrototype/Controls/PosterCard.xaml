@@ -11,19 +11,21 @@
         </Grid.RowDefinitions>
         <Grid x:Name="PosterFrame" Width="216" Height="324" RenderTransformOrigin="0.5,0.5">
             <Grid.RenderTransform><ScaleTransform x:Name="PosterScale" /></Grid.RenderTransform>
-            <Border x:Name="FocusGlow" Margin="-5" CornerRadius="20" Background="#607650F5" Opacity="0" />
+            <Border x:Name="FocusGlow" Margin="-5" CornerRadius="20" Background="{StaticResource AccentBrush}" Opacity="0" />
             <Border x:Name="Artwork" CornerRadius="14" Background="{StaticResource PanelBrush}">
                 <TextBlock x:Name="FallbackTitle" TextWrapping="Wrap" TextAlignment="Center" FontSize="22"
                            VerticalAlignment="Center" Margin="16" Foreground="{StaticResource MutedTextBrush}" />
             </Border>
-            <Border x:Name="FocusOutline" CornerRadius="14" BorderBrush="{StaticResource AccentBrush}" BorderThickness="4" Opacity="0" />
+            <ProgressBar x:Name="WatchProgressBar" Visibility="Collapsed" VerticalAlignment="Bottom" Margin="10,0,10,12"
+                         Height="8" Minimum="0" Maximum="100" Foreground="{StaticResource AccentTextBrush}" Background="#CC100E20" />
+            <Border x:Name="FocusOutline" CornerRadius="14" BorderBrush="White" BorderThickness="4" Opacity="0" />
         </Grid>
-        <TextBlock x:Name="TitleText" Grid.Row="1" FontSize="21" FontWeight="SemiBold" Margin="0,16,0,6"
+        <TextBlock x:Name="TitleText" Grid.Row="1" FontSize="23" FontWeight="SemiBold" Margin="0,16,0,6"
                    TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxLines="2" />
         <StackPanel x:Name="FocusDetails" Grid.Row="2" Spacing="3" Opacity="0">
-            <TextBlock x:Name="MetadataText" FontSize="16" Foreground="{StaticResource MutedTextBrush}"
+            <TextBlock x:Name="MetadataText" FontSize="18" Foreground="{StaticResource MutedTextBrush}"
                        TextTrimming="CharacterEllipsis" MaxLines="1" />
-            <TextBlock x:Name="TypeText" FontSize="15" Foreground="{StaticResource AccentTextBrush}" />
+            <TextBlock x:Name="TypeText" FontSize="17" Foreground="{StaticResource AccentTextBrush}" />
         </StackPanel>
     </Grid>
 </UserControl>
