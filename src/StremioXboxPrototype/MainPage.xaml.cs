@@ -51,6 +51,7 @@ public sealed partial class MainPage : Page
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
+        RefreshContinueWatching();
         if (_lastFocusedItem is not null)
         {
             _lastFocusedItem.Focus(FocusState.Programmatic);
@@ -101,10 +102,12 @@ public sealed partial class MainPage : Page
 
     private async Task LoadHomeAsync()
     {
+        RefreshContinueWatching();
         BeginRequest("Loading public catalogs…");
         var request = _request!;
-        HomeLoadingPanel.Visibility = Visibility.Visible;
-        HomeShelves.Visibility = HomeUnavailablePanel.Visibility = Visibility.Collapsed;
+        HomeLoadingPanel.Visibility = ContinueWatchingGrid.Items.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
+        HomeShelves.Visibility = ContinueWatchingGrid.Items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        HomeUnavailablePanel.Visibility = Visibility.Collapsed;
         try
         {
             // Load both shelves together. Each request is still isolated inside
@@ -117,7 +120,7 @@ public sealed partial class MainPage : Page
             SeriesGrid.ItemsSource = series.Result.Take(20).ToList();
             NetworkStatusText.Text = $"Loaded {movies.Result.Count + series.Result.Count} catalog items";
             DiagnosticsService.Current.Info("catalog", NetworkStatusText.Text);
-            var empty = MovieGrid.Items.Count + SeriesGrid.Items.Count == 0;
+            var empty = MovieGrid.Items.Count + SeriesGrid.Items.Count + ContinueWatchingGrid.Items.Count == 0;
             HomeShelves.Visibility = empty ? Visibility.Collapsed : Visibility.Visible;
             HomeUnavailablePanel.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
             HomeStateTitle.Text = "No titles found yet";
@@ -131,6 +134,12 @@ public sealed partial class MainPage : Page
             HomeStateTitle.Text = "We couldn't load your movies and series";
             HomeStateText.Text = "Check your internet connection, then try again.";
             HomeUnavailablePanel.Visibility = Visibility.Visible;
+            HomeShelves.Visibility = ContinueWatchingGrid.Items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            if (ContinueWatchingGrid.Items.Count > 0)
+            {
+                HomeUnavailablePanel.Visibility = Visibility.Collapsed;
+                PageSubtitle.Text = "Your saved progress is available. Use Refresh to retry popular titles.";
+            }
         }
         finally
         {
@@ -342,7 +351,7 @@ public sealed partial class MainPage : Page
         if (args.Item is MetaItem item)
             Windows.UI.Xaml.Automation.AutomationProperties.SetName(container, item.Name);
         if (args.Phase == 0) args.RegisterUpdateCallback(PosterContainerChanging);
-        else if (sender == MovieGrid || sender == SeriesGrid)
+        else if (sender == MovieGrid || sender == SeriesGrid || sender == ContinueWatchingGrid)
             FindPosterCard(container)?.SetCardWidth(TvLayout.GetShelfCardWidth(sender.ActualWidth));
     }
 
@@ -352,6 +361,34 @@ public sealed partial class MainPage : Page
         for (var index = 0; index < shelf.Items.Count; index++)
             if (shelf.ContainerFromIndex(index) is DependencyObject container)
                 FindPosterCard(container)?.SetCardWidth(TvLayout.GetShelfCardWidth(e.NewSize.Width));
+    }
+
+    private void ViewportSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var layout = TvLayout.GetViewportLayout(e.NewSize.Width, e.NewSize.Height);
+        // Background surfaces occupy the full window. Only interactive content
+        // receives TV-safe insets, recalculated whenever the window changes size.
+        SidebarColumn.Width = new GridLength(layout.SidebarWidth);
+        SidebarSurface.Padding = new Thickness(layout.HorizontalInset, layout.VerticalInset, 8, layout.VerticalInset);
+        ContentSurface.Padding = new Thickness(layout.ContentGap, layout.VerticalInset,
+            layout.HorizontalInset, layout.VerticalInset);
+        HeaderActionsColumn.Width = layout.StackHeader ? new GridLength(0) : GridLength.Auto;
+        Grid.SetColumn(HeaderActions, layout.StackHeader ? 0 : 1);
+        Grid.SetRow(HeaderActions, layout.StackHeader ? 1 : 0);
+        HeaderActions.Margin = layout.StackHeader ? new Thickness(0, 12, 0, 0) : new Thickness(0);
+        HeaderText.Margin = layout.StackHeader ? new Thickness(0) : new Thickness(0, 0, 24, 0);
+        PageSubtitle.Visibility = e.NewSize.Height < 600 ? Visibility.Collapsed : Visibility.Visible;
+        PageTitle.FontSize = e.NewSize.Height < 600 ? 30 : 36;
+        var contentWidth = e.NewSize.Width - layout.SidebarWidth - layout.ContentGap - layout.HorizontalInset;
+        var compactSearch = contentWidth < 560;
+        Grid.SetColumnSpan(SearchBox, compactSearch ? 4 : 1);
+        foreach (var button in new[] { SearchSubmitButton, KeyboardButton, VoiceSearchButton })
+        {
+            Grid.SetRow(button, compactSearch ? 1 : 0);
+            button.Margin = new Thickness(12, compactSearch ? 12 : 0, 0, 0);
+        }
+        DiscoverBrowseActions.Orientation = compactSearch ? Orientation.Vertical : Orientation.Horizontal;
+        SearchKeyboardPanel.MaxHeight = Math.Max(80, Math.Min(220, e.NewSize.Height * 0.3));
     }
 
     private static PosterCard? FindPosterCard(DependencyObject root)
@@ -423,6 +460,25 @@ public sealed partial class MainPage : Page
     }
 
     private async void RetryHome(object sender, RoutedEventArgs e) => await LoadHomeAsync();
+
+    private void RefreshContinueWatching()
+    {
+        // Reuse the poster template and title navigation. The progress attachment
+        // is UI-only (JsonIgnore), so it does not enter persisted catalog metadata.
+        var items = PrototypeSettings.GetWatchHistory().Select(progress =>
+        {
+            progress.Item.WatchProgress = progress;
+            return progress.Item;
+        }).ToList();
+        ContinueWatchingGrid.ItemsSource = items;
+        ContinueWatchingShelf.Visibility = items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        // Local history remains available even when the public catalog is offline.
+        if (items.Count > 0 && HomeLoadingPanel.Visibility != Visibility.Visible)
+        {
+            HomeShelves.Visibility = Visibility.Visible;
+            HomeUnavailablePanel.Visibility = Visibility.Collapsed;
+        }
+    }
 
     private void ShowSettings(object sender, RoutedEventArgs e)
     {
@@ -724,14 +780,15 @@ public sealed partial class MainPage : Page
         UpdateAccountNavigation(false);
         SetAccountStatus("Signed out.", AccountStatus.Neutral);
         SetSelectedNavigation(HomeButton);
-        ShowPanel(HomePanel, "Home", "Popular movies and series");
+        ShowPanel(HomePanel, "Home", "Pick up where you left off or find your next favourite");
         if (MovieGrid.Items.Count + SeriesGrid.Items.Count == 0) await LoadHomeAsync();
     }
 
     private async void ShowHome(object sender, RoutedEventArgs e)
     {
+        RefreshContinueWatching();
         SetSelectedNavigation(HomeButton);
-        ShowPanel(HomePanel, "Home", "Popular movies and series");
+        ShowPanel(HomePanel, "Home", "Pick up where you left off or find your next favourite");
         if (MovieGrid.Items.Count + SeriesGrid.Items.Count == 0) await LoadHomeAsync();
     }
 
@@ -887,6 +944,7 @@ public sealed partial class MainPage : Page
         PageTitle.Text = title;
         PageSubtitle.Text = subtitle;
         HeaderSearchButton.Visibility = ReferenceEquals(panel, DiscoverPanel) ? Visibility.Collapsed : Visibility.Visible;
+        HomeRefreshButton.Visibility = ReferenceEquals(panel, HomePanel) ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void BeginRequest(string status)

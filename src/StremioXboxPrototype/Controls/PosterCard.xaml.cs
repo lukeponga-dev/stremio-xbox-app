@@ -40,8 +40,7 @@ public sealed partial class PosterCard : UserControl
         if (Uri.TryCreate(item?.Poster, UriKind.Absolute, out var uri) &&
             (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
         {
-            // Decode near the card's two-times display width for a sharp TV image
-            // without retaining the full source poster in memory.
+            // Bound decoding so larger TV cards do not retain full source posters.
             var image = new BitmapImage(uri) { DecodePixelWidth = 432 };
             var brush = new ImageBrush { ImageSource = image, Stretch = Stretch.UniformToFill };
             image.ImageFailed += (_, _) =>
@@ -52,12 +51,15 @@ public sealed partial class PosterCard : UserControl
             card.FallbackTitle.Visibility = Visibility.Collapsed;
         }
         card.SetDetails(item);
+        card.WatchProgressBar.Visibility = item?.WatchProgress is null ? Visibility.Collapsed : Visibility.Visible;
+        card.WatchProgressBar.Value = item?.WatchProgress?.Percent ?? 0;
         Windows.UI.Xaml.Automation.AutomationProperties.SetName(card, item?.Name ?? "Title");
     }
 
     public void SetDetails(MetaItem? details)
     {
-        MetadataText.Text = details?.CardMetadata ?? "Details unavailable";
+        MetadataText.Text = Item?.WatchProgress?.RemainingText ?? details?.CardMetadata ?? "Details unavailable";
+        if (Item?.WatchProgress is not null) TypeText.Text = "Resume · Choose a source";
     }
 
     public void SetCardWidth(double width)
@@ -67,7 +69,7 @@ public sealed partial class PosterCard : UserControl
         // Posters use a consistent 2:3 ratio at every responsive shelf width.
         PosterFrame.Height = (width - 24) * 1.5;
         PosterRow.Height = new GridLength(PosterFrame.Height);
-        Height = PosterFrame.Height + 138;
+        Height = PosterFrame.Height + 154;
     }
 
     public void SetFocused(bool focused)
@@ -77,10 +79,12 @@ public sealed partial class PosterCard : UserControl
         IsPosterFocused = focused;
         FocusOutline.Opacity = focused ? 1 : 0;
         FocusGlow.Opacity = focused ? 1 : 0;
-        FocusDetails.Opacity = focused ? 1 : 0;
+        FocusDetails.Opacity = focused || Item?.WatchProgress is not null ? 1 : 0;
         var from = PosterScale.ScaleX;
         _animation?.Stop();
-        var to = focused && PrototypeSettings.GetPosterAnimationsEnabled() ? 1.06 : 1;
+        // Keep the zoom inside the card gutter; the white outline supplies the
+        // main focus cue and remains visible when animation is disabled.
+        var to = focused && PrototypeSettings.GetPosterAnimationsEnabled() ? 1.03 : 1;
         if (!PrototypeSettings.GetPosterAnimationsEnabled())
         {
             PosterScale.ScaleX = PosterScale.ScaleY = to;

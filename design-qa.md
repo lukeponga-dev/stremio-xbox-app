@@ -1,5 +1,35 @@
 # Design QA
 
+## Full-window TV layout — 7 October 2026
+
+- Full-window bounds are selected before first-page navigation. The frame and pages explicitly stretch horizontally and vertically.
+- Home's fixed outer padding is removed. Sidebar and page backgrounds extend to every window edge; focusable content uses responsive five-percent insets to account for TV overscan.
+- Layout follows XAML effective viewport dimensions after system scaling, rather than assuming a TV's physical resolution. Size changes recalculate insets, header placement, search controls, keyboard height, and detail poster visibility.
+- Small viewports stack header/search actions, make browse suggestions scrollable, and give details the full content width. Detail action buttons, episode selection, status copy, and source rows use available width.
+- Playback fills the window with the native player. Video retains its aspect ratio; status overlays wrap, scroll when necessary, and remain bounded inside the viewport.
+
+Validation: all 47 watch-history and TV-layout checks passed, including 640 × 360, Xbox-effective 960 × 540, 720p, 1080p, 1440p, 4K, 8K, and ultrawide layout inputs. Unsigned x64 Debug build passed. These checks verify layout calculations and compilation, not rendered device screenshots.
+
+Native application capture is unavailable in this session. Hardware validation remains necessary for controller focus, actual display scaling, TV overscan settings, and visual clipping.
+
+final result: blocked (runtime visual verification)
+
+## Home refinement — 7 October 2026
+
+Scope: improve the native UWP Home screen using the supplied Nexa board and the review's recommendations. Existing branding and navigation remain in use.
+
+- Home shelves use larger cards, larger title/metadata text, a white focus outline, and a restrained 3% scale inside the card gutter. Motion-disabled focus retains the outline.
+- Continue Watching leads the shelves when local history exists. Real progress bars and time remaining appear without requiring focus. First-run history stays hidden.
+- Playback saves position every 15 seconds and on leaving the player. Selecting a title returns to its details and remembered episode, requests fresh provider sources, and resumes when the chosen source supports seeking. Completion removes the title. Playback-lab URLs do not enter history.
+- Saved progress stays usable while public catalogs load or fail. The Home header provides Refresh for recovery.
+- History stores a compact title snapshot per entry, bounded to twelve titles, without retaining playback URLs.
+
+Validation: unsigned x64 Debug build passed; all 20 watch-history/TV-layout checks passed against production settings, serialization, and layout logic using an in-memory storage adapter. XAML XML parsing and diff whitespace checks passed. Signed packaging fails on the pre-existing local signing certificate.
+
+Visual/controller validation remains blocked: this session cannot control or capture native Windows applications. The supplied board was inspected, but a matching runtime screenshot and hardware controller checks could not be produced. Verify sofa-distance readability, focus restoration, shelf scrolling, episode selection, seekable resume, and completed-title removal on Xbox before release.
+
+final result: blocked (runtime visual verification)
+
 ## TV update — 5 October 2026
 
 The current TV brief supersedes the compact desktop reference below.

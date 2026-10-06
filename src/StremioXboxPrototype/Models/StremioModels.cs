@@ -236,6 +236,9 @@ public sealed class MetaItem
     public List<VideoItem> Videos { get; set; } = new();
 
     [JsonIgnore]
+    public WatchProgress? WatchProgress { get; set; }
+
+    [JsonIgnore]
     public string Subtitle => string.IsNullOrWhiteSpace(ReleaseInfo) ? Type : $"{Type} · {ReleaseInfo}";
 
     [JsonIgnore]
@@ -411,5 +414,13 @@ public sealed record StreamResolution(StreamResolutionKind Kind, string Label, U
 
 public sealed record AddonEndpoint(string Name, Uri ManifestUri);
 
-public sealed record PlaybackRequest(Uri Uri, string Title, string Source);
-public sealed record StreamPlaybackRequest(StreamItem Stream, Uri ServiceUri, string Title);
+public sealed record WatchProgress(MetaItem Item, string VideoId, double PositionSeconds, double DurationSeconds, DateTimeOffset UpdatedAt)
+{
+    [JsonIgnore]
+    public double Percent => DurationSeconds > 0 ? Math.Clamp(PositionSeconds / DurationSeconds * 100, 0, 100) : 0;
+    [JsonIgnore]
+    public string RemainingText => $"{Math.Max(1, (int)Math.Ceiling((DurationSeconds - PositionSeconds) / 60))} min left";
+}
+
+public sealed record PlaybackRequest(Uri Uri, string Title, string Source, MetaItem? Item = null, string? VideoId = null);
+public sealed record StreamPlaybackRequest(StreamItem Stream, Uri ServiceUri, string Title, MetaItem? Item = null, string? VideoId = null);

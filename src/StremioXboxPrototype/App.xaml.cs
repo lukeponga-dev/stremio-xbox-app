@@ -35,10 +35,20 @@ sealed partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        // Opt out of Xbox's automatic outer border before the first page measures.
+        // Pages draw edge to edge and reserve safe spacing around controls only.
+        var view = ApplicationView.GetForCurrentView();
+        view.SetDesiredBoundsMode(ApplicationViewBoundsMode.UseCoreWindow);
         var frame = Window.Current.Content as Frame;
         if (frame is null)
         {
-            frame = new Frame();
+            frame = new Frame
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                VerticalContentAlignment = VerticalAlignment.Stretch
+            };
             Window.Current.Content = frame;
         }
 
@@ -48,8 +58,6 @@ sealed partial class App : Application
         }
 
         Window.Current.Activate();
-        var view = ApplicationView.GetForCurrentView();
-        view.SetDesiredBoundsMode(ApplicationViewBoundsMode.UseCoreWindow);
         view.TryEnterFullScreenMode();
     }
 }
