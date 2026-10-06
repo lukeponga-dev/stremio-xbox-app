@@ -63,7 +63,7 @@ You control whether to sign in, use Facebook sign-in, enable microphone access, 
 - Reset or uninstall watchstream to remove its remaining local app data.
 - Use Stremio's account tools to access, correct, or delete information held by Stremio.
 
-To ask Kiwi Cloud about information controlled by watchstream, use the support contact shown on watchstream's Microsoft Store listing. Requests concerning information controlled by Stremio, Microsoft, Facebook, Render, or an independent add-on should be directed to that provider.
+To ask Kiwi Cloud about information controlled by watchstream, open a support request at <https://github.com/lukeponga-dev/stremio-xbox-prototype/issues>. Requests concerning information controlled by Stremio, Microsoft, Facebook, Render, or an independent add-on should be directed to that provider.
 
 ## Children
 
@@ -76,5 +76,4 @@ We may update this policy when watchstream's features or data practices change. 
 ## Contact
 
 **Kiwi Cloud**  
-Privacy and support requests: use the support contact provided on the **watchstream** Microsoft Store listing.
-
+Privacy and support requests: <https://github.com/lukeponga-dev/stremio-xbox-prototype/issues>
