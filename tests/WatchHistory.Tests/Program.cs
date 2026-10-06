@@ -40,6 +40,30 @@ foreach (var viewport in new[] { 600d, 960, 1280, 1560, 1920, 2560, 3840 })
     Check(width >= 240 && Math.Abs(viewport / width - count - 0.25) < 0.001, $"Readable cards and next-card cue at {viewport}");
 }
 Check(TvLayout.GetShelfCardWidth(double.NaN) == 240, "Safe sizing before layout");
+foreach (var (width, height) in new[]
+{
+    (640d, 360d), (960d, 540d), (1280d, 720d), (1920d, 1080d),
+    (2560d, 1440d), (3840d, 2160d), (7680d, 4320d), (2560d, 1080d)
+})
+{
+    var layout = TvLayout.GetViewportLayout(width, height);
+    var contentWidth = width - layout.SidebarWidth - layout.ContentGap - layout.HorizontalInset;
+    Check(contentWidth > 360 && height - layout.VerticalInset * 2 > 0,
+        $"Usable content fits {width} x {height}");
+    Check(Math.Abs(layout.HorizontalInset - width * 0.05) < 0.001 &&
+        Math.Abs(layout.VerticalInset - height * 0.05) < 0.001,
+        $"Controls retain five-percent safe spacing at {width} x {height}");
+    Check(Math.Abs(layout.SidebarWidth - layout.HorizontalInset - 8 - 148) < 0.001,
+        $"Navigation fits inside sidebar at {width} x {height}");
+}
+var xboxLayout = TvLayout.GetViewportLayout(960, 540);
+Check(xboxLayout.StackHeader && !xboxLayout.ShowDetailsPoster,
+    "Xbox effective viewport gives header actions and details adequate space");
+var desktopLayout = TvLayout.GetViewportLayout(1920, 1080);
+Check(!desktopLayout.StackHeader && desktopLayout.ShowDetailsPoster,
+    "Wide viewport restores side-by-side layout");
+Check(TvLayout.GetViewportLayout(double.NaN, 0) == xboxLayout,
+    "Unmeasured viewport uses a safe Xbox-sized fallback");
 Console.WriteLine($"All {checks} watch-history and TV-layout checks passed.");
 
 void Check(bool condition, string label)

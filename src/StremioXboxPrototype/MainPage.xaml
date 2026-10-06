@@ -191,8 +191,8 @@
                         </ScrollViewer>
                     </Border>
                     <TextBlock x:Name="DiscoverStatusText" Grid.Row="2" Text="Type a title, use the on-screen keyboard, or choose Voice." FontSize="18" Margin="0,16,0,12" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
-                    <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
-                    <StackPanel x:Name="DiscoverSuggestions" Spacing="16" Margin="0,22,0,0">
+                    <ScrollViewer x:Name="DiscoverSuggestions" Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
+                    <StackPanel Spacing="16" Margin="0,22,0,0">
                         <TextBlock Text="Browse popular titles" FontSize="25" FontWeight="SemiBold" />
                         <TextBlock Text="Choose a collection or search for a title." FontSize="18" Foreground="{StaticResource MutedTextBrush}" />
                         <StackPanel x:Name="DiscoverBrowseActions" Orientation="Horizontal" Spacing="16" Margin="0,12,0,0">
@@ -310,7 +310,7 @@
                 <ScrollViewer x:Name="SettingsPanel" Visibility="Collapsed">
                     <StackPanel Spacing="24">
                         <TextBlock Text="Display and accessibility" Style="{StaticResource SectionTitleStyle}" />
-                        <ToggleSwitch x:Name="PosterAnimationsToggle" Header="Animate focused posters" OnContent="6% focus zoom" OffContent="Border only" Toggled="PosterAnimationsChanged" FontSize="20" />
+                        <ToggleSwitch x:Name="PosterAnimationsToggle" Header="Animate focused posters" OnContent="3% focus zoom" OffContent="Border only" Toggled="PosterAnimationsChanged" FontSize="20" />
                         <TextBlock Text="Turn off zoom animations if you prefer less motion. The bright focus border remains visible." FontSize="20" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
                         <Button Content="Manage Stremio account" Style="{StaticResource TvButtonStyle}" Click="ShowAccount" />
                     </StackPanel>
