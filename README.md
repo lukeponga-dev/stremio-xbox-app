@@ -28,7 +28,7 @@ The Rust core is not binary-linked yet because upstream has no supported UWP/.NE
 - Larger Home shelf cards with rounded 2:3 artwork, titles underneath, a white focus border and 3% zoom, and year/rating/runtime metadata on focus when available. Settings can disable focus animation.
 - Continue Watching appears above popular titles after catalog playback, with progress bars and time remaining. Progress saves every 15 seconds and on leaving playback; choosing a fresh source resumes the saved movie or episode when seekable. Finished titles (95% watched or playback ended) leave the shelf. History is local, bounded to twelve titles, and stores no stream URLs; playback-lab streams are excluded.
 - Home/Discover/Library/Add-ons navigation, with Playback Lab, Server, Diagnostics, and Settings grouped under Developer / Advanced. Catalog counts and technical server information stay in those tools.
-- TV-safe margins, scrollable navigation/content, and shelves sized to show roughly 20% of the next card. Home has loading skeletons, empty/error recovery, and an offline playback-server reconnect notice.
+- Full-window page surfaces with responsive TV-safe content insets, scrollable navigation/content, and shelves sized to show roughly 20% of the next card. Headers and search actions reflow on smaller effective viewports, and details use the full content width when a separate poster would crowd the controls. Home has loading skeletons, empty/error recovery, and an offline playback-server reconnect notice.
 - A small local favorites library.
 - Bounded diagnostics for requests, playback startup, buffering, failures, lifecycle, and memory usage.
 - Internet and private-network capabilities for later external-service testing.

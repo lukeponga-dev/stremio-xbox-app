@@ -1,5 +1,19 @@
 # Design QA
 
+## Full-window TV layout — 7 October 2026
+
+- Full-window bounds are selected before first-page navigation. The frame and pages explicitly stretch horizontally and vertically.
+- Home's fixed outer padding is removed. Sidebar and page backgrounds extend to every window edge; focusable content uses responsive five-percent insets to account for TV overscan.
+- Layout follows XAML effective viewport dimensions after system scaling, rather than assuming a TV's physical resolution. Size changes recalculate insets, header placement, search controls, keyboard height, and detail poster visibility.
+- Small viewports stack header/search actions, make browse suggestions scrollable, and give details the full content width. Detail action buttons, episode selection, status copy, and source rows use available width.
+- Playback fills the window with the native player. Video retains its aspect ratio; status overlays wrap, scroll when necessary, and remain bounded inside the viewport.
+
+Validation: all 47 watch-history and TV-layout checks passed, including 640 × 360, Xbox-effective 960 × 540, 720p, 1080p, 1440p, 4K, 8K, and ultrawide layout inputs. Unsigned x64 Debug build passed. These checks verify layout calculations and compilation, not rendered device screenshots.
+
+Native application capture is unavailable in this session. Hardware validation remains necessary for controller focus, actual display scaling, TV overscan settings, and visual clipping.
+
+final result: blocked (runtime visual verification)
+
 ## Home refinement — 7 October 2026
 
 Scope: improve the native UWP Home screen using the supplied Nexa board and the review's recommendations. Existing branding and navigation remain in use.
