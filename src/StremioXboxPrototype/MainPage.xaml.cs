@@ -523,7 +523,7 @@ public sealed partial class MainPage : Page
             ServerConnectionState.Text = "Server: unavailable";
             HomeConnectionText.Text = "Your playback server is offline. You can still browse or try reconnecting.";
             HomeConnectionNotice.Visibility = Visibility.Visible;
-            StreamingServiceStatus.Text = $"Cannot reach {uri.Host}:{uri.Port}. Check that Stremio is running, both devices are on the same network, and port {uri.Port} is allowed. " + exception.Message;
+            StreamingServiceStatus.Text = $"Cannot reach {uri.Host}:{uri.Port}. The hosted server may still be waking up; wait a minute and try again. " + exception.Message;
             DiagnosticsService.Current.Error("streaming-service", exception.Message);
         }
         finally
