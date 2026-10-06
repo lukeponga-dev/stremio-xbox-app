@@ -10,7 +10,7 @@ The current TV brief supersedes the compact desktop reference below.
 - Main and detail content have 48px horizontal / 32px vertical safe spacing; playback overlays share those insets. Shelves adapt their card width to leave a 20% next-card cue at the initial scroll position.
 - Home has poster skeletons, empty and retry states, and a friendly reconnect notice when the playback server is unavailable. Catalog counts and technical server errors are confined to Diagnostics and Server.
 
-Validation: the x64 Debug build passed. A temporary console harness exercised the production shelf-sizing helper across 960, 1280, 1920, 2560, and 3840px display widths, checking the 20% cue and focus allowance. Metadata deserialization, library round trips, and missing-metadata fallback passed. Live Cinemeta metadata for The Matrix returned year 1999, rating 8.7, and runtime 136 min. The configured server remains http://192.168.1.103:32768/.
+Validation: the x64 Debug build passed. A temporary console harness exercised the production shelf-sizing helper across 960, 1280, 1920, 2560, and 3840px display widths, checking the 20% cue and focus allowance. Metadata deserialization, library round trips, and missing-metadata fallback passed. Live Cinemeta metadata for The Matrix returned year 1999, rating 8.7, and runtime 136 min. The configured server is https://watchstream-stremio-server.onrender.com/.
 
 Xbox runtime visuals, controller navigation, keyboard input, speech/microphone permissions, and playback still require device validation. Existing packaging-certificate warnings remain. The desktop-reference findings below describe an earlier layout.
 ## Comparison target

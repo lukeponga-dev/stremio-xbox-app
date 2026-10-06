@@ -75,6 +75,13 @@ Hot Reload is disabled in the checked-in launch profile. UWP AppContainer launch
 6. Deploy and run once from Visual Studio.
 7. Repeat measurements from a non-debug deployment.
 
+The remote-debug address must be the **Xbox console IP shown in Dev Home**. It is
+separate from the Stremio streaming-server address configured inside the app. The
+launch profile currently targets `192.168.1.103`; update it if DHCP changes the
+console address. If deployment reports `DEP6957` with `0x8007274D`, reopen the
+Remote Connections dialog, select the Xbox again, and confirm Dev Home still has
+remote access enabled before requesting a fresh pairing PIN.
+
 For a Device Portal package, use Visual Studio's **Publish → Create App Packages** flow and create a sideload package signed by a certificate trusted on the console. The checked-in publisher identity and template artwork are placeholders.
 
 A Debug MSIX can be produced without NativeAOT. Release packaging enables NativeAOT and therefore requires the C++ linker workload.
@@ -96,9 +103,9 @@ The prototype never executes add-on code. It sends native-direct HTTP(S) URLs st
 
 ### Connect the streaming server
 
-Open **Server** under **Developer / Advanced** in the left navigation. The default address is `http://192.168.1.103:32768/`. The app checks it on startup using Stremio's `/settings` endpoint; detailed status stays on the Server screen. Home shows a friendly reconnect notice only when disconnected or unreachable. **Connect and save** validates the response and remembers a changed address; **Disconnect server** disables server playback until you reconnect. A failed connection test preserves the previously saved address.
+Open **Server** under **Developer / Advanced** in the left navigation. The default address is the hosted Render service at `https://watchstream-stremio-server.onrender.com/`. The app checks it on startup using Stremio's `/settings` endpoint; detailed status stays on the Server screen. Home shows a friendly reconnect notice only when disconnected or unreachable. **Connect and save** validates the response and remembers a changed address; **Disconnect server** disables server playback until you reconnect. A failed connection test preserves the previously saved address. Existing installs that still use the previous `192.168.1.103:32768` default migrate automatically.
 
-Keep Stremio Service running and ensure the Xbox can reach the server on the same network. A streaming server supplies playback, while **Add-ons** or account synchronization supplies stream providers. Open a title and choose **Find streams** after configuring providers. Native direct streams also work when the server is unavailable.
+The free Render service can take about a minute to wake after being idle. A streaming server supplies playback, while **Add-ons** or account synchronization supplies stream providers. Open a title and choose **Find streams** after configuring providers. Native direct streams also work when the server is unavailable.
 
 ## Validation
 

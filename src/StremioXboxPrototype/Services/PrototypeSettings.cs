@@ -6,7 +6,8 @@ namespace StremioXboxPrototype.Services;
 
 public static class PrototypeSettings
 {
-    public const string DefaultStreamingServiceUrl = "http://192.168.1.103:32768/";
+    public const string DefaultStreamingServiceUrl = "https://watchstream-stremio-server.onrender.com/";
+    private const string LegacyStreamingServiceUrl = "http://192.168.1.103:32768/";
     private const string StreamAddonsKey = "StreamAddons";
     private const string LibraryKey = "Library";
     private const string StreamingServiceUrlKey = "StreamingServiceUrl";
@@ -68,8 +69,19 @@ public static class PrototypeSettings
     public static void SetStreamAddons(IEnumerable<AddonEndpoint> addons) =>
         SetStreamAddonText(string.Join(Environment.NewLine, addons.Select(addon => addon.ManifestUri.AbsoluteUri)));
 
-    public static string GetStreamingServiceUrlText() =>
-        ApplicationData.Current.LocalSettings.Values[StreamingServiceUrlKey] as string ?? DefaultStreamingServiceUrl;
+    public static string GetStreamingServiceUrlText()
+    {
+        var saved = ApplicationData.Current.LocalSettings.Values[StreamingServiceUrlKey] as string;
+        if (string.IsNullOrWhiteSpace(saved)) return DefaultStreamingServiceUrl;
+
+        if (string.Equals(saved.TrimEnd('/') + "/", LegacyStreamingServiceUrl, StringComparison.OrdinalIgnoreCase))
+        {
+            ApplicationData.Current.LocalSettings.Values[StreamingServiceUrlKey] = DefaultStreamingServiceUrl;
+            return DefaultStreamingServiceUrl;
+        }
+
+        return saved;
+    }
 
     public static Uri? GetStreamingServiceUrl()
     {

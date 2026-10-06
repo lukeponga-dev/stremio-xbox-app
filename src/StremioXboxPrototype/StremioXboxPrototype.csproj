@@ -25,13 +25,11 @@
     <AssemblyName>StremioXboxPrototype</AssemblyName>
     <UseWindowsForms>False</UseWindowsForms>
     <PackageCertificateKeyFile>StremioXboxPrototype_TemporaryKey.pfx</PackageCertificateKeyFile>
-    <GenerateAppInstallerFile>True</GenerateAppInstallerFile>
+    <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
     <GenerateTestArtifacts>False</GenerateTestArtifacts>
     <AppxBundle>Never</AppxBundle>
-    <AppInstallerUri>https://192.168.1.102:11443</AppInstallerUri>
-    <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Assets\**\*" />
