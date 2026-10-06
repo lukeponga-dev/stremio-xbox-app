@@ -31,6 +31,7 @@ public sealed partial class MainPage : Page
     private Control? _lastFocusedItem;
     private bool _isSignedIn;
     private bool _isSyncing;
+    private bool _discoverHasResults;
 
     public ObservableCollection<DiagnosticEntry> Diagnostics => DiagnosticsService.Current.Entries;
 
@@ -154,6 +155,22 @@ public sealed partial class MainPage : Page
         }
     }
 
+    private void MainPageKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key != VirtualKey.GamepadY) return;
+        e.Handled = true;
+        if (DiscoverPanel.Visibility != Visibility.Visible)
+            ShowDiscover(this, new RoutedEventArgs());
+        SearchBox.Focus(FocusState.Programmatic);
+    }
+
+    private void SetDiscoverResultsVisible(bool visible)
+    {
+        _discoverHasResults = visible;
+        DiscoverSuggestions.Visibility = visible ? Visibility.Collapsed : Visibility.Visible;
+        DiscoverGrid.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     private async Task SearchAsync()
     {
         var query = SearchBox.Text.Trim();
@@ -165,7 +182,7 @@ public sealed partial class MainPage : Page
         SetSelectedNavigation(DiscoverButton);
         ShowPanel(DiscoverPanel, "Discover", "Find your next movie or series");
         SearchKeyboardPanel.Visibility = Visibility.Collapsed;
-        DiscoverGrid.Visibility = Visibility.Visible;
+        SetDiscoverResultsVisible(true);
         InputPane.GetForCurrentView().TryHide();
         BeginRequest("Searching…");
         var request = _request!;
@@ -241,7 +258,8 @@ public sealed partial class MainPage : Page
     {
         var opening = SearchKeyboardPanel.Visibility != Visibility.Visible;
         SearchKeyboardPanel.Visibility = opening ? Visibility.Visible : Visibility.Collapsed;
-        DiscoverGrid.Visibility = opening ? Visibility.Collapsed : Visibility.Visible;
+        DiscoverSuggestions.Visibility = opening || _discoverHasResults ? Visibility.Collapsed : Visibility.Visible;
+        DiscoverGrid.Visibility = opening || !_discoverHasResults ? Visibility.Collapsed : Visibility.Visible;
         InputPane.GetForCurrentView().TryHide();
         if (opening) _firstKeyboardKey?.Focus(FocusState.Programmatic);
         else KeyboardButton.Focus(FocusState.Programmatic);
@@ -274,7 +292,7 @@ public sealed partial class MainPage : Page
         _voiceRequest = request;
         VoiceSearchButton.IsEnabled = false;
         SearchKeyboardPanel.Visibility = Visibility.Collapsed;
-        DiscoverGrid.Visibility = Visibility.Visible;
+        SetDiscoverResultsVisible(_discoverHasResults);
         DiscoverStatusText.Text = "Say a movie or series title…";
         try
         {
@@ -721,7 +739,10 @@ public sealed partial class MainPage : Page
     {
         SetSelectedNavigation(DiscoverButton);
         ShowPanel(DiscoverPanel, "Discover", "Find your next movie or series");
-        KeyboardButton.Focus(FocusState.Programmatic);
+        SearchBox.Text = "";
+        DiscoverStatusText.Text = "Search for a title or browse a popular collection.";
+        SetDiscoverResultsVisible(false);
+        SearchBox.Focus(FocusState.Programmatic);
     }
 
     private async void ShowMovieCatalog(object sender, RoutedEventArgs e) => await ShowCatalogAsync("movie");
@@ -731,7 +752,7 @@ public sealed partial class MainPage : Page
     {
         ShowDiscover(this, new RoutedEventArgs());
         SearchKeyboardPanel.Visibility = Visibility.Collapsed;
-        DiscoverGrid.Visibility = Visibility.Visible;
+        SetDiscoverResultsVisible(true);
         SearchBox.Text = "";
         var label = type == "movie" ? "Popular movies" : "Popular series";
         BeginRequest("Loading " + label.ToLowerInvariant());
@@ -855,7 +876,7 @@ public sealed partial class MainPage : Page
         {
             _voiceRequest?.Cancel();
             SearchKeyboardPanel.Visibility = Visibility.Collapsed;
-            DiscoverGrid.Visibility = Visibility.Visible;
+            SetDiscoverResultsVisible(_discoverHasResults);
             InputPane.GetForCurrentView().TryHide();
         }
         foreach (var candidate in new UIElement[]
@@ -865,6 +886,7 @@ public sealed partial class MainPage : Page
         }
         PageTitle.Text = title;
         PageSubtitle.Text = subtitle;
+        HeaderSearchButton.Visibility = ReferenceEquals(panel, DiscoverPanel) ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void BeginRequest(string status)
@@ -893,7 +915,7 @@ public sealed partial class MainPage : Page
         {
             e.Handled = true;
             SearchKeyboardPanel.Visibility = Visibility.Collapsed;
-            DiscoverGrid.Visibility = Visibility.Visible;
+            SetDiscoverResultsVisible(_discoverHasResults);
             KeyboardButton.Focus(FocusState.Programmatic);
             return;
         }

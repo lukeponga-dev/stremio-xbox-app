@@ -23,7 +23,7 @@
         </DataTemplate>
     </Page.Resources>
 
-    <Grid XYFocusKeyboardNavigation="Enabled" Padding="48,32">
+    <Grid XYFocusKeyboardNavigation="Enabled" Padding="56,40" KeyDown="MainPageKeyDown">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="164" />
             <ColumnDefinition Width="*" />
@@ -54,13 +54,14 @@
                         </Button>
                     </StackPanel>
                     <StackPanel Grid.Row="3" Spacing="4" Margin="0,32,0,16">
-                        <TextBlock Text="DEVELOPER / ADVANCED" FontSize="11" FontWeight="SemiBold" Margin="8,0,0,8" Foreground="{StaticResource MutedTextBrush}" />
+                        <Border Height="1" Background="{StaticResource SubtleBorderBrush}" Margin="8,0,8,18" />
+                        <TextBlock Text="DEVELOPER / ADVANCED" FontSize="13" FontWeight="SemiBold" Margin="8,0,0,8" Foreground="{StaticResource MutedTextBrush}" />
                         <Button x:Name="PlaybackLabButton" Content="Playback Lab" Style="{StaticResource AdvancedNavButtonStyle}" Click="ShowPlaybackLab" />
                         <Button x:Name="ServerButton" Content="Server" Style="{StaticResource AdvancedNavButtonStyle}" Click="ShowServer" />
                         <Button x:Name="DiagnosticsButton" Content="Diagnostics" Style="{StaticResource AdvancedNavButtonStyle}" Click="ShowDiagnostics" />
                         <Button x:Name="SettingsButton" Content="Settings" Style="{StaticResource AdvancedNavButtonStyle}" Click="ShowSettings" />
                     </StackPanel>
-                    <TextBlock Grid.Row="4" Text="A  Select    B  Back" FontSize="14" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
+                    <TextBlock Grid.Row="4" Text="A  Select   B  Back&#x0a;Y  Search" FontSize="16" LineHeight="24" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
                 </Grid>
             </ScrollViewer>
         </Border>
@@ -79,7 +80,7 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                     <ProgressRing x:Name="BusyIndicator" Width="28" Height="28" IsActive="False" />
-                    <Button Content="Search" Style="{StaticResource HeaderButtonStyle}" Click="ShowDiscover" AutomationProperties.Name="Open search" />
+                    <Button x:Name="HeaderSearchButton" Content="Search" Style="{StaticResource HeaderButtonStyle}" Click="ShowDiscover" AutomationProperties.Name="Open search" />
                     <Button x:Name="AccountButton" Style="{StaticResource HeaderButtonStyle}" Click="ShowAccount">
                         <Grid>
                             <TextBlock x:Name="AccountNavLabel" Text="Login" Margin="0,0,28,0" VerticalAlignment="Center" />
@@ -165,8 +166,12 @@
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <TextBox x:Name="SearchBox" PlaceholderText="Search movies and series" KeyDown="SearchBoxKeyDown" AutomationProperties.Name="Search movies and series" InputScope="Search" />
                         <Button Grid.Column="1" Content="Search" Margin="12,0,0,0" Style="{StaticResource PrimaryButtonStyle}" Click="Search" />
-                        <Button x:Name="KeyboardButton" Grid.Column="2" Content="Keyboard" Margin="12,0,0,0" Style="{StaticResource TvButtonStyle}" Click="ToggleSearchKeyboard" />
-                        <Button x:Name="VoiceSearchButton" Grid.Column="3" Content="Voice" Margin="12,0,0,0" Style="{StaticResource TvButtonStyle}" Click="VoiceSearch" />
+                        <Button x:Name="KeyboardButton" Grid.Column="2" Width="60" Margin="12,0,0,0" Style="{StaticResource SearchToolButtonStyle}" Click="ToggleSearchKeyboard" AutomationProperties.Name="On-screen keyboard" ToolTipService.ToolTip="On-screen keyboard">
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE765;" FontSize="23" />
+                        </Button>
+                        <Button x:Name="VoiceSearchButton" Grid.Column="3" Width="60" Margin="12,0,0,0" Style="{StaticResource SearchToolButtonStyle}" Click="VoiceSearch" AutomationProperties.Name="Voice search" ToolTipService.ToolTip="Voice search">
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE720;" FontSize="23" />
+                        </Button>
                     </Grid>
                     <Border x:Name="SearchKeyboardPanel" Grid.Row="1" Visibility="Collapsed" Style="{StaticResource SurfaceBorderStyle}" Padding="12" Margin="0,16,0,0" MaxHeight="220">
                         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -174,7 +179,15 @@
                         </ScrollViewer>
                     </Border>
                     <TextBlock x:Name="DiscoverStatusText" Grid.Row="2" Text="Type a title, use the on-screen keyboard, or choose Voice." FontSize="18" Margin="0,16,0,12" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
-                    <GridView x:Name="DiscoverGrid" Grid.Row="3" IsItemClickEnabled="True" ItemClick="OpenItem" SelectionMode="None" ContainerContentChanging="PosterContainerChanging" ItemTemplate="{StaticResource PosterTemplate}" />
+                    <StackPanel x:Name="DiscoverSuggestions" Grid.Row="3" Spacing="16" Margin="0,22,0,0">
+                        <TextBlock Text="Browse popular titles" FontSize="25" FontWeight="SemiBold" />
+                        <TextBlock Text="Choose a collection or search for a title." FontSize="18" Foreground="{StaticResource MutedTextBrush}" />
+                        <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,12,0,0">
+                            <Button Content="Popular movies  ›" Style="{StaticResource TvButtonStyle}" Click="ShowMovieCatalog" />
+                            <Button Content="Popular series  ›" Style="{StaticResource TvButtonStyle}" Click="ShowSeriesCatalog" />
+                        </StackPanel>
+                    </StackPanel>
+                    <GridView x:Name="DiscoverGrid" Grid.Row="3" Visibility="Collapsed" IsItemClickEnabled="True" ItemClick="OpenItem" SelectionMode="None" ContainerContentChanging="PosterContainerChanging" ItemTemplate="{StaticResource PosterTemplate}" />
                 </Grid>
                 <Grid x:Name="LibraryPanel" Visibility="Collapsed">
                     <StackPanel VerticalAlignment="Top" Margin="0,0,0,16">

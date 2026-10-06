@@ -33,6 +33,7 @@ public sealed partial class PosterCard : UserControl
         card.SetFocused(false);
         var item = card.Item;
         card.TitleText.Text = item?.Name ?? "";
+        card.TypeText.Text = item?.Type == "series" ? "Series · Open for streams" : "Movie · Open for streams";
         card.FallbackTitle.Text = item?.Name ?? "";
         card.FallbackTitle.Visibility = Visibility.Visible;
         card.Artwork.Background = (Brush)Application.Current.Resources["PanelBrush"];
@@ -66,7 +67,7 @@ public sealed partial class PosterCard : UserControl
         // Posters use a consistent 2:3 ratio at every responsive shelf width.
         PosterFrame.Height = (width - 24) * 1.5;
         PosterRow.Height = new GridLength(PosterFrame.Height);
-        Height = PosterFrame.Height + 122;
+        Height = PosterFrame.Height + 138;
     }
 
     public void SetFocused(bool focused)

@@ -16,14 +16,14 @@
                 <TextBlock x:Name="FallbackTitle" TextWrapping="Wrap" TextAlignment="Center" FontSize="22"
                            VerticalAlignment="Center" Margin="16" Foreground="{StaticResource MutedTextBrush}" />
             </Border>
-            <Border x:Name="FocusOutline" CornerRadius="14" BorderBrush="White" BorderThickness="3" Opacity="0" />
+            <Border x:Name="FocusOutline" CornerRadius="14" BorderBrush="{StaticResource AccentBrush}" BorderThickness="4" Opacity="0" />
         </Grid>
-        <TextBlock x:Name="TitleText" Grid.Row="1" FontSize="22" FontWeight="SemiBold" Margin="0,18,0,6"
-                   TextTrimming="CharacterEllipsis" MaxLines="1" />
+        <TextBlock x:Name="TitleText" Grid.Row="1" FontSize="21" FontWeight="SemiBold" Margin="0,16,0,6"
+                   TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxLines="2" />
         <StackPanel x:Name="FocusDetails" Grid.Row="2" Spacing="3" Opacity="0">
             <TextBlock x:Name="MetadataText" FontSize="16" Foreground="{StaticResource MutedTextBrush}"
                        TextTrimming="CharacterEllipsis" MaxLines="1" />
-            <TextBlock Text="Cinemeta · Find streams" FontSize="15" Foreground="{StaticResource AccentTextBrush}" />
+            <TextBlock x:Name="TypeText" FontSize="15" Foreground="{StaticResource AccentTextBrush}" />
         </StackPanel>
     </Grid>
 </UserControl>
