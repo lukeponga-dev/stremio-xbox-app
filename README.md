@@ -83,6 +83,18 @@ The project is x64-only because current Xbox UWP development and submission no l
 
 Open `StremioXboxPrototype.sln`, select `x64` and `Local Machine`, then run without the debugger for representative memory measurements. Debugger-attached runs do not enforce Xbox's normal app memory limit.
 
+The solution includes separate `watchstream (Local Machine)` and
+`watchstream (Xbox)` launch profiles. If local deployment reports a signing
+certificate error, create and trust a current-user development certificate with:
+
+```powershell
+.\tools\Install-DevelopmentCertificate.ps1
+```
+
+The script preserves an existing PFX under `SigningTemp`, creates a certificate
+whose subject matches the package publisher, and stores its generated password
+only in the ignored `.csproj.user` file.
+
 Hot Reload is disabled in the checked-in launch profile. UWP AppContainer launches can deny Visual Studio the process access requested by its Hot Reload session, while normal managed debugging and breakpoints continue to work. If Visual Studio had the solution open before this setting was added, stop debugging and reload the project once.
 
 ## Deploy to Xbox Dev Mode

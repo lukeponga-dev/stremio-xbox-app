@@ -1,6 +1,11 @@
 {
   "profiles": {
-    "StremioXboxPrototype": {
+    "watchstream (Local Machine)": {
+      "commandName": "MsixPackage",
+      "hotReloadEnabled": false,
+      "remoteDebugEnabled": false
+    },
+    "watchstream (Xbox)": {
       "commandName": "MsixPackage",
       "hotReloadEnabled": false,
       "remoteDebugEnabled": true,
