@@ -17,8 +17,25 @@ public sealed partial class PlayerPage : Page
     private CancellationTokenSource? _opening;
     private DispatcherTimer? _overlayTimer;
     private bool _active;
+    private bool _mediaReady;
+    private bool _completed;
+    private readonly DispatcherTimer _progressTimer = new() { Interval = TimeSpan.FromSeconds(15) };
 
-    public PlayerPage() => InitializeComponent();
+    public PlayerPage()
+    {
+        InitializeComponent();
+        _progressTimer.Tick += (_, _) => SaveProgress();
+    }
+
+    private void ViewportSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var layout = TvLayout.GetViewportLayout(e.NewSize.Width, e.NewSize.Height);
+        var insets = new Thickness(layout.HorizontalInset, layout.VerticalInset,
+            layout.HorizontalInset, layout.VerticalInset);
+        StatusOverlay.Margin = ControllerHintSurface.Margin = insets;
+        StatusOverlay.MaxWidth = Math.Max(1, Math.Min(760, e.NewSize.Width - layout.HorizontalInset * 2));
+        StatusOverlay.MaxHeight = Math.Max(1, e.NewSize.Height * 0.6);
+    }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
@@ -27,6 +44,7 @@ public sealed partial class PlayerPage : Page
         var pending = e.Parameter as StreamPlaybackRequest;
         if (_request is null && pending is null) return;
         _active = true;
+        _mediaReady = _completed = false;
         var opening = new CancellationTokenSource();
         _opening = opening;
 
@@ -55,7 +73,7 @@ public sealed partial class PlayerPage : Page
                 var uri = await new StremioStreamingServiceClient().ResolveTorrentAsync(
                     pending.ServiceUri, pending.Stream, opening.Token);
                 opening.Token.ThrowIfCancellationRequested();
-                _request = new PlaybackRequest(uri, pending.Title, pending.Stream.Provider);
+                _request = new PlaybackRequest(uri, pending.Title, pending.Stream.Provider, pending.Item, pending.VideoId);
             }
             StatusText.Text = $"Loading video · {_request!.Source}";
             DiagnosticsService.Current.Info("player", $"Open {_request.Uri}");
@@ -76,6 +94,9 @@ public sealed partial class PlayerPage : Page
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
+        // Capture the final position before clearing the media source resets it.
+        SaveProgress();
+        _progressTimer.Stop();
         _active = false;
         _opening?.Cancel();
         _overlayTimer?.Stop();
@@ -98,6 +119,16 @@ public sealed partial class PlayerPage : Page
             await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
                 if (!_active) return;
+                _mediaReady = true;
+                // Resume only after the new source exposes its seek range. Match
+                // the episode as well as the title, and reject out-of-range offsets.
+                if (_request?.Item is MetaItem item && sender.PlaybackSession.CanSeek)
+                {
+                    var progress = PrototypeSettings.GetWatchProgress(item.Type, item.Id, _request.VideoId ?? item.Id);
+                    if (progress is not null && progress.PositionSeconds < sender.PlaybackSession.NaturalDuration.TotalSeconds)
+                        sender.PlaybackSession.Position = TimeSpan.FromSeconds(progress.PositionSeconds);
+                }
+                _progressTimer.Start();
                 LoadingIndicator.Visibility = Visibility.Collapsed;
                 Player.MediaPlayer.IsMuted = false;
                 Player.MediaPlayer.Volume = 1;
@@ -131,13 +162,38 @@ public sealed partial class PlayerPage : Page
 
     private void ShowFailure(string message)
     {
+        _progressTimer.Stop();
         _overlayTimer?.Stop();
         LoadingIndicator.Visibility = Visibility.Collapsed;
         StatusOverlay.Visibility = Visibility.Visible;
         StatusText.Text = $"Could not play this stream: {message}. Press B to choose another source.";
     }
 
-    private void MediaEnded(MediaPlayer sender, object args) => DiagnosticsService.Current.Info("player", "Playback ended");
+    private async void MediaEnded(MediaPlayer sender, object args)
+    {
+        DiagnosticsService.Current.Info("player", "Playback ended");
+        try
+        {
+            await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+            {
+                if (!_active) return;
+                _completed = true;
+                SaveProgress();
+                _progressTimer.Stop();
+            });
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private void SaveProgress()
+    {
+        // Manual playback-lab URLs have no catalog item and stay out of history.
+        // Failed opens must not overwrite a previously saved resume position.
+        if (!_mediaReady || _request?.Item is not MetaItem item) return;
+        var session = Player.MediaPlayer.PlaybackSession;
+        PrototypeSettings.SaveWatchProgress(item, _request.VideoId ?? item.Id,
+            session.Position.TotalSeconds, session.NaturalDuration.TotalSeconds, _completed);
+    }
     private void BufferingStarted(MediaPlaybackSession sender, object args) => DiagnosticsService.Current.Info("player", "Buffering started");
     private void BufferingEnded(MediaPlaybackSession sender, object args) => DiagnosticsService.Current.Info("player", "Buffering ended");
 

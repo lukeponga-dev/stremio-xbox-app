@@ -14,8 +14,24 @@ public sealed partial class DetailsPage : Page
     private CancellationTokenSource? _request;
     private bool _streamsLoaded;
     private bool _isOpeningStream;
+    private WatchProgress? _resume;
 
     public DetailsPage() => InitializeComponent();
+
+    private void ViewportSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var layout = TvLayout.GetViewportLayout(e.NewSize.Width, e.NewSize.Height);
+        DetailsContent.Padding = new Thickness(layout.HorizontalInset, layout.VerticalInset,
+            layout.HorizontalInset, layout.VerticalInset);
+        // Give controls the full width on the effective 960px Xbox layout; retain
+        // the decorative poster column only when it leaves enough room to read.
+        var posterWidth = Math.Clamp(e.NewSize.Width * 0.18, 180, 280);
+        PosterColumn.Width = new GridLength(layout.ShowDetailsPoster ? posterWidth : 0);
+        PosterSurface.Visibility = layout.ShowDetailsPoster ? Visibility.Visible : Visibility.Collapsed;
+        PosterSurface.Width = posterWidth;
+        PosterSurface.Height = posterWidth * 1.5;
+        DetailsScroll.Margin = new Thickness(layout.ShowDetailsPoster ? layout.ContentGap : 0, 0, 0, 0);
+    }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
@@ -23,6 +39,9 @@ public sealed partial class DetailsPage : Page
         ResetStreamOpening();
         _item = e.Parameter as MetaItem;
         if (_item is null) return;
+        // Metadata enrichment replaces the compact shelf item, so keep the saved
+        // episode identity separately before fetching the full title details.
+        _resume = _item.WatchProgress;
         ApplyItem(_item);
         UpdateLibraryButton();
         LibraryButton.Focus(FocusState.Programmatic);
@@ -60,7 +79,8 @@ public sealed partial class DetailsPage : Page
 
         EpisodePicker.Visibility = item.Videos.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         EpisodePicker.ItemsSource = item.Videos;
-        if (item.Videos.Count > 0 && EpisodePicker.SelectedIndex < 0) EpisodePicker.SelectedIndex = 0;
+        if (item.Videos.Count > 0)
+            EpisodePicker.SelectedItem = item.Videos.FirstOrDefault(video => video.Id == _resume?.VideoId) ?? item.Videos[0];
     }
 
     private void ToggleLibrary(object sender, RoutedEventArgs e)
@@ -103,7 +123,7 @@ public sealed partial class DetailsPage : Page
         LoadStreamsButton.IsEnabled = false;
         StreamStatusText.Text = $"Checking {addons.Count} provider(s) for playable streams…";
         StreamList.ItemsSource = null;
-        var videoId = (EpisodePicker.SelectedItem as VideoItem)?.Id ?? _item.Id;
+        var videoId = (EpisodePicker.SelectedItem as VideoItem)?.Id ?? _resume?.VideoId ?? _item.Id;
 
         var requests = addons.Select(addon => GetStreamsFromAddonAsync(addon, _item.Type, videoId, cancellationToken)).ToList();
 
@@ -128,7 +148,9 @@ public sealed partial class DetailsPage : Page
             _streamsLoaded = true;
             StreamStatusText.Text = playable.Count == 0
                 ? "No playable streams found. Try another episode or check your providers in Add-ons."
-                : $"{playable.Count} playable stream(s) ready.";
+                : PrototypeSettings.GetWatchProgress(_item.Type, _item.Id, videoId) is WatchProgress progress
+                    ? $"Choose a source to resume · {progress.RemainingText}."
+                    : $"{playable.Count} playable stream(s) ready.";
         }
         catch (OperationCanceledException) { }
         finally
@@ -190,7 +212,8 @@ public sealed partial class DetailsPage : Page
 
         if (stream.Resolution.Kind == StreamResolutionKind.NativeDirect && stream.Resolution.PlaybackUri is not null)
         {
-            OpenPlayer(new PlaybackRequest(stream.Resolution.PlaybackUri, _item.Name, stream.Provider));
+            OpenPlayer(new PlaybackRequest(stream.Resolution.PlaybackUri, _item.Name, stream.Provider,
+                _item, (EpisodePicker.SelectedItem as VideoItem)?.Id ?? _resume?.VideoId ?? _item.Id));
             return;
         }
 
@@ -209,7 +232,8 @@ public sealed partial class DetailsPage : Page
                 return;
             }
 
-            OpenPlayer(new StreamPlaybackRequest(stream, serviceUrl, _item.Name));
+            OpenPlayer(new StreamPlaybackRequest(stream, serviceUrl, _item.Name,
+                _item, (EpisodePicker.SelectedItem as VideoItem)?.Id ?? _resume?.VideoId ?? _item.Id));
             return;
         }
 

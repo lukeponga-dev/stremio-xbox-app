@@ -1,5 +1,21 @@
 # Design QA
 
+## Home refinement — 7 October 2026
+
+Scope: improve the native UWP Home screen using the supplied Nexa board and the review's recommendations. Existing branding and navigation remain in use.
+
+- Home shelves use larger cards, larger title/metadata text, a white focus outline, and a restrained 3% scale inside the card gutter. Motion-disabled focus retains the outline.
+- Continue Watching leads the shelves when local history exists. Real progress bars and time remaining appear without requiring focus. First-run history stays hidden.
+- Playback saves position every 15 seconds and on leaving the player. Selecting a title returns to its details and remembered episode, requests fresh provider sources, and resumes when the chosen source supports seeking. Completion removes the title. Playback-lab URLs do not enter history.
+- Saved progress stays usable while public catalogs load or fail. The Home header provides Refresh for recovery.
+- History stores a compact title snapshot per entry, bounded to twelve titles, without retaining playback URLs.
+
+Validation: unsigned x64 Debug build passed; all 20 watch-history/TV-layout checks passed against production settings, serialization, and layout logic using an in-memory storage adapter. XAML XML parsing and diff whitespace checks passed. Signed packaging fails on the pre-existing local signing certificate.
+
+Visual/controller validation remains blocked: this session cannot control or capture native Windows applications. The supplied board was inspected, but a matching runtime screenshot and hardware controller checks could not be produced. Verify sofa-distance readability, focus restoration, shelf scrolling, episode selection, seekable resume, and completed-title removal on Xbox before release.
+
+final result: blocked (runtime visual verification)
+
 ## TV update — 5 October 2026
 
 The current TV brief supersedes the compact desktop reference below.

@@ -117,6 +117,67 @@ public static class PrototypeSettings
 
     public static bool IsInLibrary(string id) => GetLibrary().Any(item => item.Id == id);
 
+    private static ApplicationDataContainer WatchHistory =>
+        ApplicationData.Current.LocalSettings.CreateContainer("WatchHistory", ApplicationDataCreateDisposition.Always);
+
+    public static IReadOnlyList<WatchProgress> GetWatchHistory()
+    {
+        // Ignore corrupt or incomplete entries independently so one bad value
+        // cannot hide the rest of the shelf. Very short starts are not history.
+        var history = new List<WatchProgress>();
+        foreach (var value in WatchHistory.Values.Values.OfType<string>())
+        {
+            try
+            {
+                var progress = JsonSerializer.Deserialize(value, StremioJsonContext.Default.WatchProgress);
+                if (progress?.Item is not null && !string.IsNullOrWhiteSpace(progress.Item.Id) &&
+                    !string.IsNullOrWhiteSpace(progress.VideoId) && double.IsFinite(progress.PositionSeconds) &&
+                    double.IsFinite(progress.DurationSeconds) && progress.PositionSeconds >= 10 &&
+                    progress.DurationSeconds > progress.PositionSeconds && progress.Percent < 95)
+                    history.Add(progress);
+            }
+            catch (JsonException) { }
+        }
+        return history.OrderByDescending(item => item.UpdatedAt).Take(12).ToList();
+    }
+
+    public static WatchProgress? GetWatchProgress(string type, string id, string videoId) =>
+        GetWatchHistory().FirstOrDefault(progress => progress.Item.Type == type &&
+            progress.Item.Id == id && progress.VideoId == videoId);
+
+    public static void SaveWatchProgress(MetaItem item, string videoId, double position, double duration, bool completed = false)
+    {
+        // Store only title identity and artwork, never expiring or credential-bearing
+        // stream URLs. One bounded value per title avoids LocalSettings' string limit.
+        try
+        {
+            // Key by title rather than episode: a series occupies one shelf card,
+            // while VideoId remembers which episode should resume.
+            var key = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+                System.Text.Encoding.UTF8.GetBytes($"{item.Type}/{item.Id}")));
+            if (!double.IsFinite(position) || !double.IsFinite(duration)) return;
+            // Treat the final 5% as finished to avoid keeping end credits on Home.
+            // The explicit flag also handles players that reset position at EOF.
+            if (completed || (duration > 0 && position / duration >= 0.95))
+            {
+                WatchHistory.Values.Remove(key);
+                return;
+            }
+            // Preserve previous progress when opening fails or duration is unknown.
+            if (position < 10 || duration <= position) return;
+            var snapshot = new MetaItem { Id = item.Id, Type = item.Type, Name = item.Name,
+                Poster = item.Poster, ReleaseInfo = item.ReleaseInfo };
+            var progress = new WatchProgress(snapshot, videoId, position, duration, DateTimeOffset.UtcNow);
+            WatchHistory.Values[key] = JsonSerializer.Serialize(progress, StremioJsonContext.Default.WatchProgress);
+            // Prune storage as well as the displayed list to keep history bounded.
+            var keep = GetWatchHistory().Select(entry => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+                System.Text.Encoding.UTF8.GetBytes($"{entry.Item.Type}/{entry.Item.Id}")))).ToHashSet();
+            foreach (var stale in WatchHistory.Values.Keys.Where(value => !keep.Contains(value)).ToList())
+                WatchHistory.Values.Remove(stale);
+        }
+        catch (Exception exception) { DiagnosticsService.Current.Warn("watch-history", "Could not save progress: " + exception.Message); }
+    }
+
     public static bool ToggleLibrary(MetaItem item)
     {
         var library = GetLibrary().ToList();
