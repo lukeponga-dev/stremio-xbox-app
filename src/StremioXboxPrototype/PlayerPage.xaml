@@ -6,18 +6,18 @@
         <MediaPlayerElement x:Name="Player" AreTransportControlsEnabled="True"
                             AutoPlay="True" Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
 
-        <Grid x:Name="LoadingArtwork" Background="#100E19" IsHitTestVisible="False">
+        <Grid x:Name="LoadingArtwork" Background="#0D0D0F" IsHitTestVisible="False">
             <Image x:Name="LoadingBackdrop" Stretch="UniformToFill" Opacity="0.45" />
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="700" Spacing="24">
-                <TextBlock x:Name="LoadingTitle" FontSize="48" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" />
+                <TextBlock x:Name="LoadingTitle" FontFamily="{StaticResource HeadingFont}" FontSize="48" CharacterSpacing="-20" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" />
                 <ProgressRing x:Name="ArtworkSpinner" IsActive="True" Width="40" Height="40" />
             </StackPanel>
         </Grid>
         <Button Content="Back to sources" Click="BackToSources" HorizontalAlignment="Left" VerticalAlignment="Top"
                 Margin="48,16" AutomationProperties.Name="Back to sources" />
 
-        <Border x:Name="StatusOverlay" Background="#EC0E101A" BorderBrush="#458F5BFF"
-                BorderThickness="1" CornerRadius="14" Padding="20,18"
+        <Border x:Name="StatusOverlay" Background="{StaticResource GlassBrush}" BorderBrush="#26C9A8FF"
+                BorderThickness="1" CornerRadius="16" Padding="24"
                 HorizontalAlignment="Left" VerticalAlignment="Top" Margin="48,80,48,32" MaxWidth="760">
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
             <Grid>
@@ -29,7 +29,7 @@
                 <StackPanel Grid.Column="1" Margin="16,0,0,0">
                     <TextBlock Text="NOW PLAYING" FontSize="16" FontWeight="SemiBold" CharacterSpacing="100"
                                Foreground="{StaticResource AccentTextBrush}" Margin="0,0,0,5" />
-                    <TextBlock x:Name="TitleText" FontSize="26" FontWeight="SemiBold" TextWrapping="Wrap" />
+                    <TextBlock x:Name="TitleText" FontFamily="{StaticResource HeadingFont}" FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap" />
                     <ProgressBar x:Name="LoadingIndicator" IsIndeterminate="True" Margin="0,12,0,0" />
             <TextBlock x:Name="StatusText" Text="Opening media…" FontSize="20" Margin="0,6,0,0"
                            Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />

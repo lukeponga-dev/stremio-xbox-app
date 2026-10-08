@@ -7,9 +7,9 @@
         <Rectangle>
             <Rectangle.Fill>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                    <GradientStop Color="#FA080A12" Offset="0" />
-                    <GradientStop Color="#E6080A12" Offset="0.55" />
-                    <GradientStop Color="#F2080A12" Offset="1" />
+                    <GradientStop Color="#FA0D0D0F" Offset="0" />
+                    <GradientStop Color="#BF0D0D0F" Offset="0.55" />
+                    <GradientStop Color="#F20D0D0F" Offset="1" />
                 </LinearGradientBrush>
             </Rectangle.Fill>
         </Rectangle>
@@ -37,7 +37,7 @@
                         <TextBlock Text="STREMIO TITLE" FontSize="16" FontWeight="SemiBold" CharacterSpacing="100"
                                    Foreground="{StaticResource AccentTextBrush}" />
                     </Border>
-                    <TextBlock x:Name="TitleText" FontSize="48" FontWeight="SemiBold" TextWrapping="Wrap" MaxLines="2" />
+                    <TextBlock x:Name="TitleText" FontFamily="{StaticResource HeadingFont}" FontSize="48" CharacterSpacing="-20" FontWeight="SemiBold" TextWrapping="Wrap" MaxLines="2" />
                     <TextBlock x:Name="SubtitleText" FontSize="19" FontWeight="SemiBold"
                                Foreground="{StaticResource AccentTextBrush}" TextWrapping="Wrap" />
                     <TextBlock x:Name="DescriptionText" FontSize="20" LineHeight="30" TextWrapping="Wrap" />

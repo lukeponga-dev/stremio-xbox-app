@@ -96,7 +96,7 @@ public sealed partial class PosterCard : UserControl
         _animation?.Stop();
         // Keep the zoom inside the card gutter; the purple outline supplies the
         // main focus cue and remains visible when animation is disabled.
-        var to = focused && PrototypeSettings.GetPosterAnimationsEnabled() ? 1.03 : 1;
+        var to = focused && PrototypeSettings.GetPosterAnimationsEnabled() ? 1.04 : 1;
         if (!PrototypeSettings.GetPosterAnimationsEnabled())
         {
             PosterScale.ScaleX = PosterScale.ScaleY = to;

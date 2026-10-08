@@ -11,15 +11,15 @@
         </Grid.RowDefinitions>
         <Grid x:Name="PosterFrame" Width="216" Height="324" RenderTransformOrigin="0.5,0.5">
             <Grid.RenderTransform><ScaleTransform x:Name="PosterScale" /></Grid.RenderTransform>
-            <Border x:Name="FocusGlow" Margin="-5" CornerRadius="20" Background="{StaticResource AccentBrush}" Opacity="0" />
-            <Border x:Name="Artwork" CornerRadius="14" Background="{StaticResource PanelBrush}">
+            <Border x:Name="FocusGlow" Margin="-5" CornerRadius="20" Background="{StaticResource FocusBloomBrush}" Opacity="0" />
+            <Border x:Name="Artwork" CornerRadius="16" BorderThickness="1" BorderBrush="#14FFFFFF" Background="{StaticResource PanelBrush}">
                 <TextBlock x:Name="FallbackTitle" TextWrapping="Wrap" TextAlignment="Center" FontSize="22"
                            VerticalAlignment="Center" Margin="16" Foreground="{StaticResource MutedTextBrush}" />
             </Border>
             <ProgressBar x:Name="WatchProgressBar" Visibility="Collapsed" VerticalAlignment="Bottom" Margin="10,0,10,12"
                          Height="8" Minimum="0" Maximum="100" Foreground="{StaticResource AccentTextBrush}" Background="#CC100E20" />
         </Grid>
-        <TextBlock x:Name="TitleText" Grid.Row="1" FontSize="23" FontWeight="SemiBold" Margin="0,12,0,6" MinHeight="62"
+        <TextBlock x:Name="TitleText" Grid.Row="1" FontFamily="{StaticResource HeadingFont}" FontSize="22" FontWeight="SemiBold" Margin="0,12,0,6" MinHeight="62"
                    TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxLines="2" />
         <StackPanel x:Name="FocusDetails" Grid.Row="2" Spacing="3" Visibility="Collapsed">
             <TextBlock x:Name="MetadataText" FontSize="20" Foreground="{StaticResource MutedTextBrush}"
@@ -27,6 +27,6 @@
             <TextBlock x:Name="TypeText" FontSize="18" TextTrimming="CharacterEllipsis" Foreground="{StaticResource AccentTextBrush}" />
         </StackPanel>
         <Border x:Name="FocusOutline" Grid.RowSpan="3" Margin="-8,-10,-8,-6" CornerRadius="18"
-                BorderBrush="{StaticResource AccentTextBrush}" BorderThickness="4" Opacity="0" IsHitTestVisible="False" />
+                BorderBrush="{StaticResource AccentBrush}" BorderThickness="4" Opacity="0" IsHitTestVisible="False" />
     </Grid>
 </UserControl>

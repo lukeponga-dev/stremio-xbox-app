@@ -36,10 +36,7 @@
                         <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
                         <RowDefinition Height="*" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <Image Width="36" Height="36" HorizontalAlignment="Center" AutomationProperties.Name="Stremio">
-                        <Image.Source><SvgImageSource UriSource="ms-appx:///Assets/StremioSymbol.svg" /></Image.Source>
-                    </Image>
-                    <StackPanel Grid.Row="1" Spacing="6" Margin="0,24,0,0">
+                    <StackPanel Grid.Row="1" Spacing="6">
                         <Button x:Name="HomeButton" Style="{StaticResource SelectedNavButtonStyle}" Click="ShowHome">
                             <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE80F;" FontSize="22" /><TextBlock Text="Home" VerticalAlignment="Center" /></StackPanel>
                         </Button>
@@ -72,7 +69,7 @@
                 <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                 <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition x:Name="HeaderActionsColumn" Width="Auto" /></Grid.ColumnDefinitions>
                 <StackPanel x:Name="HeaderText" Spacing="6" Margin="0,0,24,0">
-                    <TextBlock x:Name="PageTitle" Text="Home" FontSize="36" FontWeight="SemiBold" />
+                    <TextBlock x:Name="PageTitle" Text="Home" FontFamily="{StaticResource HeadingFont}" FontSize="40" LineHeight="48" CharacterSpacing="-20" FontWeight="SemiBold" />
                     <TextBlock x:Name="PageSubtitle" Text="Pick up where you left off or find your next favourite" FontSize="20" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
                 </StackPanel>
                 <StackPanel x:Name="HeaderActions" Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
@@ -403,7 +400,7 @@
                 <ScrollViewer x:Name="SettingsPanel" Visibility="Collapsed">
                     <StackPanel Spacing="24">
                         <TextBlock Text="Display and accessibility" Style="{StaticResource SectionTitleStyle}" />
-                        <ToggleSwitch x:Name="PosterAnimationsToggle" Header="Animate focused posters" OnContent="3% focus zoom" OffContent="Border only" Toggled="PosterAnimationsChanged" FontSize="20" />
+                        <ToggleSwitch x:Name="PosterAnimationsToggle" Header="Animate focused posters" OnContent="4% focus zoom" OffContent="Border only" Toggled="PosterAnimationsChanged" FontSize="20" />
                         <TextBlock Text="Turn off zoom animations if you prefer less motion. The bright focus border remains visible." FontSize="20" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
                         <Button Content="Manage Stremio account" Style="{StaticResource TvButtonStyle}" Click="ShowAccount" />
                         <TextBlock Text="Advanced" Style="{StaticResource SectionTitleStyle}" Margin="0,12,0,0" />
