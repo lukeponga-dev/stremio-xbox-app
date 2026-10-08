@@ -3,6 +3,26 @@ using StremioXboxPrototype.Services;
 using Windows.Storage;
 
 var checks = 0;
+var candidatesByReliability = new[]
+{
+    new StreamItem { Title = "Seeders: 0 100 MB", Resolution = StreamResolution.Service("torrent") },
+    new StreamItem { Title = "Unknown 200 MB", Resolution = StreamResolution.Service("torrent") },
+    new StreamItem { Title = "Seeders: 5 400 MB", Resolution = StreamResolution.Service("torrent") },
+    new StreamItem { Title = "Seeders: 50 2 GB", Resolution = StreamResolution.Service("torrent") },
+    new StreamItem { Title = "Seeders: 50 1 GB", Resolution = StreamResolution.Service("torrent") },
+    new StreamItem { Title = "Direct 3 GB", Resolution = StreamResolution.Direct(new Uri("https://example.test/video.mp4")) }
+};
+Check(StreamPlaybackOrder.Order(candidatesByReliability).Select(s => s.Title).SequenceEqual(new[]
+{
+    "Direct 3 GB", "Seeders: 50 1 GB", "Seeders: 50 2 GB", "Seeders: 5 400 MB", "Unknown 200 MB", "Seeders: 0 100 MB"
+}), "Playback ranking prefers direct sources, healthy swarms, then size; unknown peers precede zero peers");
+Check(StreamPlaybackOrder.Order(Array.Empty<StreamItem>()).Count() == 0, "Empty stream list sorts safely");
+Check(StreamFileSize.Read(new StreamItem { Description = "1080p 👤 400 💾 1.5 GB" }) == 1500000000, "Reads add-on file size without confusing seeders or resolution");
+Check(StreamFileSize.Read(new StreamItem { Title = "900 MiB" }) == 943718400, "Converts binary file-size units");
+Check(StreamFileSize.Read(new StreamItem { Title = "2 GB", BehaviorHints = new StreamBehaviorHints { VideoSize = 123 } }) == 123, "Structured size takes precedence");
+Check(StreamFileSize.Read(new StreamItem { Title = "1080p 5.1" }) is null, "Missing sizes remain unknown");
+var sizes = new[] { new StreamItem { Title = "Unknown" }, new StreamItem { Title = "2 GB" }, new StreamItem { Title = "900 MB" } };
+Check(sizes.OrderBy(s => StreamFileSize.Read(s) ?? long.MaxValue).Select(s => s.Title).SequenceEqual(new[] { "900 MB", "2 GB", "Unknown" }), "Smallest streams precede larger and unknown sizes");
 using (var guess = System.Text.Json.JsonDocument.Parse("{}"))
 {
     var create = new StremioTorrentCreateRequest

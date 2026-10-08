@@ -6,6 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../src/StremioXboxPrototype/Services/StreamPlaybackOrder.cs" Link="StreamPlaybackOrder.cs" />
+    <Compile Include="../../src/StremioXboxPrototype/Services/StreamSeederCount.cs" Link="StreamSeederCount.cs" />
+    <Compile Include="../../src/StremioXboxPrototype/Services/StreamFileSize.cs" Link="StreamFileSize.cs" />
     <Compile Include="../../src/StremioXboxPrototype/Models/StremioModels.cs" Link="StremioModels.cs" />
     <Compile Include="../../src/StremioXboxPrototype/Models/StremioJsonContext.cs" Link="StremioJsonContext.cs" />
     <Compile Include="../../src/StremioXboxPrototype/Services/PrototypeSettings.cs" Link="PrototypeSettings.cs" />

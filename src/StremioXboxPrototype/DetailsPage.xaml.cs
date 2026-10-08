@@ -185,8 +185,7 @@ public sealed partial class DetailsPage : Page
         return status;
     }
 
-    private static List<StreamItem> OrderAndDeduplicateStreams(IEnumerable<StreamItem> streams) => streams
-        .OrderByDescending(stream => StreamSeederCount.Read(stream.AdditionalSources, stream.Description, stream.Title, stream.Name))
+    private static List<StreamItem> OrderAndDeduplicateStreams(IEnumerable<StreamItem> streams) => StreamPlaybackOrder.Order(streams)
         .GroupBy(StreamIdentity, StringComparer.OrdinalIgnoreCase)
         .Select(group => group.First())
         .ToList();
