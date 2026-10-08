@@ -854,7 +854,7 @@ public sealed partial class MainPage : Page
         LibraryGrid.ItemsSource = items;
         EmptyLibraryText.Visibility = items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         SetSelectedNavigation(LibraryNavButton);
-        ShowPanel(LibraryPanel, "My library", "Titles saved locally on this Xbox prototype");
+        ShowPanel(LibraryPanel, "My library", "Titles saved locally on this Xbox");
     }
 
     private void ShowPlaybackLab(object sender, RoutedEventArgs e)

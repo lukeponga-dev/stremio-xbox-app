@@ -240,7 +240,7 @@ public sealed partial class DetailsPage : Page
         await new ContentDialog
         {
             Title = "Stream is not native-direct",
-            Content = stream.Resolution.Label + ". This prototype deliberately does not process torrents, archives, external pages, or proxy-header streams on the console.",
+            Content = stream.Resolution.Label + ". This source cannot be played directly on Xbox. Choose a native stream or configure a compatible Stremio Service, then try again.",
             CloseButtonText = "Choose another stream"
         }.ShowAsync();
         ResetStreamOpening();

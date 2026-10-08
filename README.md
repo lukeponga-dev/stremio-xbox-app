@@ -39,7 +39,7 @@ The Rust core is not binary-linked yet because upstream has no supported UWP/.NE
 - Torrent, NZB, archive processing, or transcoding on the console.
 - A bundled third-party stream provider.
 - Proxy/header rewriting, YouTube embedding, or external web playback.
-- Store-ready identity, artwork, signing, age rating, or policy approval.
+- Store approval, age-rating answers, and policy review remain external release steps.
 
 These omissions preserve the proposal's feasibility boundary.
 
@@ -115,7 +115,7 @@ console address. If deployment reports `DEP6957` with `0x8007274D`, reopen the
 Remote Connections dialog, select the Xbox again, and confirm Dev Home still has
 remote access enabled before requesting a fresh pairing PIN.
 
-For a Device Portal package, use Visual Studio's **Publish → Create App Packages** flow and create a sideload package signed by a certificate trusted on the console. The checked-in publisher identity and template artwork are placeholders.
+For a Device Portal package, use Visual Studio's **Publish → Create App Packages** flow and create a sideload package signed by a certificate trusted on the console. The package identity is tied to the existing Partner Center product; do not change it without creating a new Store product. Store listing copy and artwork are maintained under `store-assets`.
 
 A Debug MSIX can be produced without NativeAOT. Release packaging enables NativeAOT and therefore requires the C++ linker workload.
 
@@ -123,7 +123,7 @@ A Debug MSIX can be produced without NativeAOT. Release packaging enables Native
 
 The checked-in package is configured for Xbox Dev Mode deployment: it is x64, controller-first, has internet/private-network capabilities, uses the full display with internal content spacing, and exposes platform transport controls. The player also supports **B** to return and **X** to mute or unmute audio.
 
-Before distribution beyond Dev Mode, replace the placeholder identity, certificates, and artwork; complete age ratings and Store policy review; and pass every item in [docs/validation.md](docs/validation.md) on the supported Xbox hardware tiers. The app must not be described as Store-ready until those external release requirements are complete.
+Before distribution beyond Dev Mode, complete the age-rating questionnaire, Store policy review, privacy/support listing links, and every item in [docs/validation.md](docs/validation.md) on the supported Xbox hardware tiers. The app must not be described as Store-ready until those external release requirements are complete.
 
 ## Exercise the prototype
 

@@ -29,7 +29,10 @@ if (-not $visualStudioPath) {
     throw 'Visual Studio with the Universal Windows Platform workload was not found.'
 }
 
-$msbuildPath = Join-Path $visualStudioPath 'MSBuild\Current\Bin\MSBuild.exe'
+$msbuildPath = Join-Path $visualStudioPath 'MSBuild\Current\Bin\amd64\MSBuild.exe'
+if (-not (Test-Path -LiteralPath $msbuildPath)) {
+    $msbuildPath = Join-Path $visualStudioPath 'MSBuild\Current\Bin\MSBuild.exe'
+}
 if (-not (Test-Path -LiteralPath $msbuildPath)) {
     throw "MSBuild was not found at $msbuildPath."
 }
@@ -54,6 +57,8 @@ Write-Host "Building watchstream $packageVersion for Microsoft Store (Release, x
     '/p:UapAppxPackageBuildMode=StoreOnly' `
     '/p:AppxBundle=Never' `
     '/p:AppxPackageSigningEnabled=false' `
+    '/nr:false' `
+    '/m:1' `
     "/p:AppxPackageDir=$outputDirectory\"
 
 if ($LASTEXITCODE -ne 0) {
