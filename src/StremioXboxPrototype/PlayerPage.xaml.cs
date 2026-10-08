@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.Http;
 using StremioXboxPrototype.Models;
 using StremioXboxPrototype.Services;
 using Windows.Media.Core;
@@ -7,11 +8,13 @@ using Windows.System;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
+using Windows.UI.Xaml.Media.Imaging;
 
 namespace StremioXboxPrototype;
 
 public sealed partial class PlayerPage : Page
 {
+    private static readonly HttpClient MediaProbe = new() { Timeout = Timeout.InfiniteTimeSpan };
     private readonly Stopwatch _openTimer = new();
     private PlaybackRequest? _request;
     private CancellationTokenSource? _opening;
@@ -36,7 +39,8 @@ public sealed partial class PlayerPage : Page
         var layout = TvLayout.GetViewportLayout(e.NewSize.Width, e.NewSize.Height);
         var insets = new Thickness(layout.HorizontalInset, layout.VerticalInset,
             layout.HorizontalInset, layout.VerticalInset);
-        StatusOverlay.Margin = ControllerHintSurface.Margin = insets;
+        ControllerHintSurface.Margin = insets;
+        StatusOverlay.Margin = new Thickness(insets.Left, insets.Top + 64, insets.Right, insets.Bottom);
         StatusOverlay.MaxWidth = Math.Max(1, Math.Min(760, e.NewSize.Width - layout.HorizontalInset * 2));
         StatusOverlay.MaxHeight = Math.Max(1, e.NewSize.Height * 0.6);
     }
@@ -53,6 +57,12 @@ public sealed partial class PlayerPage : Page
         _opening = opening;
 
         TitleText.Text = pending?.Title ?? _request!.Title;
+        LoadingTitle.Text = TitleText.Text;
+        var artwork = pending?.Item?.Background ?? _request?.Item?.Background;
+        LoadingBackdrop.Source = Uri.TryCreate(artwork, UriKind.Absolute, out var artworkUri)
+            ? new BitmapImage(artworkUri) : null;
+        LoadingArtwork.Visibility = Visibility.Visible;
+        ArtworkSpinner.IsActive = true;
         StatusOverlay.Visibility = Visibility.Visible;
         LoadingIndicator.Visibility = Visibility.Visible;
         SetLoadingStage(pending is not null
@@ -82,10 +92,28 @@ public sealed partial class PlayerPage : Page
                 _request = new PlaybackRequest(uri, pending.Title, pending.Stream.Provider, pending.Item, pending.VideoId);
             }
             SetLoadingStage($"Opening video · {_request!.Source}");
+            using (var probeTimeout = CancellationTokenSource.CreateLinkedTokenSource(opening.Token))
+            {
+                probeTimeout.CancelAfter(TimeSpan.FromSeconds(45));
+                using var probeRequest = new HttpRequestMessage(HttpMethod.Get, _request.Uri);
+                probeRequest.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(0, 0);
+                using var probeResponse = await MediaProbe.SendAsync(probeRequest,
+                    HttpCompletionOption.ResponseHeadersRead, probeTimeout.Token);
+                if (!probeResponse.IsSuccessStatusCode)
+                    throw new HttpRequestException($"Media server returned HTTP {(int)probeResponse.StatusCode} ({probeResponse.ReasonPhrase})");
+                var mediaType = probeResponse.Content.Headers.ContentType?.MediaType;
+                if (mediaType is "text/html" or "application/json" or "application/xml")
+                    throw new InvalidDataException($"The URL returned {mediaType} instead of playable media");
+            }
+            opening.Token.ThrowIfCancellationRequested();
             DiagnosticsService.Current.Info("player", $"Open media from {_request.Uri.Host}");
             Player.Source = MediaSource.CreateFromUri(_request.Uri);
         }
         catch (OperationCanceledException) when (opening.IsCancellationRequested) { }
+        catch (OperationCanceledException)
+        {
+            if (_active) ShowFailure("The server did not return media headers within 45 seconds. Try another source or check the streaming server");
+        }
         catch (Exception exception)
         {
             if (_active) ShowFailure(exception.Message);
@@ -128,6 +156,8 @@ public sealed partial class PlayerPage : Page
             {
                 if (!_active) return;
                 _mediaReady = true;
+                LoadingArtwork.Visibility = Visibility.Collapsed;
+                ArtworkSpinner.IsActive = false;
                 _loadingTimer.Stop();
                 // Resume only after the new source exposes its seek range. Match
                 // the episode as well as the title, and reject out-of-range offsets.
@@ -151,13 +181,16 @@ public sealed partial class PlayerPage : Page
 
     private async void MediaFailed(MediaPlayer sender, MediaPlayerFailedEventArgs args)
     {
-        DiagnosticsService.Current.Error("player", $"{args.Error}: {args.ErrorMessage}");
-        _loadingTimer.Stop();
+        var detail = string.IsNullOrWhiteSpace(args.ErrorMessage)
+            ? args.Error.ToString()
+            : $"{args.Error} ({args.ErrorMessage})";
+        var source = _request?.Uri.AbsoluteUri ?? "unknown source";
+        DiagnosticsService.Current.Error("player", $"Media failed: {detail}; source={source}");
         try
         {
             await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
-                if (_active) ShowFailure(args.ErrorMessage);
+                if (_active) ShowFailure(detail);
             });
         }
         catch (OperationCanceledException) { }
@@ -165,9 +198,13 @@ public sealed partial class PlayerPage : Page
 
     private void ShowFailure(string message)
     {
+        // Callers marshal failures to the UI thread before touching XAML timers.
         _loadingTimer.Stop();
         _progressTimer.Stop();
         _overlayTimer?.Stop();
+        _active = false;
+        _mediaReady = false;
+        ArtworkSpinner.IsActive = false;
         LoadingIndicator.Visibility = Visibility.Collapsed;
         StatusOverlay.Visibility = Visibility.Visible;
         StatusText.Text = $"Could not play this stream: {message}. Press B to choose another source.";
@@ -201,30 +238,56 @@ public sealed partial class PlayerPage : Page
             session.Position.TotalSeconds, session.NaturalDuration.TotalSeconds, _completed);
     }
 
-    private void BufferingStarted(MediaPlaybackSession sender, object args)
+    private async void BufferingStarted(MediaPlaybackSession sender, object args)
     {
         DiagnosticsService.Current.Info("player", "Buffering started");
+        await RunPlaybackUiAsync(() =>
+        {
         if (!_active) return;
         LoadingIndicator.Visibility = Visibility.Visible;
         ShowPlayerMessage("Buffering…", hideAutomatically: false);
+        });
     }
 
-    private void BufferingEnded(MediaPlaybackSession sender, object args)
+    private async void BufferingEnded(MediaPlaybackSession sender, object args)
     {
         DiagnosticsService.Current.Info("player", "Buffering ended");
+        await RunPlaybackUiAsync(() =>
+        {
         if (!_active || _completed) return;
         LoadingIndicator.Visibility = Visibility.Collapsed;
         StatusText.Text = "Playing";
         HideOverlaySoon();
+        });
     }
 
-    private void PlaybackStateChanged(MediaPlaybackSession sender, object args)
+    private async void PlaybackStateChanged(MediaPlaybackSession sender, object args)
     {
+        await RunPlaybackUiAsync(() =>
+        {
         if (!_active || _completed) return;
         if (sender.PlaybackState == MediaPlaybackState.Playing)
             StatusText.Text = "Playing";
         else if (sender.PlaybackState == MediaPlaybackState.Paused)
             ShowPlayerMessage("Paused", hideAutomatically: false);
+        });
+    }
+
+    private async Task RunPlaybackUiAsync(Action update)
+    {
+        try
+        {
+            await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+            {
+                if (_active) update();
+            });
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private void BackToSources(object sender, RoutedEventArgs e)
+    {
+        if (Frame.CanGoBack) Frame.GoBack();
     }
 
     private void PlayerPageKeyDown(object sender, Windows.UI.Xaml.Input.KeyRoutedEventArgs e)

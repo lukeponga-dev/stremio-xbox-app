@@ -13,6 +13,34 @@ public static class PrototypeSettings
     private const string LibraryKey = "Library";
     private const string StreamingServiceUrlKey = "StreamingServiceUrl";
     private const string PosterAnimationsKey = "PosterAnimations";
+    private const string StreamingCacheKey = "StreamingCache";
+    private const string LocalFilesAddonKey = "LocalFilesAddon";
+    private const string RemoteHttpsKey = "RemoteHttps";
+    private const string TorrentProfileKey = "TorrentProfile";
+
+    public static string GetStreamingCache() =>
+        ApplicationData.Current.LocalSettings.Values[StreamingCacheKey] as string ?? "2GB";
+
+    public static void SetStreamingCache(string value) =>
+        ApplicationData.Current.LocalSettings.Values[StreamingCacheKey] = value;
+
+    public static bool GetLocalFilesAddonEnabled() =>
+        ApplicationData.Current.LocalSettings.Values[LocalFilesAddonKey] as bool? ?? false;
+
+    public static void SetLocalFilesAddonEnabled(bool enabled) =>
+        ApplicationData.Current.LocalSettings.Values[LocalFilesAddonKey] = enabled;
+
+    public static string GetRemoteHttpsMode() =>
+        ApplicationData.Current.LocalSettings.Values[RemoteHttpsKey] as string ?? "Disabled";
+
+    public static void SetRemoteHttpsMode(string value) =>
+        ApplicationData.Current.LocalSettings.Values[RemoteHttpsKey] = value;
+
+    public static string GetTorrentProfile() =>
+        ApplicationData.Current.LocalSettings.Values[TorrentProfileKey] as string ?? "Default";
+
+    public static void SetTorrentProfile(string value) =>
+        ApplicationData.Current.LocalSettings.Values[TorrentProfileKey] = value;
 
     public static bool GetPosterAnimationsEnabled() =>
         ApplicationData.Current.LocalSettings.Values[PosterAnimationsKey] as bool? ?? true;

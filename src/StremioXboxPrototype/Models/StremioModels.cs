@@ -304,6 +304,9 @@ public sealed class StreamItem
     [JsonPropertyName("sources")]
     public List<string> Sources { get; set; } = new();
 
+    [JsonPropertyName("announce")]
+    public List<string> Announce { get; set; } = new();
+
     [JsonPropertyName("nzbUrl")]
     public string? NzbUrl { get; set; }
 
@@ -380,11 +383,24 @@ public sealed class StreamSource
 
 public sealed class StremioTorrentCreateRequest
 {
+    [JsonPropertyName("torrent")]
+    public StremioTorrentIdentity Torrent { get; set; } = new();
+
+    [JsonPropertyName("guessFileIdx")]
+    public JsonElement GuessFileIdx { get; set; }
+
     [JsonPropertyName("peerSearch")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public StremioPeerSearch? PeerSearch { get; set; }
 
     [JsonPropertyName("fileMustInclude")]
     public List<string>? FileMustInclude { get; set; }
+}
+
+public sealed class StremioTorrentIdentity
+{
+    [JsonPropertyName("infoHash")]
+    public string InfoHash { get; set; } = "";
 }
 
 public sealed class StremioPeerSearch

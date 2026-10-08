@@ -219,7 +219,7 @@
                         <TextBlock Text="Exercise the native Xbox media pipeline with a direct HTTP(S) URL."
                                    FontSize="22" TextWrapping="Wrap" />
                         <TextBox x:Name="DirectUrlBox" Header="Media URL"
-                                 Text="https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" />
+                                 Text="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" />
                         <Button Content="Play direct stream" Style="{StaticResource PrimaryButtonStyle}"
                                 Width="260" Click="PlayDirectUrl" />
                         <Border Background="{StaticResource PanelBrush}" CornerRadius="10" Padding="22" Margin="0,18,0,0">
@@ -284,26 +284,82 @@
                 </ScrollViewer>
 
                 <ScrollViewer x:Name="ServerPanel" Visibility="Collapsed">
-                    <StackPanel HorizontalAlignment="Stretch" Spacing="20">
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <Image Width="38" Height="38" Stretch="Uniform" AutomationProperties.Name="Stremio Service">
-                                <Image.Source>
-                                    <SvgImageSource UriSource="ms-appx:///Assets/StremioSymbol.svg" />
-                                </Image.Source>
-                            </Image>
-                            <TextBlock Text="Connect your Stremio server" FontSize="25" FontWeight="SemiBold" VerticalAlignment="Center" />
-                        </StackPanel>
-                        <TextBlock Text="Your server handles torrent-backed playback. Enter its network address below."
-                                   FontSize="19" TextWrapping="Wrap" />
-                        <TextBox x:Name="StreamingServiceUrlBox" Header="Streaming service URL"
-                                 PlaceholderText="http://192.168.1.105:11470/" />
-                        <TextBlock x:Name="ServerConnectionState" Text="Server: checking…" FontSize="22" FontWeight="SemiBold" />
-                        <Button x:Name="ConnectServerButton" Content="Connect and save" Style="{StaticResource PrimaryButtonStyle}"
-                                Width="290" Click="SaveStreamingService" />
-                        <TextBlock x:Name="StreamingServiceStatus" FontSize="18"
-                                   Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
-                        <Button Content="Disconnect server" Style="{StaticResource TvButtonStyle}" Click="DisconnectServer" />
-                        <TextBlock Text="Keep your streaming server running and your Xbox on the same local network. Open a title to load sources automatically, then select a source to play." FontSize="20" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
+                    <StackPanel HorizontalAlignment="Stretch" Spacing="22">
+                        <TextBlock Text="Streaming" FontSize="32" FontWeight="SemiBold" />
+                        <Grid ColumnSpacing="30" RowSpacing="18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="300" />
+                                <ColumnDefinition Width="300" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Text="Caching" FontSize="20" VerticalAlignment="Center" />
+                            <ComboBox x:Name="StreamingCacheCombo" Grid.Column="1" Width="180" HorizontalAlignment="Left"
+                                      SelectionChanged="StreamingCacheChanged" AutomationProperties.Name="Caching">
+                                <ComboBoxItem Content="512MB" />
+                                <ComboBoxItem Content="1GB" />
+                                <ComboBoxItem Content="2GB" />
+                                <ComboBoxItem Content="4GB" />
+                            </ComboBox>
+
+                            <TextBlock Grid.Row="1" Text="Enable the local files add-on (requires restart)" FontSize="20"
+                                       Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center" />
+                            <ToggleSwitch x:Name="LocalFilesAddonToggle" Grid.Row="1" Grid.Column="1"
+                                          HorizontalAlignment="Left" Toggled="LocalFilesAddonChanged"
+                                          AutomationProperties.Name="Enable local files add-on" />
+
+                            <TextBlock Grid.Row="2" Text="Enable remote HTTPS connections" FontSize="20" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                            <ComboBox x:Name="RemoteHttpsCombo" Grid.Row="2" Grid.Column="1" Width="180" HorizontalAlignment="Left"
+                                      SelectionChanged="RemoteHttpsChanged" AutomationProperties.Name="Remote HTTPS connections">
+                                <ComboBoxItem Content="Disabled" />
+                                <ComboBoxItem Content="Enabled" />
+                            </ComboBox>
+
+                            <TextBlock Grid.Row="3" Text="Torrent Profile" FontSize="20" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                            <ComboBox x:Name="TorrentProfileCombo" Grid.Row="3" Grid.Column="1" Width="180" HorizontalAlignment="Left"
+                                      SelectionChanged="TorrentProfileChanged" AutomationProperties.Name="Torrent profile">
+                                <ComboBoxItem Content="Default" />
+                                <ComboBoxItem Content="Fast start" />
+                                <ComboBoxItem Content="Data saver" />
+                            </ComboBox>
+
+                            <TextBlock Grid.Row="4" Text="Server" FontSize="20" VerticalAlignment="Center" />
+                            <TextBlock x:Name="ServerConnectionState" Grid.Row="4" Grid.Column="1" Text="Checking…" FontSize="20"
+                                       FontWeight="SemiBold" VerticalAlignment="Center" />
+
+                            <TextBlock Grid.Row="5" Text="Streaming server URL:" FontSize="20" VerticalAlignment="Center" />
+                            <TextBlock x:Name="StreamingServerUrlText" Grid.Row="5" Grid.Column="1" TextTrimming="CharacterEllipsis"
+                                       FontSize="18" VerticalAlignment="Center" />
+                            <Button Grid.Row="5" Grid.Column="2" Content="Copy" Style="{StaticResource TvButtonStyle}"
+                                    Click="CopyStreamingServerUrl" AutomationProperties.Name="Copy streaming server URL" />
+                        </Grid>
+
+                        <Border Style="{StaticResource SurfaceBorderStyle}" Padding="18">
+                            <StackPanel Spacing="14">
+                                <TextBlock Text="Playback server" FontSize="24" FontWeight="SemiBold" />
+                                <TextBlock Text="Your server handles torrent-backed playback. Render-hosted servers should use the public HTTPS URL without port 12470."
+                                           FontSize="18" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
+                                <TextBox x:Name="StreamingServiceUrlBox" Header="Streaming service URL"
+                                         PlaceholderText="https://watchstream-stremio-server.onrender.com/" />
+                                <StackPanel Orientation="Horizontal" Spacing="14">
+                                    <Button x:Name="ConnectServerButton" Content="Connect and save" Style="{StaticResource PrimaryButtonStyle}"
+                                            Width="230" Click="SaveStreamingService" />
+                                    <Button Content="Disconnect server" Style="{StaticResource TvButtonStyle}" Click="DisconnectServer" />
+                                </StackPanel>
+                                <TextBlock x:Name="StreamingServiceStatus" FontSize="18"
+                                           Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
                 <ScrollViewer x:Name="AccountPanel" Visibility="Collapsed">

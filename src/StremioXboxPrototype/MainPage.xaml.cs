@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using StremioXboxPrototype.Controls;
 using StremioXboxPrototype.Models;
 using StremioXboxPrototype.Services;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.System;
 using Windows.Media.SpeechRecognition;
 using Windows.UI.ViewManagement;
@@ -41,6 +42,11 @@ public sealed partial class MainPage : Page
         AddonUrlsBox.Text = PrototypeSettings.GetStreamAddonText();
         UpdateAddonSummary();
         StreamingServiceUrlBox.Text = PrototypeSettings.GetStreamingServiceUrlText();
+        StreamingServerUrlText.Text = PrototypeSettings.GetStreamingServiceUrlText();
+        SelectComboItem(StreamingCacheCombo, PrototypeSettings.GetStreamingCache());
+        LocalFilesAddonToggle.IsOn = PrototypeSettings.GetLocalFilesAddonEnabled();
+        SelectComboItem(RemoteHttpsCombo, PrototypeSettings.GetRemoteHttpsMode());
+        SelectComboItem(TorrentProfileCombo, PrototypeSettings.GetTorrentProfile());
         PosterAnimationsToggle.IsOn = PrototypeSettings.GetPosterAnimationsEnabled();
         BuildSearchKeyboard();
         MovieSkeletons.ItemsSource = SeriesSkeletons.ItemsSource = Enumerable.Range(0, 8).ToList();
@@ -571,6 +577,42 @@ public sealed partial class MainPage : Page
         }
     }
 
+    private static void SelectComboItem(ComboBox combo, string value)
+    {
+        combo.SelectedIndex = Math.Max(0, combo.Items.OfType<ComboBoxItem>()
+            .ToList().FindIndex(item => string.Equals(item.Content?.ToString(), value, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private void StreamingCacheChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (((ComboBox)sender).SelectedItem is ComboBoxItem item)
+            PrototypeSettings.SetStreamingCache(item.Content?.ToString() ?? "2GB");
+    }
+
+    private void LocalFilesAddonChanged(object sender, RoutedEventArgs e) =>
+        PrototypeSettings.SetLocalFilesAddonEnabled(((ToggleSwitch)sender).IsOn);
+
+    private void RemoteHttpsChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (((ComboBox)sender).SelectedItem is ComboBoxItem item)
+            PrototypeSettings.SetRemoteHttpsMode(item.Content?.ToString() ?? "Disabled");
+    }
+
+    private void TorrentProfileChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (((ComboBox)sender).SelectedItem is ComboBoxItem item)
+            PrototypeSettings.SetTorrentProfile(item.Content?.ToString() ?? "Default");
+    }
+
+    private async void CopyStreamingServerUrl(object sender, RoutedEventArgs e)
+    {
+        var value = PrototypeSettings.GetStreamingServiceUrlText();
+        var package = new DataPackage();
+        package.SetText(value);
+        Clipboard.SetContent(package);
+        await ShowErrorAsync("Streaming server URL", "The streaming server URL was copied to the clipboard.");
+    }
+
     private async void SaveStreamingService(object sender, RoutedEventArgs e)
     {
         if (!Uri.TryCreate(StreamingServiceUrlBox.Text.Trim(), UriKind.Absolute, out var uri) ||
@@ -589,7 +631,8 @@ public sealed partial class MainPage : Page
         var uri = PrototypeSettings.GetStreamingServiceUrl();
         if (uri is null)
         {
-            ServerConnectionState.Text = "Server: disconnected";
+            ServerConnectionState.Text = "Offline";
+            StreamingServerUrlText.Text = "Not configured";
             StreamingServiceStatus.Text = "Enter your server address to connect.";
             HomeConnectionText.Text = "Playback server not connected";
             HomeReconnectButton.Content = "Connect";
@@ -609,7 +652,7 @@ public sealed partial class MainPage : Page
         ConnectServerButton.IsEnabled = false;
         HomeReconnectButton.IsEnabled = false;
         HomeConnectionText.Text = "Connecting to playback server…";
-        ServerConnectionState.Text = "Server: checking…";
+        ServerConnectionState.Text = "Checking…";
         StreamingServiceStatus.Text = $"Connecting to {uri.Host}:{uri.Port}…";
         try
         {
@@ -619,7 +662,8 @@ public sealed partial class MainPage : Page
             // the Stremio Service settings endpoint.
             if (save) PrototypeSettings.SetStreamingServiceUrl(uri);
             StreamingServiceUrlBox.Text = PrototypeSettings.GetStreamingServiceUrlText();
-            ServerConnectionState.Text = "Server: connected";
+            StreamingServerUrlText.Text = PrototypeSettings.GetStreamingServiceUrlText();
+            ServerConnectionState.Text = "✓ Online";
             HomeConnectionNotice.Visibility = Visibility.Collapsed;
             StreamingServiceStatus.Text = $"Connected to {uri.Host}:{uri.Port} · Stremio {version}. Ready to stream.";
             DiagnosticsService.Current.Info("streaming-service", $"Connected to {uri.Host}");
@@ -627,7 +671,7 @@ public sealed partial class MainPage : Page
         catch (OperationCanceledException) when (request.IsCancellationRequested) { }
         catch (Exception exception)
         {
-            ServerConnectionState.Text = "Server: unavailable";
+            ServerConnectionState.Text = "Offline";
             HomeConnectionText.Text = "Playback server offline";
             HomeReconnectButton.Content = "Reconnect";
             HomeConnectionNotice.Visibility = Visibility.Visible;
@@ -651,7 +695,8 @@ public sealed partial class MainPage : Page
         _serverRequest?.Cancel();
         PrototypeSettings.ClearStreamingServiceUrl();
         StreamingServiceUrlBox.Text = "";
-        ServerConnectionState.Text = "Server: disconnected";
+        StreamingServerUrlText.Text = "Not configured";
+        ServerConnectionState.Text = "Offline";
         HomeConnectionText.Text = "Playback server not connected";
         HomeReconnectButton.Content = "Connect";
         HomeConnectionNotice.Visibility = Visibility.Visible;

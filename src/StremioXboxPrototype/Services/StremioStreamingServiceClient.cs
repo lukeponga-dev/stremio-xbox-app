@@ -60,16 +60,28 @@ public sealed class StremioStreamingServiceClient
             return cached.PlaybackUri;
         }
 
-        var sources = new List<string> { $"dht:{infoHash}" };
-        foreach (var encodedSource in stream.Sources.Where(value => !string.IsNullOrWhiteSpace(value)))
+        var sources = new List<string>();
+        foreach (var encodedSource in stream.Sources.Concat(stream.Announce).Where(value => !string.IsNullOrWhiteSpace(value)))
         {
             AddPeerSource(sources, encodedSource);
         }
         foreach (var tracker in GetMagnetTrackers(GetTorrentUri(stream))) AddPeerSource(sources, tracker);
 
+        // Match Stremio's direct route when the add-on already selected a file
+        // and supplied no peer overrides. Let the server use its default discovery.
+        if (fileIndex >= 0 && sources.Count == 0)
+            return new Uri(root, $"{infoHash}/{fileIndex}");
+
+        using var guess = JsonDocument.Parse(fileIndex >= 0 ? "false" : "{}");
+
         var request = new StremioTorrentCreateRequest
         {
-            PeerSearch = new StremioPeerSearch { Sources = sources.Distinct(StringComparer.Ordinal).ToList() },
+            Torrent = new StremioTorrentIdentity { InfoHash = infoHash },
+            GuessFileIdx = guess.RootElement.Clone(),
+            PeerSearch = sources.Count == 0 ? null : new StremioPeerSearch
+            {
+                Sources = new[] { $"dht:{infoHash}" }.Concat(sources).Distinct(StringComparer.Ordinal).ToList()
+            },
             FileMustInclude = string.IsNullOrWhiteSpace(stream.FileMustInclude)
                 ? null
                 : new List<string> { stream.FileMustInclude.Trim() }
@@ -84,7 +96,7 @@ public sealed class StremioStreamingServiceClient
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            throw new TimeoutException("The streaming service could not find torrent metadata within two minutes. Try another source with more peers.");
+            throw new TimeoutException("The server did not return torrent metadata within two minutes. Its API can be online while peer discovery is stalled. Try another source or a server with working torrent connectivity.");
         }
         int? guessedFileIndex;
         using (response)
@@ -94,20 +106,20 @@ public sealed class StremioStreamingServiceClient
             guessedFileIndex = await ReadGuessedFileIndexAsync(response, operationToken);
         }
 
-        Uri playbackUri;
-        try
-        {
-            var selectedFileIndex = fileIndex >= 0 ? fileIndex : guessedFileIndex ?? -1;
-            DiagnosticsService.Current.Info("streaming-service",
-                selectedFileIndex >= 0
-                    ? $"Torrent metadata selected file index {selectedFileIndex}"
-                    : "Torrent metadata did not select a file; asking the service to guess");
-            playbackUri = await GetPlaybackUriAsync(root, infoHash, selectedFileIndex, operationToken);
-        }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            throw new TimeoutException("The streaming service prepared the torrent but did not return a playback URL in time. Try another source.");
-        }
+        var selectedFileIndex = fileIndex >= 0 ? fileIndex : guessedFileIndex ?? -1;
+        DiagnosticsService.Current.Info("streaming-service",
+            selectedFileIndex >= 0
+                ? $"Torrent metadata selected file index {selectedFileIndex}"
+                : "Torrent metadata did not select a file; asking the service to guess");
+
+        // Use the public HTTP stream route directly. The official server's
+        // external=1 response can advertise its container/LAN HTTPS endpoint;
+        // that redirect is not reachable through Render's public TLS edge.
+        // The selected file index is already known from the create response, so
+        // no redirect is needed for remote playback.
+        var trackerQuery = sources.Count == 0 ? "" : "?" + string.Join("&",
+            sources.Distinct(StringComparer.Ordinal).Select(source => "tr=" + Uri.EscapeDataString(source)));
+        var playbackUri = new Uri(root, $"{infoHash}/{selectedFileIndex}{trackerQuery}");
         PreparedTorrentCache[cacheKey] = (playbackUri, DateTimeOffset.UtcNow.AddMinutes(15));
         DiagnosticsService.Current.Info("streaming-service", $"Torrent prepared in {timer.ElapsedMilliseconds} ms");
         return playbackUri;
@@ -187,33 +199,4 @@ public sealed class StremioStreamingServiceClient
             : "tracker:" + source);
     }
 
-    private static async Task<Uri> GetPlaybackUriAsync(Uri root, string infoHash, int fileIndex,
-        CancellationToken cancellationToken)
-    {
-        // external=1 asks Stremio Service for a redirect to the URL intended for
-        // a separate media player. Some versions stream directly instead.
-        var externalUri = new Uri(root, $"{infoHash}/{fileIndex}?external=1");
-        using var request = new HttpRequestMessage(HttpMethod.Get, externalUri);
-        using var response = await Http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        if ((int)response.StatusCode is >= 300 and < 400 && response.Headers.Location is not null)
-        {
-            var location = response.Headers.Location;
-            if (!location.IsAbsoluteUri) return new Uri(root, location);
-
-            // Hosted Stremio servers commonly advertise their container/LAN
-            // address in Location. Keep the returned path, but route playback
-            // through the public server address that the Xbox can reach.
-            if (!string.Equals(location.Host, root.Host, StringComparison.OrdinalIgnoreCase) ||
-                location.Port != root.Port || location.Scheme != root.Scheme)
-            {
-                DiagnosticsService.Current.Info("streaming-service",
-                    $"Rewrote private playback redirect from {location.Host} to {root.Host}");
-                return new Uri(root, location.PathAndQuery.TrimStart('/'));
-            }
-            return location;
-        }
-        if (!response.IsSuccessStatusCode)
-            throw new HttpRequestException($"Stremio Service could not open the prepared torrent (HTTP {(int)response.StatusCode}).");
-        return new Uri(root, $"{infoHash}/{fileIndex}");
-    }
 }

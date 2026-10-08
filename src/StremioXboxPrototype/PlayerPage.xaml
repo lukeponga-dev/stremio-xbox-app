@@ -6,9 +6,19 @@
         <MediaPlayerElement x:Name="Player" AreTransportControlsEnabled="True"
                             AutoPlay="True" Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
 
+        <Grid x:Name="LoadingArtwork" Background="#100E19" IsHitTestVisible="False">
+            <Image x:Name="LoadingBackdrop" Stretch="UniformToFill" Opacity="0.45" />
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="700" Spacing="24">
+                <TextBlock x:Name="LoadingTitle" FontSize="48" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" />
+                <ProgressRing x:Name="ArtworkSpinner" IsActive="True" Width="40" Height="40" />
+            </StackPanel>
+        </Grid>
+        <Button Content="Back to sources" Click="BackToSources" HorizontalAlignment="Left" VerticalAlignment="Top"
+                Margin="48,16" AutomationProperties.Name="Back to sources" />
+
         <Border x:Name="StatusOverlay" Background="#EC0E101A" BorderBrush="#458F5BFF"
                 BorderThickness="1" CornerRadius="14" Padding="20,18"
-                HorizontalAlignment="Left" VerticalAlignment="Top" Margin="48,32" MaxWidth="760">
+                HorizontalAlignment="Left" VerticalAlignment="Top" Margin="48,80,48,32" MaxWidth="760">
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
             <Grid>
                 <Grid.ColumnDefinitions>

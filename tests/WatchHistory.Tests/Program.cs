@@ -3,6 +3,19 @@ using StremioXboxPrototype.Services;
 using Windows.Storage;
 
 var checks = 0;
+using (var guess = System.Text.Json.JsonDocument.Parse("{}"))
+{
+    var create = new StremioTorrentCreateRequest
+    {
+        Torrent = new StremioTorrentIdentity { InfoHash = new string('a', 40) },
+        GuessFileIdx = guess.RootElement.Clone()
+    };
+    var json = System.Text.Json.JsonSerializer.Serialize(create, StremioJsonContext.Default.StremioTorrentCreateRequest);
+    using var payload = System.Text.Json.JsonDocument.Parse(json);
+    Check(payload.RootElement.GetProperty("torrent").GetProperty("infoHash").GetString() == new string('a', 40), "Torrent create includes the torrent identity");
+    Check(payload.RootElement.GetProperty("guessFileIdx").ValueKind == System.Text.Json.JsonValueKind.Object, "Unknown file requests server selection");
+    Check(!payload.RootElement.TryGetProperty("peerSearch", out _), "No trackers preserves server default discovery");
+}
 PrototypeSettings.SetStreamAddonText("https://saved.example/manifest.json");
 var candidates = PrototypeSettings.ParseStreamAddons("https://candidate.example/manifest.json\nhttp://invalid.example/manifest.json\ninvalid");
 Check(candidates.Count == 1 && candidates[0].ManifestUri.Host == "candidate.example", "Only HTTPS add-on candidates are parsed");
