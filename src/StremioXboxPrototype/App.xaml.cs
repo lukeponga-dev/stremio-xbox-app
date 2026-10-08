@@ -11,11 +11,17 @@ sealed partial class App : Application
     public App()
     {
         InitializeComponent();
-        ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.FullScreen;
+        // Full-screen launch is an Xbox presentation preference. On desktop
+        // certification hosts, setting it during App construction can fail in
+        // the XAML activation path before a page is shown.
+        if (IsXbox)
+        {
+            ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.FullScreen;
+        }
 
         // RequiresPointerMode is an Xbox-specific setting. Assigning it while
         // debugging the package on desktop Windows can fail during activation.
-        if (AnalyticsInfo.VersionInfo.DeviceFamily == "Windows.Xbox")
+        if (IsXbox)
         {
             RequiresPointerMode = ApplicationRequiresPointerMode.WhenRequested;
         }
@@ -35,10 +41,6 @@ sealed partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        // Opt out of Xbox's automatic outer border before the first page measures.
-        // Pages draw edge to edge and reserve safe spacing around controls only.
-        var view = ApplicationView.GetForCurrentView();
-        view.SetDesiredBoundsMode(ApplicationViewBoundsMode.UseCoreWindow);
         var frame = Window.Current.Content as Frame;
         if (frame is null)
         {
@@ -58,6 +60,16 @@ sealed partial class App : Application
         }
 
         Window.Current.Activate();
-        view.TryEnterFullScreenMode();
+
+        if (IsXbox)
+        {
+            // Opt out of Xbox's automatic outer border after activation. Pages
+            // draw edge to edge and reserve safe spacing around controls only.
+            var view = ApplicationView.GetForCurrentView();
+            view.SetDesiredBoundsMode(ApplicationViewBoundsMode.UseCoreWindow);
+            view.TryEnterFullScreenMode();
+        }
     }
+
+    private static bool IsXbox => AnalyticsInfo.VersionInfo.DeviceFamily == "Windows.Xbox";
 }
