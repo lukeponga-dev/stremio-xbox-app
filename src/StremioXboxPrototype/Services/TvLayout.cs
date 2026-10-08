@@ -13,7 +13,7 @@ public static class TvLayout
         var horizontalInset = Math.Max(width * 0.05, 16);
         var verticalInset = Math.Max(height * 0.05, 12);
         var gap = width < 1000 ? 16 : 24;
-        var sidebarWidth = 148 + 8 + horizontalInset;
+        var sidebarWidth = 168 + 8 + horizontalInset;
         var contentWidth = Math.Max(1, width - sidebarWidth - horizontalInset - gap);
         return new TvViewportLayout(horizontalInset, verticalInset, gap, sidebarWidth,
             contentWidth < 760, width >= 1000);
@@ -24,7 +24,7 @@ public static class TvLayout
         if (viewport <= 0 || !double.IsFinite(viewport)) return 240;
         // Prioritize legible posters and titles at sofa distance. A partial next
         // card makes horizontal scrolling apparent without shrinking the shelf.
-        var wholeCards = Math.Max(1, (int)Math.Floor(viewport / 280));
+        var wholeCards = Math.Max(1, (int)Math.Floor(viewport / 240 - 0.25));
         return viewport / (wholeCards + 0.25);
     }
 }

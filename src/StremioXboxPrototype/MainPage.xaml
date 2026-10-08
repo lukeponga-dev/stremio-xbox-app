@@ -55,13 +55,9 @@
                     </StackPanel>
                     <StackPanel Grid.Row="3" Spacing="4" Margin="0,32,0,16">
                         <Border Height="1" Background="{StaticResource SubtleBorderBrush}" Margin="8,0,8,18" />
-                        <TextBlock Text="DEVELOPER / ADVANCED" FontSize="13" FontWeight="SemiBold" Margin="8,0,0,8" Foreground="{StaticResource MutedTextBrush}" />
-                        <Button x:Name="PlaybackLabButton" Content="Playback Lab" Style="{StaticResource AdvancedNavButtonStyle}" Click="ShowPlaybackLab" />
-                        <Button x:Name="ServerButton" Content="Server" Style="{StaticResource AdvancedNavButtonStyle}" Click="ShowServer" />
-                        <Button x:Name="DiagnosticsButton" Content="Diagnostics" Style="{StaticResource AdvancedNavButtonStyle}" Click="ShowDiagnostics" />
-                        <Button x:Name="SettingsButton" Content="Settings" Style="{StaticResource AdvancedNavButtonStyle}" Click="ShowSettings" />
+                        <Button x:Name="SettingsButton" Content="Settings" Style="{StaticResource NavButtonStyle}" Click="ShowSettings" />
                     </StackPanel>
-                    <TextBlock Grid.Row="4" Text="A  Select   B  Back&#x0a;Y  Search" FontSize="16" LineHeight="24" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
+                    <TextBlock Grid.Row="4" Text="A  Select&#x0a;B  Back&#x0a;Y  Search" FontSize="18" LineHeight="28" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
                 </Grid>
             </ScrollViewer>
         </Border>
@@ -96,20 +92,22 @@
             <Grid Grid.Row="1">
                 <Grid x:Name="HomePanel">
                     <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-                    <Border x:Name="HomeConnectionNotice" Visibility="Collapsed" Style="{StaticResource SurfaceBorderStyle}" Padding="16,12" Margin="0,0,0,16">
+                    <Border x:Name="HomeConnectionNotice" Visibility="Collapsed" Style="{StaticResource SurfaceBorderStyle}" Padding="12,4" Margin="0,0,0,12">
                         <Grid>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                            <TextBlock x:Name="HomeConnectionText" Text="Your playback server is offline. You can still browse or try reconnecting."
-                                       FontSize="18" TextWrapping="Wrap" VerticalAlignment="Center" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,16,0" />
-                            <Button Grid.Column="1" Content="Reconnect" Style="{StaticResource HeaderButtonStyle}" Click="ReconnectServer" />
+                            <TextBlock x:Name="HomeConnectionText" Text="Playback server offline"
+                                       FontSize="20" TextWrapping="Wrap" VerticalAlignment="Center" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,16,0" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                <Button Content="Details" Style="{StaticResource HeaderButtonStyle}" Click="ShowConnectionDetails" />
+                                <Button x:Name="HomeReconnectButton" Content="Reconnect" Style="{StaticResource HeaderButtonStyle}" Click="ReconnectServer" />
+                            </StackPanel>
                         </Grid>
                     </Border>
                     <Grid Grid.Row="1">
                         <ScrollViewer x:Name="HomeShelves" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Visibility="Collapsed">
-                            <StackPanel Spacing="32">
+                            <StackPanel Spacing="20">
                                 <StackPanel x:Name="ContinueWatchingShelf" Visibility="Collapsed">
                                     <TextBlock Text="Continue Watching" Style="{StaticResource SectionTitleStyle}" />
-                                    <TextBlock Text="Pick up where you left off" FontSize="20" Foreground="{StaticResource MutedTextBrush}" Margin="0,-8,0,16" />
                                     <GridView x:Name="ContinueWatchingGrid" SizeChanged="ShelfSizeChanged" ContainerContentChanging="PosterContainerChanging"
                                               IsItemClickEnabled="True" ItemClick="OpenItem" SelectionMode="None"
                                               ItemsPanel="{StaticResource HorizontalItemsPanel}" ItemTemplate="{StaticResource PosterTemplate}"
@@ -313,6 +311,11 @@
                         <ToggleSwitch x:Name="PosterAnimationsToggle" Header="Animate focused posters" OnContent="3% focus zoom" OffContent="Border only" Toggled="PosterAnimationsChanged" FontSize="20" />
                         <TextBlock Text="Turn off zoom animations if you prefer less motion. The bright focus border remains visible." FontSize="20" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
                         <Button Content="Manage Stremio account" Style="{StaticResource TvButtonStyle}" Click="ShowAccount" />
+                        <TextBlock Text="Advanced" Style="{StaticResource SectionTitleStyle}" Margin="0,12,0,0" />
+                        <TextBlock Text="Manage your playback server and troubleshooting tools." FontSize="20" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
+                        <Button x:Name="ServerButton" Content="Playback server" Style="{StaticResource TvButtonStyle}" Click="ShowServer" />
+                        <Button x:Name="PlaybackLabButton" Content="Playback Lab" Style="{StaticResource TvButtonStyle}" Click="ShowPlaybackLab" />
+                        <Button x:Name="DiagnosticsButton" Content="Diagnostics" Style="{StaticResource TvButtonStyle}" Click="ShowDiagnostics" />
                     </StackPanel>
                 </ScrollViewer>
                 <Grid x:Name="DiagnosticsPanel" Visibility="Collapsed">

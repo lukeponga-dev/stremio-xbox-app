@@ -30,7 +30,6 @@ public sealed partial class PosterCard : UserControl
     private static void ItemChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
     {
         var card = (PosterCard)sender;
-        card.SetFocused(false);
         var item = card.Item;
         card.TitleText.Text = item?.Name ?? "";
         card.TypeText.Text = item?.Type == "series" ? "Series · Open for streams" : "Movie · Open for streams";
@@ -53,13 +52,15 @@ public sealed partial class PosterCard : UserControl
         card.SetDetails(item);
         card.WatchProgressBar.Visibility = item?.WatchProgress is null ? Visibility.Collapsed : Visibility.Visible;
         card.WatchProgressBar.Value = item?.WatchProgress?.Percent ?? 0;
+        card.SetFocused(false);
         Windows.UI.Xaml.Automation.AutomationProperties.SetName(card, item?.Name ?? "Title");
     }
 
     public void SetDetails(MetaItem? details)
     {
         MetadataText.Text = Item?.WatchProgress?.RemainingText ?? details?.CardMetadata ?? "Details unavailable";
-        if (Item?.WatchProgress is not null) TypeText.Text = "Resume · Choose a source";
+        TypeText.Text = Item?.WatchProgress is not null ? "Continue watching" :
+            Item?.Type == "series" ? "Series · Open for streams" : "Movie · Open for streams";
     }
 
     public void SetCardWidth(double width)
@@ -69,7 +70,15 @@ public sealed partial class PosterCard : UserControl
         // Posters use a consistent 2:3 ratio at every responsive shelf width.
         PosterFrame.Height = (width - 24) * 1.5;
         PosterRow.Height = new GridLength(PosterFrame.Height);
-        Height = PosterFrame.Height + 154;
+        UpdateCardHeight();
+    }
+
+    private void UpdateCardHeight()
+    {
+        // Reserve two title lines; focused titles can grow to reveal their full
+        // name without clipping or moving into the following shelf.
+        TitleText.Measure(new Windows.Foundation.Size(Math.Max(1, Width - 24), double.PositiveInfinity));
+        Height = PosterFrame.Height + Math.Max(62, TitleText.DesiredSize.Height) + 82;
     }
 
     public void SetFocused(bool focused)
@@ -79,10 +88,13 @@ public sealed partial class PosterCard : UserControl
         IsPosterFocused = focused;
         FocusOutline.Opacity = focused ? 1 : 0;
         FocusGlow.Opacity = focused ? 1 : 0;
-        FocusDetails.Opacity = focused || Item?.WatchProgress is not null ? 1 : 0;
+        FocusDetails.Visibility = focused || Item?.WatchProgress is not null ? Visibility.Visible : Visibility.Collapsed;
+        TitleText.MaxLines = focused ? 0 : 2;
+        TitleText.TextTrimming = focused ? TextTrimming.None : TextTrimming.CharacterEllipsis;
+        UpdateCardHeight();
         var from = PosterScale.ScaleX;
         _animation?.Stop();
-        // Keep the zoom inside the card gutter; the white outline supplies the
+        // Keep the zoom inside the card gutter; the purple outline supplies the
         // main focus cue and remains visible when animation is disabled.
         var to = focused && PrototypeSettings.GetPosterAnimationsEnabled() ? 1.03 : 1;
         if (!PrototypeSettings.GetPosterAnimationsEnabled())

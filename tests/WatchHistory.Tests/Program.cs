@@ -53,7 +53,7 @@ foreach (var (width, height) in new[]
     Check(Math.Abs(layout.HorizontalInset - width * 0.05) < 0.001 &&
         Math.Abs(layout.VerticalInset - height * 0.05) < 0.001,
         $"Controls retain five-percent safe spacing at {width} x {height}");
-    Check(Math.Abs(layout.SidebarWidth - layout.HorizontalInset - 8 - 148) < 0.001,
+    Check(Math.Abs(layout.SidebarWidth - layout.HorizontalInset - 8 - 168) < 0.001,
         $"Navigation fits inside sidebar at {width} x {height}");
 }
 var xboxLayout = TvLayout.GetViewportLayout(960, 540);

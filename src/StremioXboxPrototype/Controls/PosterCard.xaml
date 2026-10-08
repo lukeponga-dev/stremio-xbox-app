@@ -2,8 +2,8 @@
     x:Class="StremioXboxPrototype.Controls.PosterCard"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    IsTabStop="False" Width="240" Height="446">
-    <Grid Padding="12,14,12,0">
+    IsTabStop="False" Width="240" Height="450">
+    <Grid Padding="12,14,12,10">
         <Grid.RowDefinitions>
             <RowDefinition x:Name="PosterRow" Height="324" />
             <RowDefinition Height="Auto" />
@@ -18,14 +18,15 @@
             </Border>
             <ProgressBar x:Name="WatchProgressBar" Visibility="Collapsed" VerticalAlignment="Bottom" Margin="10,0,10,12"
                          Height="8" Minimum="0" Maximum="100" Foreground="{StaticResource AccentTextBrush}" Background="#CC100E20" />
-            <Border x:Name="FocusOutline" CornerRadius="14" BorderBrush="White" BorderThickness="4" Opacity="0" />
         </Grid>
-        <TextBlock x:Name="TitleText" Grid.Row="1" FontSize="23" FontWeight="SemiBold" Margin="0,16,0,6"
+        <TextBlock x:Name="TitleText" Grid.Row="1" FontSize="23" FontWeight="SemiBold" Margin="0,12,0,6" MinHeight="62"
                    TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxLines="2" />
-        <StackPanel x:Name="FocusDetails" Grid.Row="2" Spacing="3" Opacity="0">
-            <TextBlock x:Name="MetadataText" FontSize="18" Foreground="{StaticResource MutedTextBrush}"
+        <StackPanel x:Name="FocusDetails" Grid.Row="2" Spacing="3" Visibility="Collapsed">
+            <TextBlock x:Name="MetadataText" FontSize="20" Foreground="{StaticResource MutedTextBrush}"
                        TextTrimming="CharacterEllipsis" MaxLines="1" />
-            <TextBlock x:Name="TypeText" FontSize="17" Foreground="{StaticResource AccentTextBrush}" />
+            <TextBlock x:Name="TypeText" FontSize="18" TextTrimming="CharacterEllipsis" Foreground="{StaticResource AccentTextBrush}" />
         </StackPanel>
+        <Border x:Name="FocusOutline" Grid.RowSpan="3" Margin="-8,-10,-8,-6" CornerRadius="18"
+                BorderBrush="{StaticResource AccentTextBrush}" BorderThickness="4" Opacity="0" IsHitTestVisible="False" />
     </Grid>
 </UserControl>

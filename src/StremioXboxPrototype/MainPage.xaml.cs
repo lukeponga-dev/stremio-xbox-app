@@ -353,6 +353,8 @@ public sealed partial class MainPage : Page
         if (args.Phase == 0) args.RegisterUpdateCallback(PosterContainerChanging);
         else if (sender == MovieGrid || sender == SeriesGrid || sender == ContinueWatchingGrid)
             FindPosterCard(container)?.SetCardWidth(TvLayout.GetShelfCardWidth(sender.ActualWidth));
+        if (args.Phase > 0)
+            FindPosterCard(container)?.SetFocused(container.FocusState != FocusState.Unfocused);
     }
 
     private void ShelfSizeChanged(object sender, SizeChangedEventArgs e)
@@ -573,7 +575,8 @@ public sealed partial class MainPage : Page
         {
             ServerConnectionState.Text = "Server: disconnected";
             StreamingServiceStatus.Text = "Enter your server address to connect.";
-            HomeConnectionText.Text = "Connect a playback server when you're ready to watch. You can still browse.";
+            HomeConnectionText.Text = "Playback server not connected";
+            HomeReconnectButton.Content = "Connect";
             HomeConnectionNotice.Visibility = Visibility.Visible;
             return;
         }
@@ -588,6 +591,8 @@ public sealed partial class MainPage : Page
         var request = new CancellationTokenSource();
         _serverRequest = request;
         ConnectServerButton.IsEnabled = false;
+        HomeReconnectButton.IsEnabled = false;
+        HomeConnectionText.Text = "Connecting to playback server…";
         ServerConnectionState.Text = "Server: checking…";
         StreamingServiceStatus.Text = $"Connecting to {uri.Host}:{uri.Port}…";
         try
@@ -607,7 +612,8 @@ public sealed partial class MainPage : Page
         catch (Exception exception)
         {
             ServerConnectionState.Text = "Server: unavailable";
-            HomeConnectionText.Text = "Your playback server is offline. You can still browse or try reconnecting.";
+            HomeConnectionText.Text = "Playback server offline";
+            HomeReconnectButton.Content = "Reconnect";
             HomeConnectionNotice.Visibility = Visibility.Visible;
             StreamingServiceStatus.Text = $"Cannot reach {uri.Host}:{uri.Port}. The hosted server may still be waking up; wait a minute and try again. " + exception.Message;
             DiagnosticsService.Current.Error("streaming-service", exception.Message);
@@ -618,6 +624,7 @@ public sealed partial class MainPage : Page
             {
                 _serverRequest = null;
                 ConnectServerButton.IsEnabled = true;
+                HomeReconnectButton.IsEnabled = true;
             }
             request.Dispose();
         }
@@ -629,7 +636,8 @@ public sealed partial class MainPage : Page
         PrototypeSettings.ClearStreamingServiceUrl();
         StreamingServiceUrlBox.Text = "";
         ServerConnectionState.Text = "Server: disconnected";
-        HomeConnectionText.Text = "Connect a playback server when you're ready to watch. You can still browse.";
+        HomeConnectionText.Text = "Playback server not connected";
+        HomeReconnectButton.Content = "Connect";
         HomeConnectionNotice.Visibility = Visibility.Visible;
         StreamingServiceStatus.Text = "Disconnected. Enter a server address to reconnect.";
     }
@@ -638,13 +646,20 @@ public sealed partial class MainPage : Page
     {
         SetSelectedNavigation(ServerButton);
         ShowPanel(ServerPanel, "Stremio server", "Connect your TV to your streaming server");
+        StreamingServiceUrlBox.Focus(FocusState.Programmatic);
+    }
+
+    private async void ShowConnectionDetails(object sender, RoutedEventArgs e)
+    {
+        await ShowErrorAsync("Playback server", PrototypeSettings.GetStreamingServiceUrl() is null
+            ? "Connect a playback server when you're ready to watch. You can still browse movies, series, and your library. Choose Connect to enter your server address."
+            : "Your playback server is offline. You can still browse movies, series, and your library. Check that your server is running, then choose Reconnect.");
     }
 
     private async void ReconnectServer(object sender, RoutedEventArgs e)
     {
         var uri = PrototypeSettings.GetStreamingServiceUrl();
         if (uri is null) { ShowServer(sender, e); return; }
-        HomeConnectionText.Text = "Reconnecting to your playback server…";
         await ConnectServerAsync(uri, save: false);
     }
 
@@ -846,6 +861,7 @@ public sealed partial class MainPage : Page
     {
         SetSelectedNavigation(PlaybackLabButton);
         ShowPanel(PlaybackLabPanel, "Playback lab", "Test a direct stream through the native Xbox media pipeline");
+        DirectUrlBox.Focus(FocusState.Programmatic);
     }
 
     private void ShowAddons(object sender, RoutedEventArgs e)
@@ -897,30 +913,31 @@ public sealed partial class MainPage : Page
     {
         SetSelectedNavigation(DiagnosticsButton);
         ShowPanel(DiagnosticsPanel, "Diagnostics", "Bounded in-memory event log");
+        SettingsButton.Focus(FocusState.Programmatic);
         UpdateMemory();
         _memoryTimer.Start();
     }
 
     private void SetSelectedNavigation(Button selected)
     {
-        // Main and advanced items use separate visual styles, but both groups
-        // receive the same unmistakable selected state for controller users.
-        foreach (var button in new[]
-                 {
-                     HomeButton, DiscoverButton, LibraryNavButton, PlaybackLabButton,
-                     AddonsButton, ServerButton, DiagnosticsButton, SettingsButton
-                 })
+        // Advanced tools belong to Settings, which stays selected in the rail.
+        if (selected == PlaybackLabButton || selected == ServerButton || selected == DiagnosticsButton)
+            selected = SettingsButton;
+        foreach (var button in new[] { HomeButton, DiscoverButton, LibraryNavButton, AddonsButton, SettingsButton })
         {
-            var advanced = button == PlaybackLabButton || button == ServerButton ||
-                           button == DiagnosticsButton || button == SettingsButton;
             button.Style = (Style)Application.Current.Resources[ReferenceEquals(button, selected)
-                ? (advanced ? "SelectedAdvancedNavButtonStyle" : "SelectedNavButtonStyle")
-                : (advanced ? "AdvancedNavButtonStyle" : "NavButtonStyle")];
+                ? "SelectedNavButtonStyle" : "NavButtonStyle"];
         }
     }
 
     private void ShowPanel(UIElement panel, string title, string subtitle)
     {
+        var focusedElement = FocusManager.GetFocusedElement() as DependencyObject;
+        var focusWasInContent = false;
+        for (var ancestor = focusedElement; ancestor is not null; ancestor = VisualTreeHelper.GetParent(ancestor))
+        {
+            if (ReferenceEquals(ancestor, ContentSurface)) { focusWasInContent = true; break; }
+        }
         // Requests, animations, speech, and diagnostic polling belong to the
         // visible panel. Stop them before transferring focus to another panel.
         _request?.Cancel();
@@ -945,6 +962,8 @@ public sealed partial class MainPage : Page
         PageSubtitle.Text = subtitle;
         HeaderSearchButton.Visibility = ReferenceEquals(panel, DiscoverPanel) ? Visibility.Collapsed : Visibility.Visible;
         HomeRefreshButton.Visibility = ReferenceEquals(panel, HomePanel) ? Visibility.Visible : Visibility.Collapsed;
+        if (focusWasInContent && FocusManager.FindFirstFocusableElement(panel) is Control firstControl)
+            firstControl.Focus(FocusState.Programmatic);
     }
 
     private void BeginRequest(string status)
@@ -977,7 +996,16 @@ public sealed partial class MainPage : Page
             KeyboardButton.Focus(FocusState.Programmatic);
             return;
         }
-        if (Frame.CanGoBack)
+        if (ServerPanel.Visibility == Visibility.Visible || PlaybackLabPanel.Visibility == Visibility.Visible ||
+            DiagnosticsPanel.Visibility == Visibility.Visible)
+        {
+            var returnTarget = ServerPanel.Visibility == Visibility.Visible ? ServerButton :
+                PlaybackLabPanel.Visibility == Visibility.Visible ? PlaybackLabButton : DiagnosticsButton;
+            e.Handled = true;
+            ShowSettings(this, new RoutedEventArgs());
+            returnTarget.Focus(FocusState.Programmatic);
+        }
+        else if (Frame.CanGoBack)
         {
             e.Handled = true;
             Frame.GoBack();
