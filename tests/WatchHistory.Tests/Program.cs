@@ -3,6 +3,13 @@ using StremioXboxPrototype.Services;
 using Windows.Storage;
 
 var checks = 0;
+PrototypeSettings.SetStreamAddonText("https://saved.example/manifest.json");
+var candidates = PrototypeSettings.ParseStreamAddons("https://candidate.example/manifest.json\nhttp://invalid.example/manifest.json\ninvalid");
+Check(candidates.Count == 1 && candidates[0].ManifestUri.Host == "candidate.example", "Only HTTPS add-on candidates are parsed");
+Check(PrototypeSettings.GetStreamAddons().Single().ManifestUri.Host == "saved.example", "Parsing unvalidated candidates preserves saved add-ons");
+Check(PrototypeSettings.ParseStreamAddons(null).Count == 0, "Null candidate input is empty");
+PrototypeSettings.SetStreamAddonText("");
+Check(PrototypeSettings.GetStreamAddons().Count == 0, "Explicit removal clears configured add-ons");
 var movie = new MetaItem { Id = "movie", Name = "A movie", Poster = "https://example.test/poster.jpg" };
 Check(PrototypeSettings.GetWatchHistory().Count == 0, "Empty first-run history");
 PrototypeSettings.SaveWatchProgress(movie, movie.Id, 120, 3600);

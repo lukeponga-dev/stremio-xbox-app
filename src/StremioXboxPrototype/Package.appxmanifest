@@ -7,9 +7,9 @@
 
   <Identity Name="pongadev.watchstream"
             Publisher="CN=72F532F7-EE7F-4B17-8DC0-38902DFF476C"
-            Version="1.0.3.0" />
+            Version="1.0.6.0" />
 
-  <mp:PhoneIdentity PhoneProductId="6b9fc68c-b81e-4f5a-bf55-1de70bd11f2f"
+  <mp:PhoneIdentity PhoneProductId="73930288-e8ee-4acb-849e-9dfb16353cd1"
                     PhonePublisherId="00000000-0000-0000-0000-000000000000" />
 
   <Properties>

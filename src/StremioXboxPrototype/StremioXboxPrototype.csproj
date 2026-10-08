@@ -26,7 +26,6 @@
     <RootNamespace>StremioXboxPrototype</RootNamespace>
     <AssemblyName>StremioXboxPrototype</AssemblyName>
     <UseWindowsForms>False</UseWindowsForms>
-    <PackageCertificateKeyFile>StremioXboxPrototype_TemporaryKey.pfx</PackageCertificateKeyFile>
     <!-- Developer certificates stay outside source control. Sign automatically
          when one is present; Store builds are emitted unsigned and re-signed by
          Microsoft after acceptance. -->
@@ -37,6 +36,9 @@
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
     <GenerateTestArtifacts>False</GenerateTestArtifacts>
     <AppxBundle>Never</AppxBundle>
+    <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
+    <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
+    <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Assets\**\*" />

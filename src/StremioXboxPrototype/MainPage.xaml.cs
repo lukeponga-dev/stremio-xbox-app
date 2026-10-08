@@ -508,8 +508,15 @@ public sealed partial class MainPage : Page
 
     private async void SaveAddons(object sender, RoutedEventArgs e)
     {
-        PrototypeSettings.SetStreamAddonText(AddonUrlsBox.Text);
-        var candidates = PrototypeSettings.GetStreamAddons();
+        var input = AddonUrlsBox.Text.Trim();
+        if (input.Length == 0)
+        {
+            _request?.Cancel();
+            PrototypeSettings.SetStreamAddonText("");
+            AddonSaveStatus.Text = "All configured add-ons removed.";
+            return;
+        }
+        var candidates = PrototypeSettings.ParseStreamAddons(input);
         if (candidates.Count == 0)
         {
             AddonSaveStatus.Text = "Enter at least one HTTPS manifest URL.";
@@ -517,6 +524,7 @@ public sealed partial class MainPage : Page
         }
 
         BeginRequest("Validating add-on manifests…");
+        var request = _request!;
         var accepted = new List<AddonEndpoint>();
         try
         {
@@ -524,7 +532,8 @@ public sealed partial class MainPage : Page
             {
                 try
                 {
-                    var manifest = await _client.GetManifestAsync(candidate.ManifestUri, _request!.Token);
+                    var manifest = await _client.GetManifestAsync(candidate.ManifestUri, request.Token);
+                    request.Token.ThrowIfCancellationRequested();
                     if (!manifest.Resources.Any(resource =>
                             resource.ValueKind == System.Text.Json.JsonValueKind.String && resource.GetString() == "stream" ||
                             resource.ValueKind == System.Text.Json.JsonValueKind.Object &&
@@ -541,6 +550,12 @@ public sealed partial class MainPage : Page
                 }
             }
 
+            request.Token.ThrowIfCancellationRequested();
+            if (accepted.Count == 0)
+            {
+                AddonSaveStatus.Text = "No valid stream add-ons found. Your saved add-ons have been kept. See Diagnostics.";
+                return;
+            }
             PrototypeSettings.SetStreamAddons(accepted);
             AddonUrlsBox.Text = PrototypeSettings.GetStreamAddonText();
             AddonSaveStatus.Text = accepted.Count == 0
@@ -551,7 +566,7 @@ public sealed partial class MainPage : Page
         catch (OperationCanceledException) { }
         finally
         {
-            EndRequest();
+            if (ReferenceEquals(_request, request)) EndRequest();
         }
     }
 

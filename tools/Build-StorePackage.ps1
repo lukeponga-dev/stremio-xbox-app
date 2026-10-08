@@ -81,6 +81,7 @@ if (-not $msix) {
 
 # A successful archive build alone does not prove that Native AOT ran. Reject
 # a desktop managed-runtime payload before presenting it as an Xbox release.
+Add-Type -AssemblyName System.IO.Compression.FileSystem
 $packageArchive = [System.IO.Compression.ZipFile]::OpenRead($msix.FullName)
 try {
     $manifestEntry = $packageArchive.GetEntry('AppxManifest.xml')

@@ -76,7 +76,7 @@ public sealed partial class PlayerPage : Page
                 _request = new PlaybackRequest(uri, pending.Title, pending.Stream.Provider, pending.Item, pending.VideoId);
             }
             StatusText.Text = $"Loading video · {_request!.Source}";
-            DiagnosticsService.Current.Info("player", $"Open {_request.Uri}");
+            DiagnosticsService.Current.Info("player", $"Open media from {_request.Uri.Host}");
             Player.Source = MediaSource.CreateFromUri(_request.Uri);
         }
         catch (OperationCanceledException) when (opening.IsCancellationRequested) { }

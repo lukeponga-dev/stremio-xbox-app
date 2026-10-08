@@ -51,6 +51,11 @@ public static class PrototypeSettings
     public static IReadOnlyList<AddonEndpoint> GetStreamAddons()
     {
         var raw = ApplicationData.Current.LocalSettings.Values[StreamAddonsKey] as string;
+        return ParseStreamAddons(raw);
+    }
+
+    public static IReadOnlyList<AddonEndpoint> ParseStreamAddons(string? raw)
+    {
         if (string.IsNullOrWhiteSpace(raw)) return Array.Empty<AddonEndpoint>();
 
         return raw.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
