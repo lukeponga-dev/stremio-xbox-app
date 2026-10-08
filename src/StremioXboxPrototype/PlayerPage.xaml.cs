@@ -20,11 +20,15 @@ public sealed partial class PlayerPage : Page
     private bool _mediaReady;
     private bool _completed;
     private readonly DispatcherTimer _progressTimer = new() { Interval = TimeSpan.FromSeconds(15) };
+    private readonly DispatcherTimer _loadingTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+    private DateTimeOffset _loadingStartedAt;
+    private string _loadingStage = "Opening media";
 
     public PlayerPage()
     {
         InitializeComponent();
         _progressTimer.Tick += (_, _) => SaveProgress();
+        _loadingTimer.Tick += (_, _) => UpdateLoadingStatus();
     }
 
     private void ViewportSizeChanged(object sender, SizeChangedEventArgs e)
@@ -51,14 +55,15 @@ public sealed partial class PlayerPage : Page
         TitleText.Text = pending?.Title ?? _request!.Title;
         StatusOverlay.Visibility = Visibility.Visible;
         LoadingIndicator.Visibility = Visibility.Visible;
-        StatusText.Text = pending is not null
-            ? $"Connecting to {pending.Stream.Provider}… Preparing your stream."
-            : $"Loading · {_request!.Source}";
+        SetLoadingStage(pending is not null
+            ? $"Connecting to {pending.Stream.Provider}… Preparing your stream"
+            : $"Loading · {_request!.Source}");
         Player.MediaPlayer.MediaOpened += MediaOpened;
         Player.MediaPlayer.MediaFailed += MediaFailed;
         Player.MediaPlayer.MediaEnded += MediaEnded;
         Player.MediaPlayer.PlaybackSession.BufferingStarted += BufferingStarted;
         Player.MediaPlayer.PlaybackSession.BufferingEnded += BufferingEnded;
+        Player.MediaPlayer.PlaybackSession.PlaybackStateChanged += PlaybackStateChanged;
         Player.MediaPlayer.IsMuted = false;
         Player.MediaPlayer.Volume = 1;
         _openTimer.Restart();
@@ -70,12 +75,13 @@ public sealed partial class PlayerPage : Page
             opening.Token.ThrowIfCancellationRequested();
             if (pending is not null)
             {
+                SetLoadingStage($"Preparing torrent through {pending.Stream.Provider}");
                 var uri = await new StremioStreamingServiceClient().ResolveTorrentAsync(
                     pending.ServiceUri, pending.Stream, opening.Token);
                 opening.Token.ThrowIfCancellationRequested();
                 _request = new PlaybackRequest(uri, pending.Title, pending.Stream.Provider, pending.Item, pending.VideoId);
             }
-            StatusText.Text = $"Loading video · {_request!.Source}";
+            SetLoadingStage($"Opening video · {_request!.Source}");
             DiagnosticsService.Current.Info("player", $"Open media from {_request.Uri.Host}");
             Player.Source = MediaSource.CreateFromUri(_request.Uri);
         }
@@ -100,11 +106,13 @@ public sealed partial class PlayerPage : Page
         _active = false;
         _opening?.Cancel();
         _overlayTimer?.Stop();
+        _loadingTimer.Stop();
         Player.MediaPlayer.MediaOpened -= MediaOpened;
         Player.MediaPlayer.MediaFailed -= MediaFailed;
         Player.MediaPlayer.MediaEnded -= MediaEnded;
         Player.MediaPlayer.PlaybackSession.BufferingStarted -= BufferingStarted;
         Player.MediaPlayer.PlaybackSession.BufferingEnded -= BufferingEnded;
+        Player.MediaPlayer.PlaybackSession.PlaybackStateChanged -= PlaybackStateChanged;
         Player.MediaPlayer.Pause();
         Player.Source = null;
         base.OnNavigatedFrom(e);
@@ -120,6 +128,7 @@ public sealed partial class PlayerPage : Page
             {
                 if (!_active) return;
                 _mediaReady = true;
+                _loadingTimer.Stop();
                 // Resume only after the new source exposes its seek range. Match
                 // the episode as well as the title, and reject out-of-range offsets.
                 if (_request?.Item is MetaItem item && sender.PlaybackSession.CanSeek)
@@ -134,14 +143,7 @@ public sealed partial class PlayerPage : Page
                 Player.MediaPlayer.Volume = 1;
                 Player.MediaPlayer.Play();
                 StatusText.Text = $"Playing · opened in {elapsed} ms · {_request?.Source}";
-                _overlayTimer?.Stop();
-                _overlayTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
-                _overlayTimer.Tick += (_, _) =>
-                {
-                    StatusOverlay.Visibility = Visibility.Collapsed;
-                    _overlayTimer.Stop();
-                };
-                _overlayTimer.Start();
+                HideOverlaySoon();
             });
         }
         catch (OperationCanceledException) { }
@@ -150,6 +152,7 @@ public sealed partial class PlayerPage : Page
     private async void MediaFailed(MediaPlayer sender, MediaPlayerFailedEventArgs args)
     {
         DiagnosticsService.Current.Error("player", $"{args.Error}: {args.ErrorMessage}");
+        _loadingTimer.Stop();
         try
         {
             await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
@@ -162,6 +165,7 @@ public sealed partial class PlayerPage : Page
 
     private void ShowFailure(string message)
     {
+        _loadingTimer.Stop();
         _progressTimer.Stop();
         _overlayTimer?.Stop();
         LoadingIndicator.Visibility = Visibility.Collapsed;
@@ -180,6 +184,8 @@ public sealed partial class PlayerPage : Page
                 _completed = true;
                 SaveProgress();
                 _progressTimer.Stop();
+                LoadingIndicator.Visibility = Visibility.Collapsed;
+                ShowPlayerMessage("Playback complete. Press A to replay or B to choose another source.", hideAutomatically: false);
             });
         }
         catch (OperationCanceledException) { }
@@ -194,8 +200,32 @@ public sealed partial class PlayerPage : Page
         PrototypeSettings.SaveWatchProgress(item, _request.VideoId ?? item.Id,
             session.Position.TotalSeconds, session.NaturalDuration.TotalSeconds, _completed);
     }
-    private void BufferingStarted(MediaPlaybackSession sender, object args) => DiagnosticsService.Current.Info("player", "Buffering started");
-    private void BufferingEnded(MediaPlaybackSession sender, object args) => DiagnosticsService.Current.Info("player", "Buffering ended");
+
+    private void BufferingStarted(MediaPlaybackSession sender, object args)
+    {
+        DiagnosticsService.Current.Info("player", "Buffering started");
+        if (!_active) return;
+        LoadingIndicator.Visibility = Visibility.Visible;
+        ShowPlayerMessage("Buffering…", hideAutomatically: false);
+    }
+
+    private void BufferingEnded(MediaPlaybackSession sender, object args)
+    {
+        DiagnosticsService.Current.Info("player", "Buffering ended");
+        if (!_active || _completed) return;
+        LoadingIndicator.Visibility = Visibility.Collapsed;
+        StatusText.Text = "Playing";
+        HideOverlaySoon();
+    }
+
+    private void PlaybackStateChanged(MediaPlaybackSession sender, object args)
+    {
+        if (!_active || _completed) return;
+        if (sender.PlaybackState == MediaPlaybackState.Playing)
+            StatusText.Text = "Playing";
+        else if (sender.PlaybackState == MediaPlaybackState.Paused)
+            ShowPlayerMessage("Paused", hideAutomatically: false);
+    }
 
     private void PlayerPageKeyDown(object sender, Windows.UI.Xaml.Input.KeyRoutedEventArgs e)
     {
@@ -206,12 +236,104 @@ public sealed partial class PlayerPage : Page
             return;
         }
 
-        if (e.Key != VirtualKey.GamepadX) return;
-        Player.MediaPlayer.IsMuted = !Player.MediaPlayer.IsMuted;
-        ControllerHintText.Text = Player.MediaPlayer.IsMuted ? "B  Back     X  Unmute" : "B  Back     X  Mute";
+        if (e.Key == VirtualKey.GamepadA)
+        {
+            TogglePlayback();
+            e.Handled = true;
+        }
+        else if (e.Key is VirtualKey.GamepadLeftShoulder or VirtualKey.GamepadDPadLeft)
+        {
+            SeekBy(TimeSpan.FromSeconds(-10));
+            e.Handled = true;
+        }
+        else if (e.Key is VirtualKey.GamepadRightShoulder or VirtualKey.GamepadDPadRight)
+        {
+            SeekBy(TimeSpan.FromSeconds(10));
+            e.Handled = true;
+        }
+        else if (e.Key == VirtualKey.GamepadX)
+        {
+            Player.MediaPlayer.IsMuted = !Player.MediaPlayer.IsMuted;
+            ControllerHintText.Text = Player.MediaPlayer.IsMuted
+                ? "A  Play/Pause     LB/RB  Seek 10s     B  Back     X  Unmute"
+                : "A  Play/Pause     LB/RB  Seek 10s     B  Back     X  Mute";
+            ShowPlayerMessage(Player.MediaPlayer.IsMuted ? "Audio muted" : "Audio on", hideAutomatically: false);
+            DiagnosticsService.Current.Info("player", Player.MediaPlayer.IsMuted ? "Audio muted" : "Audio unmuted");
+            e.Handled = true;
+        }
+    }
+
+    private void TogglePlayback()
+    {
+        if (!_mediaReady) return;
+        var session = Player.MediaPlayer.PlaybackSession;
+        if (_completed)
+        {
+            if (session.CanSeek) session.Position = TimeSpan.Zero;
+            _completed = false;
+            _progressTimer.Start();
+            Player.MediaPlayer.Play();
+            ShowPlayerMessage("Replaying", hideAutomatically: true);
+            return;
+        }
+
+        if (session.PlaybackState == MediaPlaybackState.Playing)
+        {
+            Player.MediaPlayer.Pause();
+            ShowPlayerMessage("Paused", hideAutomatically: false);
+        }
+        else
+        {
+            Player.MediaPlayer.Play();
+            ShowPlayerMessage("Playing", hideAutomatically: true);
+        }
+    }
+
+    private void SeekBy(TimeSpan offset)
+    {
+        var session = Player.MediaPlayer.PlaybackSession;
+        if (!_mediaReady || !session.CanSeek) return;
+        var target = session.Position + offset;
+        if (target < TimeSpan.Zero) target = TimeSpan.Zero;
+        if (session.NaturalDuration > TimeSpan.Zero && target > session.NaturalDuration)
+            target = session.NaturalDuration;
+        session.Position = target;
+        ShowPlayerMessage($"{(offset < TimeSpan.Zero ? "Rewound" : "Skipped forward")} 10 seconds", hideAutomatically: true);
+        DiagnosticsService.Current.Info("player", $"Seeked to {target.TotalSeconds:0} seconds");
+    }
+
+    private void ShowPlayerMessage(string message, bool hideAutomatically)
+    {
         StatusOverlay.Visibility = Visibility.Visible;
-        StatusText.Text = Player.MediaPlayer.IsMuted ? "Audio muted" : "Audio on";
-        DiagnosticsService.Current.Info("player", Player.MediaPlayer.IsMuted ? "Audio muted" : "Audio unmuted");
-        e.Handled = true;
+        StatusText.Text = message;
+        if (hideAutomatically) HideOverlaySoon();
+        else _overlayTimer?.Stop();
+    }
+
+    private void HideOverlaySoon()
+    {
+        _overlayTimer?.Stop();
+        _overlayTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
+        _overlayTimer.Tick += (_, _) =>
+        {
+            StatusOverlay.Visibility = Visibility.Collapsed;
+            _overlayTimer.Stop();
+        };
+        _overlayTimer.Start();
+    }
+
+    private void SetLoadingStage(string stage)
+    {
+        _loadingStage = stage;
+        _loadingStartedAt = DateTimeOffset.UtcNow;
+        StatusText.Text = stage + " · 0s";
+        _loadingTimer.Start();
+    }
+
+    private void UpdateLoadingStatus()
+    {
+        if (!_active || _mediaReady) return;
+        var seconds = Math.Max(0, (int)(DateTimeOffset.UtcNow - _loadingStartedAt).TotalSeconds);
+        StatusText.Text = $"{_loadingStage} · {seconds}s";
     }
 }

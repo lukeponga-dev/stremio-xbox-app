@@ -136,7 +136,11 @@ The prototype never executes add-on code. It sends native-direct HTTP(S) URLs st
 
 ### Connect the streaming server
 
-Open **Server** under **Developer / Advanced** in the left navigation. The default address is the local Stremio service at `http://192.168.1.105:11470/`. The app checks it on startup using Stremio's `/settings` endpoint; detailed status stays on the Server screen. Home shows a friendly reconnect notice only when disconnected or unreachable. **Connect and save** validates the response and remembers a changed address; **Disconnect server** disables server playback until you reconnect. A failed connection test preserves the previously saved address. Existing installs using the previous Render or `192.168.1.103:32768` defaults migrate automatically; custom addresses and explicit disconnection are preserved.
+Open **Server** under **Developer / Advanced** in the left navigation. The default address is the hosted Stremio service at `https://watchstream-stremio-server.onrender.com/`. The app checks it on startup using Stremio's `/settings` endpoint; detailed status stays on the Server screen. Home shows a friendly reconnect notice only when disconnected or unreachable. **Connect and save** validates the response and remembers a changed address; **Disconnect server** disables server playback until you reconnect. A failed connection test preserves the previously saved address. Existing installs using the previous local, Render, or `192.168.1.103:32768` defaults migrate automatically; custom addresses and explicit disconnection are preserved.
+
+### Deploy the Render Stremio service
+
+The repository includes [`render.yaml`](render.yaml), which provisions the official `stremio/server` Docker image as a Render web service named `watchstream-stremio-server` in Singapore. In Render, create a new Blueprint from this repository and apply the Blueprint. The resulting URL should be `https://watchstream-stremio-server.onrender.com/`; verify `/settings` reports a Stremio server version before using torrent-backed playback. The free Render plan may spin down when idle and has ephemeral storage, so a paid instance with persistent storage is recommended for reliable long-running torrent sessions.
 
 Keep the local server running and the Xbox on the same network. A streaming server supplies playback, while **Add-ons** or account synchronization supplies stream providers. Opening a title loads sources automatically after configuring providers; select a source to play it. Native direct streams also work when the server is unavailable.
 

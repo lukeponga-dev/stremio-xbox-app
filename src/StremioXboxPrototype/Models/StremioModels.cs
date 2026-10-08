@@ -382,6 +382,9 @@ public sealed class StremioTorrentCreateRequest
 {
     [JsonPropertyName("peerSearch")]
     public StremioPeerSearch? PeerSearch { get; set; }
+
+    [JsonPropertyName("fileMustInclude")]
+    public List<string>? FileMustInclude { get; set; }
 }
 
 public sealed class StremioPeerSearch

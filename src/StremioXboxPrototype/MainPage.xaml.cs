@@ -39,6 +39,7 @@ public sealed partial class MainPage : Page
     {
         InitializeComponent();
         AddonUrlsBox.Text = PrototypeSettings.GetStreamAddonText();
+        UpdateAddonSummary();
         StreamingServiceUrlBox.Text = PrototypeSettings.GetStreamingServiceUrlText();
         PosterAnimationsToggle.IsOn = PrototypeSettings.GetPosterAnimationsEnabled();
         BuildSearchKeyboard();
@@ -514,6 +515,7 @@ public sealed partial class MainPage : Page
             _request?.Cancel();
             PrototypeSettings.SetStreamAddonText("");
             AddonSaveStatus.Text = "All configured add-ons removed.";
+            UpdateAddonSummary();
             return;
         }
         var candidates = PrototypeSettings.ParseStreamAddons(input);
@@ -558,9 +560,8 @@ public sealed partial class MainPage : Page
             }
             PrototypeSettings.SetStreamAddons(accepted);
             AddonUrlsBox.Text = PrototypeSettings.GetStreamAddonText();
-            AddonSaveStatus.Text = accepted.Count == 0
-                ? "No valid stream add-on manifests were found. See Diagnostics."
-                : $"Saved {accepted.Count}: {string.Join(", ", accepted.Select(addon => addon.Name))}.";
+            AddonSaveStatus.Text = $"Saved {accepted.Count}: {string.Join(", ", accepted.Select(addon => addon.Name))}.";
+            UpdateAddonSummary();
             DiagnosticsService.Current.Info("settings", $"Validated and saved {accepted.Count} stream add-ons");
         }
         catch (OperationCanceledException) { }
@@ -782,6 +783,7 @@ public sealed partial class MainPage : Page
 
         PrototypeSettings.SetStreamAddons(streamAddons);
         AddonUrlsBox.Text = PrototypeSettings.GetStreamAddonText();
+        UpdateAddonSummary();
         var profile = PrototypeSettings.GetProfileCache();
         PrototypeSettings.SaveProfileCache(new AccountProfileCache(AccountEmailBox.Text, profile?.Id ?? "", profile?.Avatar, streamAddons.Count));
         UpdateAccountNavigation(true, AccountEmailBox.Text, profile?.Id, streamAddons.Count);
@@ -882,7 +884,17 @@ public sealed partial class MainPage : Page
     private void ShowAddons(object sender, RoutedEventArgs e)
     {
         SetSelectedNavigation(AddonsButton);
+        UpdateAddonSummary();
         ShowPanel(AddonsPanel, "Stream add-ons", "Add providers or sync them from your Stremio account");
+    }
+
+    private void UpdateAddonSummary()
+    {
+        var addons = PrototypeSettings.GetStreamAddons();
+        AddonCountText.Text = addons.Count == 1 ? "1 connected" : $"{addons.Count} connected";
+        AddonSummaryText.Text = addons.Count == 0
+            ? "No providers connected yet"
+            : string.Join(" • ", addons.Select(addon => addon.Name));
     }
 
     private void ShowAccount(object sender, RoutedEventArgs e)

@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: watchstream-stremio-server
+    runtime: image
+    plan: free
+    region: singapore
+    image:
+      url: docker.io/stremio/server:latest
+    healthCheckPath: /settings
+    autoDeployTrigger: commit

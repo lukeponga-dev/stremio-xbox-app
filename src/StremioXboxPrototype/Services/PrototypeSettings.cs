@@ -6,7 +6,7 @@ namespace StremioXboxPrototype.Services;
 
 public static class PrototypeSettings
 {
-    public const string DefaultStreamingServiceUrl = "http://192.168.1.105:11470/";
+    public const string DefaultStreamingServiceUrl = "https://watchstream-stremio-server.onrender.com/";
     private const string PreviousHostedStreamingServiceUrl = "https://watchstream-stremio-server.onrender.com/";
     private const string LegacyStreamingServiceUrl = "http://192.168.1.103:32768/";
     private const string StreamAddonsKey = "StreamAddons";

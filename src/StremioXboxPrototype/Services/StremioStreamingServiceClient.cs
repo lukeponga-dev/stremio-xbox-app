@@ -69,7 +69,10 @@ public sealed class StremioStreamingServiceClient
 
         var request = new StremioTorrentCreateRequest
         {
-            PeerSearch = new StremioPeerSearch { Sources = sources.Distinct(StringComparer.Ordinal).ToList() }
+            PeerSearch = new StremioPeerSearch { Sources = sources.Distinct(StringComparer.Ordinal).ToList() },
+            FileMustInclude = string.IsNullOrWhiteSpace(stream.FileMustInclude)
+                ? null
+                : new List<string> { stream.FileMustInclude.Trim() }
         };
         var json = JsonSerializer.Serialize(request, StremioJsonContext.Default.StremioTorrentCreateRequest);
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -83,16 +86,23 @@ public sealed class StremioStreamingServiceClient
         {
             throw new TimeoutException("The streaming service could not find torrent metadata within two minutes. Try another source with more peers.");
         }
+        int? guessedFileIndex;
         using (response)
         {
-        if (!response.IsSuccessStatusCode)
-            throw new HttpRequestException($"Stremio Service could not prepare the stream (HTTP {(int)response.StatusCode}).");
+            if (!response.IsSuccessStatusCode)
+                throw new HttpRequestException($"Stremio Service could not prepare the stream (HTTP {(int)response.StatusCode}).");
+            guessedFileIndex = await ReadGuessedFileIndexAsync(response, operationToken);
         }
 
         Uri playbackUri;
         try
         {
-            playbackUri = await GetPlaybackUriAsync(root, infoHash, fileIndex, operationToken);
+            var selectedFileIndex = fileIndex >= 0 ? fileIndex : guessedFileIndex ?? -1;
+            DiagnosticsService.Current.Info("streaming-service",
+                selectedFileIndex >= 0
+                    ? $"Torrent metadata selected file index {selectedFileIndex}"
+                    : "Torrent metadata did not select a file; asking the service to guess");
+            playbackUri = await GetPlaybackUriAsync(root, infoHash, selectedFileIndex, operationToken);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
@@ -101,6 +111,28 @@ public sealed class StremioStreamingServiceClient
         PreparedTorrentCache[cacheKey] = (playbackUri, DateTimeOffset.UtcNow.AddMinutes(15));
         DiagnosticsService.Current.Info("streaming-service", $"Torrent prepared in {timer.ElapsedMilliseconds} ms");
         return playbackUri;
+    }
+
+    private static async Task<int?> ReadGuessedFileIndexAsync(HttpResponseMessage response,
+        CancellationToken cancellationToken)
+    {
+        if (response.Content.Headers.ContentLength == 0) return null;
+        try
+        {
+            await using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var document = await JsonDocument.ParseAsync(body, cancellationToken: cancellationToken);
+            if (document.RootElement.ValueKind != JsonValueKind.Object ||
+                !document.RootElement.TryGetProperty("guessedFileIdx", out var value)) return null;
+            return value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var index) && index >= 0
+                ? index
+                : null;
+        }
+        catch (JsonException)
+        {
+            // Some compatible services return an empty/non-JSON create response.
+            // The stream endpoint can still select a file with -1.
+            return null;
+        }
     }
 
     private static Uri Normalize(Uri value)

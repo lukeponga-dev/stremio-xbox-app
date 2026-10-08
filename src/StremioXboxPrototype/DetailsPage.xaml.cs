@@ -140,7 +140,7 @@ public sealed partial class DetailsPage : Page
 
                 var ordered = OrderAndDeduplicateStreams(streams);
                 StreamList.ItemsSource = ordered;
-                StreamStatusText.Text = $"{ordered.Count} playable stream(s) found. Checking {requests.Count} provider(s)…";
+                StreamStatusText.Text = DescribeStreams(ordered, requests.Count > 0);
             }
 
             var playable = OrderAndDeduplicateStreams(streams);
@@ -148,9 +148,10 @@ public sealed partial class DetailsPage : Page
             _streamsLoaded = true;
             StreamStatusText.Text = playable.Count == 0
                 ? "No playable streams found. Try another episode or check your providers in Add-ons."
-                : PrototypeSettings.GetWatchProgress(_item.Type, _item.Id, videoId) is WatchProgress progress
-                    ? $"Choose a source to resume · {progress.RemainingText}."
-                    : $"{playable.Count} playable stream(s) ready.";
+                : DescribeStreams(playable, checkingProviders: false) +
+                  (PrototypeSettings.GetWatchProgress(_item.Type, _item.Id, videoId) is WatchProgress progress
+                      ? $" Choose a source to resume · {progress.RemainingText}."
+                      : "");
         }
         catch (OperationCanceledException) { }
         finally
@@ -166,9 +167,23 @@ public sealed partial class DetailsPage : Page
     }
 
     private static bool IsPlayable(StreamItem stream) =>
-        stream.Resolution.Kind == StreamResolutionKind.NativeDirect ||
-        stream.Resolution.Kind == StreamResolutionKind.RequiresStreamingService &&
-        PrototypeSettings.GetStreamingServiceUrl() is not null;
+        stream.Resolution.Kind is StreamResolutionKind.NativeDirect or StreamResolutionKind.RequiresStreamingService;
+
+    private static string DescribeStreams(IReadOnlyCollection<StreamItem> streams, bool checkingProviders)
+    {
+        var direct = streams.Count(stream => stream.Resolution.Kind == StreamResolutionKind.NativeDirect);
+        var service = streams.Count(stream => stream.Resolution.Kind == StreamResolutionKind.RequiresStreamingService);
+        var parts = new List<string>();
+        if (direct > 0) parts.Add($"{direct} direct");
+        if (service > 0) parts.Add($"{service} torrent/server-backed");
+        if (parts.Count == 0) return checkingProviders ? "Checking providers…" : "No playable streams found.";
+
+        var status = string.Join(" + ", parts) + " stream(s) found";
+        if (service > 0 && PrototypeSettings.GetStreamingServiceUrl() is null)
+            status += ". Connect a Stremio Service to use torrent sources.";
+        if (checkingProviders) status += " Checking more providers…";
+        return status;
+    }
 
     private static List<StreamItem> OrderAndDeduplicateStreams(IEnumerable<StreamItem> streams) => streams
         .OrderByDescending(stream => StreamSeederCount.Read(stream.AdditionalSources, stream.Description, stream.Title, stream.Name))
