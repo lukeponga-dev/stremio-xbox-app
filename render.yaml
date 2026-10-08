@@ -6,5 +6,8 @@ services:
     region: singapore
     image:
       url: docker.io/stremio/server:latest
+    envVars:
+      - key: NO_CORS
+        value: "1"
     healthCheckPath: /settings
     autoDeployTrigger: commit
