@@ -65,10 +65,22 @@ if (Test-Path -LiteralPath $userFile) {
     [xml]$userProject = '<Project><PropertyGroup /></Project>'
 }
 
-$propertyGroup = $userProject.Project.PropertyGroup | Select-Object -First 1
+$propertyGroup = $userProject.Project.PropertyGroup | Where-Object { -not $_.Condition } | Select-Object -First 1
 if (-not $propertyGroup) {
     $propertyGroup = $userProject.CreateElement('PropertyGroup')
     $userProject.Project.AppendChild($propertyGroup) | Out-Null
+}
+
+# Visual Studio may add configuration-specific or later property groups to the
+# user file. Remove old certificate values there so they cannot override the
+# newly generated certificate for Debug/x64 deployment.
+foreach ($group in @($userProject.Project.PropertyGroup)) {
+    if ([object]::ReferenceEquals($group, $propertyGroup)) { continue }
+    foreach ($node in @($group.ChildNodes)) {
+        if ($node.LocalName -in @('PackageCertificateKeyFile', 'PackageCertificatePassword', 'PackageCertificateThumbprint')) {
+            $group.RemoveChild($node) | Out-Null
+        }
+    }
 }
 
 foreach ($setting in @{

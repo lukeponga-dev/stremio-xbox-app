@@ -84,7 +84,7 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Grid Margin="0,0,0,24">
+            <Grid x:Name="MainHeader" Margin="0,0,0,24">
                 <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                 <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition x:Name="HeaderActionsColumn" Width="Auto" /></Grid.ColumnDefinitions>
                 <StackPanel x:Name="HeaderText" Spacing="6" Margin="0,0,24,0">
@@ -252,56 +252,64 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <ScrollViewer x:Name="AddonsPanel" Visibility="Collapsed">
-                    <StackPanel HorizontalAlignment="Stretch" Spacing="20">
-                        <Border Style="{StaticResource SurfaceBorderStyle}" Padding="20">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Spacing="6" Margin="0,0,20,0">
-                                    <TextBlock Text="Your stream providers" FontSize="25" FontWeight="SemiBold" />
-                                    <TextBlock x:Name="AddonSummaryText" Text="No providers connected yet" FontSize="19"
-                                               Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
-                                <TextBlock Text="Providers are checked when you save them and queried when you open a title. Torrent and magnet results come from these add-ons too."
-                                               FontSize="17" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
+                <Grid x:Name="AddonsPanel" Visibility="Collapsed" Background="#0F0E18">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                    <TextBlock Text="Addons" FontFamily="{StaticResource HeadingFont}" FontSize="38" FontWeight="SemiBold" Margin="0,0,0,16" />
+                    <Grid x:Name="AddonTopActions" Grid.Row="1" Margin="0,0,0,18" RowSpacing="10">
+                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <Button x:Name="AddonSyncAccountButton" Content="Sync Addons" Style="{StaticResource TvButtonStyle}" Click="SyncAddonsFromPage" HorizontalAlignment="Left" />
+                        <Button x:Name="AddProviderButton" Grid.Column="1" Content="Import Manifest" Style="{StaticResource PrimaryButtonStyle}" Click="ToggleAddProviderForm" HorizontalAlignment="Right" />
+                    </Grid>
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Spacing="14">
+                            <Border x:Name="AddProviderForm" Visibility="Collapsed" Background="#1B1A2B" BorderBrush="#3C3951" BorderThickness="1" CornerRadius="14" Padding="20">
+                                <StackPanel Spacing="12">
+                                    <TextBlock Text="Import stream add-on manifest" FontSize="23" FontWeight="SemiBold" />
+                                    <TextBlock Text="Paste HTTPS Stremio manifest URLs. Providers are validated before they are saved." FontSize="16" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
+                                    <TextBox x:Name="AddonUrlsBox" Header="Manifest URLs" PlaceholderText="https://example.com/manifest.json" AcceptsReturn="True" TextWrapping="Wrap" Height="130" />
+                                    <StackPanel x:Name="AddonImportActions" Orientation="Horizontal" Spacing="12">
+                                        <Button x:Name="SaveProvidersButton" Content="Import providers" Style="{StaticResource PrimaryButtonStyle}" Click="SaveAddons" />
+                                        <Button x:Name="SyncProvidersButton" Content="Sync from Stremio account" Style="{StaticResource TvButtonStyle}" Click="ShowAccount" />
+                                    </StackPanel>
+                                    <TextBlock x:Name="AddonSaveStatus" FontSize="16" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
                                 </StackPanel>
-                                <Border Grid.Column="1" Background="{StaticResource AccentSoftBrush}" BorderBrush="{StaticResource AccentBrush}"
-                                        BorderThickness="1" CornerRadius="24" Padding="16,8" VerticalAlignment="Top">
-                                    <TextBlock x:Name="AddonCountText" Text="0 connected" FontSize="18" FontWeight="SemiBold"
-                                               Foreground="{StaticResource AccentTextBrush}" />
-                                </Border>
-                            </Grid>
-                        </Border>
-
-                        <Border Style="{StaticResource SurfaceBorderStyle}" Padding="20">
-                            <StackPanel Spacing="14">
-                                <TextBlock Text="Add a provider" FontSize="25" FontWeight="SemiBold" />
-                                <TextBlock Text="Paste one HTTPS Stremio manifest URL per line. Add-ons must declare stream support; invalid entries are rejected without replacing your saved providers."
-                                           FontSize="19" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
-                                <TextBox x:Name="AddonUrlsBox" Header="Stream add-on manifest URLs" PlaceholderText="https://example.com/manifest.json"
-                                         AcceptsReturn="True" TextWrapping="Wrap" Height="170" />
-                                <StackPanel Orientation="Horizontal" Spacing="14">
-                                    <Button x:Name="SaveProvidersButton" Content="Save providers" Style="{StaticResource PrimaryButtonStyle}"
-                                            Width="220" Click="SaveAddons" />
-                                    <Button x:Name="SyncProvidersButton" Content="Sync from Stremio account" Style="{StaticResource TvButtonStyle}"
-                                            Width="280" Click="ShowAccount" />
+                            </Border>
+                            <Border Background="#171623" BorderBrush="#393747" BorderThickness="1" CornerRadius="14" Padding="20,18">
+                                <StackPanel Spacing="12">
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <TextBlock Text="Installed Addons" FontSize="23" FontWeight="SemiBold" />
+                                        <TextBlock x:Name="AddonCountText" VerticalAlignment="Center" Foreground="{StaticResource MutedTextBrush}" FontSize="15" />
+                                    </StackPanel>
+                                    <TextBlock x:Name="AddonSummaryText" FontSize="16" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
+                                    <Grid x:Name="AddonGridHost" SizeChanged="AddonGridSizeChanged" Loaded="AddonGridHostLoaded">
+                                    <GridView x:Name="AddonCards" IsItemClickEnabled="True" ItemClick="AddonTileClicked" SelectionMode="None"
+                                              HorizontalAlignment="Left" Background="Transparent" BorderThickness="0" Loaded="AddonGridHostLoaded">
+                                        <GridView.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal" ItemWidth="218" ItemHeight="224" /></ItemsPanelTemplate></GridView.ItemsPanel>
+                                        <GridView.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="#242338" BorderBrush="#46435E" BorderThickness="1" CornerRadius="12" Padding="13" Margin="0,0,14,14" Height="204">
+                                                    <StackPanel Spacing="7">
+                                                        <Border Height="139" Background="#32304B" CornerRadius="10">
+                                                            <Grid>
+                                                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE7FC;" FontSize="54" Foreground="#CFB9FF" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                                <Image Source="{Binding LogoSource}" Stretch="Uniform" Margin="10" />
+                                                            </Grid>
+                                                        </Border>
+                                                        <TextBlock Text="{Binding Name}" FontSize="17" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxLines="1" />
+                                                        <TextBlock Text="{Binding Category}" FontSize="13" Foreground="{StaticResource MutedTextBrush}" TextTrimming="CharacterEllipsis" MaxLines="1" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </GridView.ItemTemplate>
+                                    </GridView>
+                                    </Grid>
+                                    <TextBlock x:Name="AddonEmptyDetail" Visibility="Collapsed" FontSize="17" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
                                 </StackPanel>
-                                <TextBlock x:Name="AddonSaveStatus" FontSize="18" Foreground="{StaticResource MutedTextBrush}"
-                                           TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Border>
-
-                        <Border Background="{StaticResource AccentSoftBrush}" CornerRadius="10" Padding="18">
-                            <StackPanel Spacing="6">
-                                <TextBlock Text="How providers are used" FontSize="22" FontWeight="SemiBold" />
-                                <TextBlock Text="When you choose Find streams, the app asks each connected provider independently. Torrent and magnet results are prepared by your connected Stremio Service; direct HTTP streams can play without it."
-                                           FontSize="18" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </ScrollViewer>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
 
                 <ScrollViewer x:Name="ServerPanel" Visibility="Collapsed">
                     <StackPanel HorizontalAlignment="Stretch" Spacing="22">

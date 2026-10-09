@@ -115,6 +115,18 @@ Check(!desktopLayout.StackHeader && desktopLayout.ShowDetailsPoster,
     "Wide viewport restores side-by-side layout");
 Check(TvLayout.GetViewportLayout(double.NaN, 0) == xboxLayout,
     "Unmeasured viewport uses a safe Xbox-sized fallback");
+foreach (var (width, columns, stackTop, stackImport) in new[]
+{
+    (1090d, 3, false, false), (600d, 3, false, false),
+    (430d, 2, false, true), (359d, 1, true, true), (150d, 1, true, true)
+})
+{
+    var grid = TvLayout.GetAddonGridLayout(width);
+    Check(grid.Columns == columns && grid.StackTopActions == stackTop &&
+          grid.StackImportActions == stackImport && grid.GridWidth <= width &&
+          grid.Columns * grid.TileWidth <= grid.GridWidth,
+        $"Addon tiles and actions fit {width}px");
+}
 Console.WriteLine($"All {checks} watch-history and TV-layout checks passed.");
 
 void Check(bool condition, string label)

@@ -34,7 +34,19 @@ public static class TvLayout
         if (viewport <= 0 || !double.IsFinite(viewport)) return 194;
         return Math.Clamp(viewport / 5.7, 194, 280);
     }
+
+    public static AddonGridLayout GetAddonGridLayout(double availableWidth)
+    {
+        if (!double.IsFinite(availableWidth) || availableWidth <= 0) availableWidth = 360;
+        var gridWidth = Math.Min(availableWidth, 690);
+        var columns = Math.Max(1, Math.Min(3, (int)Math.Floor(gridWidth / 180)));
+        return new AddonGridLayout(gridWidth, columns, Math.Min(220, Math.Max(1, gridWidth / columns - 4)),
+            availableWidth < 430, availableWidth < 540);
+    }
 }
 
 public readonly record struct TvViewportLayout(double HorizontalInset, double VerticalInset,
     double ContentGap, double SidebarWidth, bool StackHeader, bool ShowDetailsPoster);
+
+public readonly record struct AddonGridLayout(double GridWidth, int Columns, double TileWidth,
+    bool StackTopActions, bool StackImportActions);

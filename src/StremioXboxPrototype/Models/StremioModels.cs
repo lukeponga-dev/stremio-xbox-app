@@ -131,6 +131,9 @@ public sealed class AddonManifest
     [JsonPropertyName("description")]
     public string? Description { get; set; }
 
+    [JsonPropertyName("logo")]
+    public string? Logo { get; set; }
+
     // The official protocol permits each resource to be either a string or
     // an object with its own types and idPrefixes. JsonElement preserves both.
     [JsonPropertyName("resources")]

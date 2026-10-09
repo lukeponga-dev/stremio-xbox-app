@@ -47,10 +47,12 @@ These omissions preserve the proposal's feasibility boundary.
 
 Prerequisites:
 
-- Visual Studio 2026 with Universal Windows Platform development tools.
-- Windows SDK 10.0.26100 or newer.
+- Visual Studio 2026 with the **WinUI application development** workload. In the Visual Studio Installer, select the optional **Universal Windows Platform tools** and **Windows 11 SDK (10.0.26100.0)** components.
+- Windows SDK 10.0.26100.0 or newer (the project targets 10.0.26100.0).
 - .NET 10 SDK.
 - Visual Studio's Desktop development with C++ workload for Release/NativeAOT packaging.
+
+This repository uses the modern SDK-style UWP project (`net10.0-windows10.0.26100.0` with `UseUwp=true`). Microsoft's [modern UWP setup guide](https://learn.microsoft.com/en-us/windows/uwp/dotnet-native/modernize-uwp-apps-with-dotnet) specifies Visual Studio 2026 for this project type. Visual Studio 2022 can build older UWP/.NET Native projects, but its [UWP tutorial](https://learn.microsoft.com/en-us/visualstudio/get-started/csharp/tutorial-uwp?view=vs-2022) does not establish support for this modern .NET 10 configuration. Use Visual Studio 2026 for the checked-in solution; do not recreate it from a legacy UWP template.
 
 From a Developer PowerShell prompt:
 

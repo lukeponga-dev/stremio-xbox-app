@@ -29,16 +29,18 @@
     <!-- Developer certificates stay outside source control. Sign automatically
          when one is present; Store builds are emitted unsigned and re-signed by
          Microsoft after acceptance. -->
-    <AppxPackageSigningEnabled Condition="Exists('$(PackageCertificateKeyFile)')">true</AppxPackageSigningEnabled>
-    <AppxPackageSigningEnabled Condition="!Exists('$(PackageCertificateKeyFile)')">false</AppxPackageSigningEnabled>
+    <!-- .csproj.user is imported after this property group, so its
+         PackageCertificateKeyFile value cannot be used in this condition. -->
+    <AppxPackageSigningEnabled Condition="Exists('StremioXboxPrototype_TemporaryKey.pfx')">true</AppxPackageSigningEnabled>
+    <AppxPackageSigningEnabled Condition="!Exists('StremioXboxPrototype_TemporaryKey.pfx')">false</AppxPackageSigningEnabled>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
     <GenerateTestArtifacts>False</GenerateTestArtifacts>
-    <AppxBundle>Never</AppxBundle>
+    <AppxBundle>Always</AppxBundle>
     <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
-    <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+    <AppxBundlePlatforms>x64</AppxBundlePlatforms>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Assets\**\*" />

@@ -1,4 +1,6 @@
-## This app is a C# UWP/XAML project. Open [StremioXboxPrototype.sln](C:/Users/lukeg/source/repos/lukeponga-dev/stremio-xbox-prototype/StremioXboxPrototype.sln) in Visual Studio.
+## This app is a C# UWP/XAML project. Open [StremioXboxPrototype.sln](../StremioXboxPrototype.sln) in Visual Studio 2026.
+
+The solution uses modern .NET 10 UWP tooling. See the [build prerequisites](../README.md#build) before opening it.
 
 ### The main files are:
 

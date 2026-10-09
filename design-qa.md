@@ -1,5 +1,27 @@
 # Design QA
 
+## Responsive Addons wireframe — 9 October 2026
+
+- Source visual truth: `C:\Users\lukeg\Downloads\addons-wireframe.jpg` (1024 × 765 pixels). The intended state shows a sidebar, Addons title, Sync Addons and Import Manifest actions, and a three-column Installed Addons tile grid.
+- Implementation: native UWP Addons screen. Screenshot path: unavailable; no deployed same-state capture could be obtained. Intended comparison viewport: 1024 × 765 effective pixels. Implementation pixel dimensions, device scale, CSS-equivalent size, and density normalization are therefore unknown.
+- Full-view and focused-region comparison: blocked. The source was inspected, but there is no implementation image to combine with it. Capture the whole Addons page and focused tiles/actions at 1024 × 765, then also capture a narrow viewport to verify the wrapped grid and stacked controls.
+- Fidelity surfaces still requiring rendered inspection: title/button typography and line wrapping; sidebar/content spacing and tile rhythm; inherited dark palette and focus colors (intentional existing-product treatment instead of the monochrome wireframe); real manifest logo sharpness/fallback icon; and live add-on names/descriptions versus the wireframe's unlabeled placeholders.
+- Functional check pending on-device: D-pad focus from the rail through Sync/Import and the grid, import-form scrolling, account sync, tile details, copy URL, and remove confirmation. The grid uses real configured add-ons plus the built-in Cinemeta catalog; it does not manufacture the nine placeholder tiles.
+- Validation: unsigned Debug/x64 UWP build passed; 74 watch-history and TV-layout checks passed, including five responsive Addons widths. These do not establish visual fidelity.
+
+final result: blocked
+
+## Add-ons reference — 9 October 2026
+
+- Source visual truth: `C:\Users\lukeg\Downloads\stitch_watchstream_brand_guidelines (2)\screen.png` (1294 × 1024 pixels). The intended state is the dark Add-ons screen with My Addons selected, populated cards, and a compact icon rail.
+- Implementation screenshot path: unavailable. This is a native UWP/Xbox screen; no same-state runtime capture was available. Intended comparison viewport is 1294 × 1024 effective pixels; implementation pixels, scale/density, and normalized side-by-side evidence cannot be established.
+- Full-view and focused-region comparison: blocked without an implementation capture. Inspect the tab/search row, a focused card, card text wrapping and actions, and the bottom-right controls on a deployed Xbox build.
+- Fidelity surfaces pending native comparison: typography (Segoe/HeadingFont vs reference), spacing and card rhythm, blue/violet selection colors, puzzle icon and logo quality, and live add-on copy/metadata. The reference's sample installed add-ons are intentionally not fabricated; My Addons reflects locally saved providers. The Community tab is an honest add-provider state because the app has no public add-on directory.
+- Interactions needing native confirmation: D-pad traversal through tabs, search, cards, and card actions; add-provider form scrolling; remove confirmation; clipboard sharing; account sync. Build and unit checks do not verify these interactions.
+- Validation: unsigned Debug/x64 UWP build passed; all 69 watch-history and TV-layout checks passed; `git diff --check` passed.
+
+final result: blocked
+
 ## Compact Home reference — 9 October 2026
 
 - Source visual truth: `C:\Users\lukeg\Downloads\stitch_watchstream_brand_guidelines (1)\screen.png` (1294 × 1024 pixels). This supersedes the larger Home reference below.

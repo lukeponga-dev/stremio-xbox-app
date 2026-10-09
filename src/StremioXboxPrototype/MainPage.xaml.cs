@@ -11,6 +11,7 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
+using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
 
 namespace StremioXboxPrototype;
@@ -33,16 +34,22 @@ public sealed partial class MainPage : Page
     private bool _isSignedIn;
     private bool _isSyncing;
     private bool _discoverHasResults;
+    private readonly Dictionary<string, AddonManifest> _addonMetadata = new(StringComparer.OrdinalIgnoreCase);
+    private CancellationTokenSource? _addonMetadataRequest;
 
     public ObservableCollection<DiagnosticEntry> Diagnostics => DiagnosticsService.Current.Entries;
 
     public MainPage()
     {
         InitializeComponent();
-        // Explicit neighbors keep the Add-ons form reachable from the icon rail
-        // and let a controller leave the multiline URL editor predictably.
+        // Keep the top actions and import form reachable with a controller.
         AddonUrlsBox.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(AddonUrlsBoxKeyDown), true);
-        AddonsButton.XYFocusRight = AddonUrlsBox;
+        AddonsButton.XYFocusRight = AddonSyncAccountButton;
+        AddonSyncAccountButton.XYFocusLeft = AddonsButton;
+        AddonSyncAccountButton.XYFocusRight = AddProviderButton;
+        AddonSyncAccountButton.XYFocusDown = AddonCards;
+        AddProviderButton.XYFocusLeft = AddonSyncAccountButton;
+        AddProviderButton.XYFocusDown = AddonCards;
         AddonUrlsBox.XYFocusLeft = AddonsButton;
         AddonUrlsBox.XYFocusDown = SaveProvidersButton;
         SaveProvidersButton.XYFocusUp = AddonUrlsBox;
@@ -50,7 +57,7 @@ public sealed partial class MainPage : Page
         SaveProvidersButton.XYFocusRight = SyncProvidersButton;
         SyncProvidersButton.XYFocusUp = AddonUrlsBox;
         SyncProvidersButton.XYFocusLeft = SaveProvidersButton;
-        AddonUrlsBox.Text = PrototypeSettings.GetStreamAddonText();
+        AddonUrlsBox.Text = "";
         UpdateAddonSummary();
         StreamingServiceUrlBox.Text = PrototypeSettings.GetStreamingServiceUrlText();
         StreamingServerUrlText.Text = PrototypeSettings.GetStreamingServiceUrlText();
@@ -185,8 +192,13 @@ public sealed partial class MainPage : Page
     private void MainPageKeyDown(object sender, KeyRoutedEventArgs e)
     {
         if (e.Key != VirtualKey.GamepadY) return;
-        if (AddonsPanel.Visibility == Visibility.Visible && AddonUrlsBox.FocusState != FocusState.Unfocused)
+        if (AddonsPanel.Visibility == Visibility.Visible)
+        {
+            if (AddonUrlsBox.FocusState != FocusState.Unfocused) return;
+            e.Handled = true;
+            AddProviderButton.Focus(FocusState.Programmatic);
             return;
+        }
         e.Handled = true;
         if (DiscoverPanel.Visibility != Visibility.Visible)
             ShowDiscover(this, new RoutedEventArgs());
@@ -540,10 +552,7 @@ public sealed partial class MainPage : Page
         var input = AddonUrlsBox.Text.Trim();
         if (input.Length == 0)
         {
-            _request?.Cancel();
-            PrototypeSettings.SetStreamAddonText("");
-            AddonSaveStatus.Text = "All configured add-ons removed.";
-            UpdateAddonSummary();
+            AddonSaveStatus.Text = "Enter at least one HTTPS manifest URL.";
             return;
         }
         var candidates = PrototypeSettings.ParseStreamAddons(input);
@@ -573,6 +582,7 @@ public sealed partial class MainPage : Page
                         continue;
                     }
                     accepted.Add(new AddonEndpoint(manifest.Name, candidate.ManifestUri));
+                    _addonMetadata[candidate.ManifestUri.AbsoluteUri] = manifest;
                 }
                 catch (Exception exception) when (exception is not OperationCanceledException)
                 {
@@ -586,10 +596,15 @@ public sealed partial class MainPage : Page
                 AddonSaveStatus.Text = "No valid stream add-ons found. Your saved add-ons have been kept. See Diagnostics.";
                 return;
             }
-            PrototypeSettings.SetStreamAddons(accepted);
-            AddonUrlsBox.Text = PrototypeSettings.GetStreamAddonText();
+            var existing = PrototypeSettings.GetStreamAddons();
+            var combined = existing.Concat(accepted)
+                .GroupBy(addon => addon.ManifestUri.AbsoluteUri, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First()).ToList();
+            PrototypeSettings.SetStreamAddons(combined);
+            AddonUrlsBox.Text = "";
             AddonSaveStatus.Text = $"Saved {accepted.Count}: {string.Join(", ", accepted.Select(addon => addon.Name))}.";
             UpdateAddonSummary();
+            RenderAddonCards();
             DiagnosticsService.Current.Info("settings", $"Validated and saved {accepted.Count} stream add-ons");
         }
         catch (OperationCanceledException) { }
@@ -829,6 +844,7 @@ public sealed partial class MainPage : Page
         BeginRequest("Syncing Stremio add-ons…");
         _isSyncing = true;
         SyncAddonsButton.IsEnabled = false;
+        AddonSyncAccountButton.IsEnabled = false;
         try
         {
             var user = await _accountClient.GetUserAsync(session.AuthKey, _request!.Token);
@@ -840,9 +856,11 @@ public sealed partial class MainPage : Page
         catch (Exception exception)
         {
             SetAccountStatus("Sync failed: " + exception.Message, AccountStatus.Error);
+            if (AddonsPanel.Visibility == Visibility.Visible)
+                AddonSummaryText.Text = "Sync failed. Check your connection or sign in again.";
             DiagnosticsService.Current.Error("account", exception.Message);
         }
-        finally { _isSyncing = false; SyncAddonsButton.IsEnabled = true; EndRequest(); }
+        finally { _isSyncing = false; SyncAddonsButton.IsEnabled = true; AddonSyncAccountButton.IsEnabled = true; EndRequest(); }
     }
 
     private async Task SyncAccountAddonsAsync(string authKey, CancellationToken cancellationToken)
@@ -863,7 +881,7 @@ public sealed partial class MainPage : Page
         }
 
         PrototypeSettings.SetStreamAddons(streamAddons);
-        AddonUrlsBox.Text = PrototypeSettings.GetStreamAddonText();
+        AddonUrlsBox.Text = "";
         UpdateAddonSummary();
         var profile = PrototypeSettings.GetProfileCache();
         PrototypeSettings.SaveProfileCache(new AccountProfileCache(AccountEmailBox.Text, profile?.Id ?? "", profile?.Avatar, streamAddons.Count));
@@ -966,17 +984,160 @@ public sealed partial class MainPage : Page
     {
         SetSelectedNavigation(AddonsButton);
         UpdateAddonSummary();
-        ShowPanel(AddonsPanel, "Stream add-ons", "Add providers or sync them from your Stremio account");
-        AddonUrlsBox.Focus(FocusState.Programmatic);
+        ShowPanel(AddonsPanel, "Addons", "Browse and manage your providers");
+        RenderAddonCards();
+        AddonSyncAccountButton.Focus(FocusState.Programmatic);
+        _ = LoadAddonMetadataAsync();
     }
 
     private void UpdateAddonSummary()
     {
         var addons = PrototypeSettings.GetStreamAddons();
-        AddonCountText.Text = addons.Count == 1 ? "1 connected" : $"{addons.Count} connected";
-        AddonSummaryText.Text = addons.Count == 0
-            ? "No providers connected yet"
-            : string.Join(" • ", addons.Select(addon => addon.Name));
+        AddonCountText.Text = addons.Count == 0 ? "1 built-in" : $"1 built-in · {addons.Count} stream provider{(addons.Count == 1 ? "" : "s")}";
+        if (AddonsPanel.Visibility == Visibility.Visible) RenderAddonCards();
+    }
+
+    private void RenderAddonCards()
+    {
+        if (AddonCards is null) return;
+        var cards = new List<AddonCardView>
+        {
+            new("Cinemeta", "Built-in", "Movies & Series",
+                "Official movie and series catalog used by WatchStream.", StremioAddonClient.CinemetaManifest.AbsoluteUri, false,
+                GetAddonLogoUri(StremioAddonClient.CinemetaManifest))
+        };
+        foreach (var addon in PrototypeSettings.GetStreamAddons())
+        {
+            if (string.Equals(addon.ManifestUri.AbsoluteUri, StremioAddonClient.CinemetaManifest.AbsoluteUri,
+                    StringComparison.OrdinalIgnoreCase)) continue;
+            _addonMetadata.TryGetValue(addon.ManifestUri.AbsoluteUri, out var manifest);
+            cards.Add(new AddonCardView(manifest?.Name ?? addon.ManifestUri.Host,
+                string.IsNullOrWhiteSpace(manifest?.Version) ? "" : "v" + manifest.Version,
+                "Stream provider", manifest?.Description ?? addon.ManifestUri.Host,
+                addon.ManifestUri.AbsoluteUri, true, GetAddonLogoUri(addon.ManifestUri)));
+        }
+        AddonSummaryText.Text = cards.Count == 1
+            ? "Your built-in catalog is ready. Import a manifest or sync your account to add stream providers."
+            : "Select an addon to view its details, copy its manifest URL, or remove a provider.";
+        AddonCards.ItemsSource = cards;
+        AddonEmptyDetail.Visibility = Visibility.Collapsed;
+        UpdateAddonGridLayout(AddonCards.ActualWidth);
+    }
+
+    private Uri? GetAddonLogoUri(Uri manifestUri)
+    {
+        if (!_addonMetadata.TryGetValue(manifestUri.AbsoluteUri, out var manifest) ||
+            string.IsNullOrWhiteSpace(manifest.Logo)) return null;
+        if (!Uri.TryCreate(manifestUri, manifest.Logo, out var logoUri) || logoUri.Scheme != Uri.UriSchemeHttps)
+            return null;
+        return logoUri;
+    }
+
+    private async Task LoadAddonMetadataAsync()
+    {
+        _addonMetadataRequest?.Cancel();
+        var request = new CancellationTokenSource();
+        _addonMetadataRequest = request;
+        var addons = new[] { new AddonEndpoint("Cinemeta", StremioAddonClient.CinemetaManifest) }
+            .Concat(PrototypeSettings.GetStreamAddons()).ToList();
+        foreach (var addon in addons)
+        {
+            if (request.IsCancellationRequested || AddonsPanel.Visibility != Visibility.Visible) break;
+            if (_addonMetadata.ContainsKey(addon.ManifestUri.AbsoluteUri)) continue;
+            try
+            {
+                var manifest = await _client.GetManifestAsync(addon.ManifestUri, request.Token);
+                if (request.IsCancellationRequested) break;
+                _addonMetadata[addon.ManifestUri.AbsoluteUri] = manifest;
+                RenderAddonCards();
+            }
+            catch (OperationCanceledException) { break; }
+            catch (Exception exception) { DiagnosticsService.Current.Warn("addons", $"Metadata unavailable for {addon.ManifestUri.Host}: {exception.Message}"); }
+        }
+        if (ReferenceEquals(_addonMetadataRequest, request)) _addonMetadataRequest = null;
+        request.Dispose();
+    }
+
+    private void ToggleAddProviderForm(object sender, RoutedEventArgs e)
+    {
+        AddProviderForm.Visibility = AddProviderForm.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+        if (AddProviderForm.Visibility == Visibility.Visible) AddonUrlsBox.Focus(FocusState.Programmatic);
+        else AddProviderButton.Focus(FocusState.Programmatic);
+    }
+
+    private void SyncAddonsFromPage(object sender, RoutedEventArgs e)
+    {
+        if (_isSyncing) return;
+        if (_accountClient.TryGetSession() is null)
+        {
+            ShowAccount(sender, e);
+            return;
+        }
+        AddonSummaryText.Text = "Syncing add-ons from your Stremio account…";
+        SyncAccountAddons(sender, e);
+    }
+
+    private void AddonGridSizeChanged(object sender, SizeChangedEventArgs e) => UpdateAddonGridLayout(e.NewSize.Width);
+    private void AddonGridHostLoaded(object sender, RoutedEventArgs e) => UpdateAddonGridLayout(AddonGridHost.ActualWidth);
+
+    private void UpdateAddonGridLayout(double width)
+    {
+        if (width <= 0) return;
+        var layout = TvLayout.GetAddonGridLayout(width);
+        AddonCards.Width = layout.GridWidth;
+        if (AddonCards.ItemsPanelRoot is ItemsWrapGrid panel)
+        {
+            panel.ItemWidth = layout.TileWidth;
+            panel.ItemHeight = 224;
+        }
+        AddonImportActions.Orientation = layout.StackImportActions ? Orientation.Vertical : Orientation.Horizontal;
+        Grid.SetRow(AddProviderButton, layout.StackTopActions ? 1 : 0);
+        Grid.SetColumn(AddProviderButton, layout.StackTopActions ? 0 : 1);
+        AddProviderButton.HorizontalAlignment = layout.StackTopActions ? HorizontalAlignment.Left : HorizontalAlignment.Right;
+        SaveProvidersButton.XYFocusDown = layout.StackImportActions ? SyncProvidersButton : null;
+        SyncProvidersButton.XYFocusUp = layout.StackImportActions ? SaveProvidersButton : AddonUrlsBox;
+    }
+
+    private async void AddonTileClicked(object sender, ItemClickEventArgs e)
+    {
+        if (e.ClickedItem is not AddonCardView addon) return;
+        var details = new ContentDialog
+        {
+            Title = addon.Name,
+            Content = $"{addon.Category}{(addon.Version.Length > 0 ? " · " + addon.Version : "")}\n\n{addon.Description}\n\n{addon.ManifestUrl}",
+            PrimaryButtonText = addon.RemoveVisibility == Visibility.Visible ? "Remove" : "Copy manifest URL",
+            SecondaryButtonText = addon.RemoveVisibility == Visibility.Visible ? "Copy manifest URL" : "",
+            CloseButtonText = "Back"
+        };
+        var result = await details.ShowAsync();
+        if (result == ContentDialogResult.Secondary || result == ContentDialogResult.Primary && addon.RemoveVisibility != Visibility.Visible)
+        {
+            CopyAddonUrl(addon.ManifestUrl);
+        }
+        else if (result == ContentDialogResult.Primary)
+        {
+            var confirmation = new ContentDialog
+            {
+                Title = $"Remove {addon.Name}?",
+                Content = "This removes the provider from this Xbox. You can import it again later.",
+                PrimaryButtonText = "Remove",
+                CloseButtonText = "Cancel"
+            };
+            if (await confirmation.ShowAsync() != ContentDialogResult.Primary) return;
+            PrototypeSettings.SetStreamAddons(PrototypeSettings.GetStreamAddons()
+                .Where(item => !string.Equals(item.ManifestUri.AbsoluteUri, addon.ManifestUrl, StringComparison.OrdinalIgnoreCase)));
+            _addonMetadata.Remove(addon.ManifestUrl);
+            UpdateAddonSummary();
+            AddonSummaryText.Text = $"Removed {addon.Name}.";
+        }
+    }
+
+    private void CopyAddonUrl(string url)
+    {
+        var package = new DataPackage();
+        package.SetText(url);
+        Clipboard.SetContent(package);
+        AddonSummaryText.Text = "Manifest URL copied to clipboard.";
     }
 
     private void ShowAccount(object sender, RoutedEventArgs e)
@@ -1053,6 +1214,7 @@ public sealed partial class MainPage : Page
         _memoryTimer.Stop();
         BusyIndicator.IsActive = false;
         _posterRequest?.Cancel();
+        if (!ReferenceEquals(panel, AddonsPanel)) _addonMetadataRequest?.Cancel();
         _focusedCard?.SetFocused(false);
         _focusedCard = null;
         if (!ReferenceEquals(panel, DiscoverPanel))
@@ -1069,11 +1231,13 @@ public sealed partial class MainPage : Page
         }
         PageTitle.Text = title;
         PageSubtitle.Text = subtitle;
+        MainHeader.Visibility = ReferenceEquals(panel, AddonsPanel) ? Visibility.Collapsed : Visibility.Visible;
         HeaderSearchButton.Visibility = ReferenceEquals(panel, DiscoverPanel) ? Visibility.Collapsed : Visibility.Visible;
         HomeRefreshButton.Visibility = ReferenceEquals(panel, HomePanel) ? Visibility.Visible : Visibility.Collapsed;
         if (focusWasInContent && FocusManager.FindFirstFocusableElement(panel) is Control firstControl)
             firstControl.Focus(FocusState.Programmatic);
     }
+
 
     private void BeginRequest(string status)
     {
@@ -1143,4 +1307,29 @@ public sealed partial class MainPage : Page
             // The dialog was dismissed by navigation, suspension, or shutdown.
         }
     }
+}
+
+public sealed class AddonCardView
+{
+    public AddonCardView(string name, string version, string category, string description, string manifestUrl,
+        bool removable, Uri? logoUri)
+    {
+        Name = name;
+        Version = version;
+        Category = category;
+        Description = description;
+        ManifestUrl = manifestUrl;
+        RemoveVisibility = removable ? Visibility.Visible : Visibility.Collapsed;
+        ShareVisibility = Visibility.Visible;
+        LogoSource = logoUri is null ? null : new BitmapImage(logoUri);
+    }
+
+    public string Name { get; }
+    public string Version { get; }
+    public string Category { get; }
+    public string Description { get; }
+    public string ManifestUrl { get; }
+    public Visibility RemoveVisibility { get; }
+    public Visibility ShareVisibility { get; }
+    public BitmapImage? LogoSource { get; }
 }

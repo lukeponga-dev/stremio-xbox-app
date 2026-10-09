@@ -84,6 +84,25 @@
             <Setter Property="BorderBrush" Value="#3A3940" />
             <Setter Property="FontSize" Value="16" />
         </Style>
+        <Style x:Key="AddonTabButtonStyle" TargetType="Button" BasedOn="{StaticResource TvButtonStyle}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="20,9" />
+            <Setter Property="MinHeight" Value="42" />
+            <Setter Property="FontSize" Value="16" />
+        </Style>
+        <Style x:Key="AddonSelectedTabButtonStyle" TargetType="Button" BasedOn="{StaticResource AddonTabButtonStyle}">
+            <Setter Property="Background" Value="#2864DF" />
+            <Setter Property="CornerRadius" Value="22" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style x:Key="AddonCardActionStyle" TargetType="Button" BasedOn="{StaticResource AddonTabButtonStyle}">
+            <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="Padding" Value="9,4" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+        </Style>
         <Style x:Key="SearchToolButtonStyle" TargetType="Button" BasedOn="{StaticResource TvButtonStyle}">
             <Setter Property="MinHeight" Value="60" />
             <Setter Property="Padding" Value="0" />
