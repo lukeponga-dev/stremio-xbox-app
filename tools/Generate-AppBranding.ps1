@@ -20,5 +20,4 @@ function Export-BrandAsset([string]$source, [string]$name, [int]$width, [int]$he
 Export-BrandAsset 'WatchstreamVisual.png' 'Square44x44Logo.scale-200.png' 88 88
 Export-BrandAsset 'WatchstreamVisual.png' 'Square150x150Logo.scale-200.png' 300 300
 Export-BrandAsset 'WatchstreamVisual.png' 'StoreLogo.png' 50 50
-Export-BrandAsset 'WatchstreamLogo.png' 'Wide310x150Logo.scale-200.png' 620 300
-Export-BrandAsset 'WatchstreamSplashGenerated.png' 'SplashScreen.scale-200.png' 1240 600
+Export-BrandAsset 'WatchstreamSplashSource.png' 'SplashScreen.scale-200.png' 1240 600
