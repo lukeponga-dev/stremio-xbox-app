@@ -25,58 +25,81 @@
 
     <Grid x:Name="LayoutRoot" XYFocusKeyboardNavigation="Enabled" KeyDown="MainPageKeyDown" SizeChanged="ViewportSizeChanged">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition x:Name="SidebarColumn" Width="204" />
+            <ColumnDefinition x:Name="SidebarColumn" Width="80" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Border x:Name="SidebarSurface" Grid.Column="0" Background="{StaticResource SidebarBrush}" Padding="48,27,8,27">
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" VerticalContentAlignment="Stretch">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="1" Spacing="6">
-                        <Button x:Name="HomeButton" Style="{StaticResource SelectedNavButtonStyle}" Click="ShowHome">
-                            <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE80F;" FontSize="22" /><TextBlock Text="Home" VerticalAlignment="Center" /></StackPanel>
+        <Border x:Name="SidebarSurface" Grid.Column="0" Background="{StaticResource SidebarBrush}" Padding="13.5,31,13.5,26"
+                BorderBrush="{StaticResource SubtleBorderBrush}" BorderThickness="0,0,1,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Button x:Name="BrandHomeButton" Grid.Row="0" Style="{StaticResource IconRailBrandButtonStyle}"
+                        Click="ShowHome" ToolTipService.ToolTip="WatchStream Home" AutomationProperties.Name="WatchStream Home">
+                    <Image Source="ms-appx:///Assets/Square44x44Logo.scale-200.png" Width="44" Height="44" Stretch="Uniform" />
+                </Button>
+                <ScrollViewer Grid.Row="1" Margin="0,29,0,12" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Spacing="14">
+                        <Button x:Name="HomeButton" Style="{StaticResource SelectedIconRailButtonStyle}" Click="ShowHome"
+                                ToolTipService.ToolTip="Home" AutomationProperties.Name="Home">
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE80F;" FontSize="25" />
                         </Button>
-                        <Button x:Name="DiscoverButton" Style="{StaticResource NavButtonStyle}" Click="ShowDiscover">
-                            <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE721;" FontSize="22" /><TextBlock Text="Discover" VerticalAlignment="Center" /></StackPanel>
+                        <Button x:Name="DiscoverButton" Style="{StaticResource IconRailButtonStyle}" Click="ShowDiscover"
+                                ToolTipService.ToolTip="Discover" AutomationProperties.Name="Discover">
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE721;" FontSize="25" />
                         </Button>
-                        <Button x:Name="LibraryNavButton" Style="{StaticResource NavButtonStyle}" Click="ShowLibrary">
-                            <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE8B7;" FontSize="22" /><TextBlock Text="Library" VerticalAlignment="Center" /></StackPanel>
+                        <Button x:Name="LibraryNavButton" Style="{StaticResource IconRailButtonStyle}" Click="ShowLibrary"
+                                ToolTipService.ToolTip="Library" AutomationProperties.Name="Library">
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE8B7;" FontSize="25" />
                         </Button>
-                        <Button x:Name="AddonsButton" Style="{StaticResource NavButtonStyle}" Click="ShowAddons">
-                            <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE7FC;" FontSize="22" /><TextBlock Text="Add-ons" VerticalAlignment="Center" /></StackPanel>
+                        <Button x:Name="AddonsButton" Style="{StaticResource IconRailButtonStyle}" Click="ShowAddons"
+                                ToolTipService.ToolTip="Add-ons" AutomationProperties.Name="Add-ons">
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE7FC;" FontSize="25" />
                         </Button>
                     </StackPanel>
-                    <StackPanel Grid.Row="3" Spacing="4" Margin="0,32,0,16">
-                        <Border Height="1" Background="{StaticResource SubtleBorderBrush}" Margin="8,0,8,18" />
-                        <Button x:Name="SettingsButton" Content="Settings" Style="{StaticResource NavButtonStyle}" Click="ShowSettings" />
-                    </StackPanel>
-                    <TextBlock Grid.Row="4" Text="A  Select&#x0a;B  Back&#x0a;Y  Search" FontSize="18" LineHeight="28" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
-                </Grid>
-            </ScrollViewer>
+                </ScrollViewer>
+                <StackPanel Grid.Row="2" Spacing="14">
+                    <Button x:Name="SettingsButton" Style="{StaticResource IconRailButtonStyle}" Click="ShowSettings"
+                            ToolTipService.ToolTip="Settings" AutomationProperties.Name="Settings">
+                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE713;" FontSize="25" />
+                    </Button>
+                    <Border Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource SubtleBorderBrush}" BorderThickness="1"
+                            CornerRadius="14" Padding="8" HorizontalAlignment="Center">
+                        <StackPanel Spacing="7" AutomationProperties.Name="A Select, B Back, Y Search">
+                            <TextBlock Text="A" Style="{StaticResource ControllerHintTextStyle}" />
+                            <TextBlock Text="B" Style="{StaticResource ControllerHintTextStyle}" />
+                            <TextBlock Text="Y" Style="{StaticResource ControllerHintTextStyle}" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
         </Border>
-        <Grid x:Name="ContentSurface" Grid.Column="1" Padding="16,27,48,27">
+        <Grid x:Name="ContentSurface" Grid.Column="1" Background="{StaticResource HomeSurfaceBrush}" Padding="48,36,65,51">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Grid Margin="0,0,0,20">
+            <Grid Margin="0,0,0,24">
                 <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                 <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition x:Name="HeaderActionsColumn" Width="Auto" /></Grid.ColumnDefinitions>
                 <StackPanel x:Name="HeaderText" Spacing="6" Margin="0,0,24,0">
-                    <TextBlock x:Name="PageTitle" Text="Home" FontFamily="{StaticResource HeadingFont}" FontSize="40" LineHeight="48" CharacterSpacing="-20" FontWeight="SemiBold" />
-                    <TextBlock x:Name="PageSubtitle" Text="Pick up where you left off or find your next favourite" FontSize="20" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
+                    <TextBlock x:Name="PageTitle" Text="Home" FontFamily="{StaticResource HeadingFont}" FontSize="36" LineHeight="48" CharacterSpacing="-20" FontWeight="Bold" />
+                    <TextBlock x:Name="PageSubtitle" Text="Pick up where you left off or find your next favourite" FontSize="16" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
                 </StackPanel>
-                <StackPanel x:Name="HeaderActions" Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                <StackPanel x:Name="HeaderActions" Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Top">
                     <ProgressRing x:Name="BusyIndicator" Width="28" Height="28" IsActive="False" />
-                    <Button x:Name="HomeRefreshButton" Content="Refresh" Style="{StaticResource HeaderButtonStyle}" Click="RetryHome" AutomationProperties.Name="Refresh popular titles" />
-                    <Button x:Name="HeaderSearchButton" Content="Search" Style="{StaticResource HeaderButtonStyle}" Click="ShowDiscover" AutomationProperties.Name="Open search" />
-                    <Button x:Name="AccountButton" Style="{StaticResource HeaderButtonStyle}" Click="ShowAccount">
+                    <Button x:Name="HomeRefreshButton" Style="{StaticResource HomeHeaderButtonStyle}" Click="RetryHome" AutomationProperties.Name="Refresh popular titles">
+                        <StackPanel Orientation="Horizontal" Spacing="10"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE72C;" FontSize="20" /><TextBlock Text="Refresh" VerticalAlignment="Center" /></StackPanel>
+                    </Button>
+                    <Button x:Name="HeaderSearchButton" Style="{StaticResource HomeHeaderButtonStyle}" Click="ShowDiscover" AutomationProperties.Name="Open search">
+                        <StackPanel Orientation="Horizontal" Spacing="10"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE721;" FontSize="20" /><TextBlock Text="Search" VerticalAlignment="Center" /></StackPanel>
+                    </Button>
+                    <Button x:Name="AccountButton" Style="{StaticResource HomeHeaderButtonStyle}" Click="ShowAccount">
                         <Grid>
                             <TextBlock x:Name="AccountNavLabel" Text="Login" Margin="0,0,28,0" VerticalAlignment="Center" />
                             <Border x:Name="ProfileInitialBadge" Width="23" Height="23" CornerRadius="12" HorizontalAlignment="Right" Background="{StaticResource AccentBrush}" Visibility="Collapsed">
@@ -102,9 +125,9 @@
                     </Border>
                     <Grid Grid.Row="1">
                         <ScrollViewer x:Name="HomeShelves" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Visibility="Collapsed">
-                            <StackPanel Spacing="20">
-                                <StackPanel x:Name="ContinueWatchingShelf" Visibility="Collapsed">
-                                    <TextBlock Text="Continue Watching" Style="{StaticResource SectionTitleStyle}" />
+                            <StackPanel Spacing="24">
+                                <StackPanel x:Name="ContinueWatchingShelf" Visibility="Collapsed" Margin="0,0,0,30">
+                                    <TextBlock Text="Continue Watching" Style="{StaticResource HomeSectionTitleStyle}" />
                                     <GridView x:Name="ContinueWatchingGrid" SizeChanged="ShelfSizeChanged" ContainerContentChanging="PosterContainerChanging"
                                               IsItemClickEnabled="True" ItemClick="OpenItem" SelectionMode="None"
                                               ItemsPanel="{StaticResource HorizontalItemsPanel}" ItemTemplate="{StaticResource PosterTemplate}"
@@ -113,7 +136,7 @@
                                 </StackPanel>
                                 <StackPanel>
                                     <Grid Margin="0,0,12,0">
-                                        <TextBlock Text="Popular movies" Style="{StaticResource SectionTitleStyle}" />
+                                        <TextBlock Text="Popular movies" Style="{StaticResource HomeSectionTitleStyle}" />
                                         <Button Content="See all ›" Width="120" HorizontalAlignment="Right" Style="{StaticResource ShelfLinkButtonStyle}" Click="ShowMovieCatalog" />
                                     </Grid>
                                     <GridView x:Name="MovieGrid" SizeChanged="ShelfSizeChanged" ContainerContentChanging="PosterContainerChanging"
@@ -124,7 +147,7 @@
                                 </StackPanel>
                                 <StackPanel>
                                     <Grid Margin="0,0,12,0">
-                                        <TextBlock Text="Popular series" Style="{StaticResource SectionTitleStyle}" />
+                                        <TextBlock Text="Popular series" Style="{StaticResource HomeSectionTitleStyle}" />
                                         <Button Content="See all ›" Width="120" HorizontalAlignment="Right" Style="{StaticResource ShelfLinkButtonStyle}" Click="ShowSeriesCatalog" />
                                     </Grid>
                                     <GridView x:Name="SeriesGrid" SizeChanged="ShelfSizeChanged" ContainerContentChanging="PosterContainerChanging"
@@ -260,9 +283,9 @@
                                 <TextBox x:Name="AddonUrlsBox" Header="Stream add-on manifest URLs" PlaceholderText="https://example.com/manifest.json"
                                          AcceptsReturn="True" TextWrapping="Wrap" Height="170" />
                                 <StackPanel Orientation="Horizontal" Spacing="14">
-                                    <Button Content="Save providers" Style="{StaticResource PrimaryButtonStyle}"
+                                    <Button x:Name="SaveProvidersButton" Content="Save providers" Style="{StaticResource PrimaryButtonStyle}"
                                             Width="220" Click="SaveAddons" />
-                                    <Button Content="Sync from Stremio account" Style="{StaticResource TvButtonStyle}"
+                                    <Button x:Name="SyncProvidersButton" Content="Sync from Stremio account" Style="{StaticResource TvButtonStyle}"
                                             Width="280" Click="ShowAccount" />
                                 </StackPanel>
                                 <TextBlock x:Name="AddonSaveStatus" FontSize="18" Foreground="{StaticResource MutedTextBrush}"

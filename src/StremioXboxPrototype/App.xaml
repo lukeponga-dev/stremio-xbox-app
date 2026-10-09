@@ -6,7 +6,18 @@
         <FontFamily x:Key="HeadingFont">ms-appx:///Assets/Fonts/Sora.ttf#Sora</FontFamily>
         <FontFamily x:Key="BodyFont">ms-appx:///Assets/Fonts/Inter.ttf#Inter</FontFamily>
         <SolidColorBrush x:Key="AppBackgroundBrush" Color="#131315" />
-        <SolidColorBrush x:Key="SidebarBrush" Color="#0E0E10" />
+        <SolidColorBrush x:Key="SidebarBrush" Color="#111116" />
+        <LinearGradientBrush x:Key="HomeSurfaceBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#111126" Offset="0" />
+            <GradientStop Color="#0B0B0E" Offset="0.42" />
+            <GradientStop Color="#17101F" Offset="0.72" />
+            <GradientStop Color="#0B0B0E" Offset="1" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="PosterFallbackBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#94C2D8" Offset="0" />
+            <GradientStop Color="#AA9BB1" Offset="0.46" />
+            <GradientStop Color="#181416" Offset="1" />
+        </LinearGradientBrush>
         <SolidColorBrush x:Key="PanelBrush" Color="#201F21" />
         <SolidColorBrush x:Key="PanelHoverBrush" Color="#353437" />
         <SolidColorBrush x:Key="ElevatedPanelBrush" Color="#2A2A2C" />
@@ -65,6 +76,14 @@
             <Setter Property="Padding" Value="16,8" />
             <Setter Property="FontSize" Value="18" />
         </Style>
+        <Style x:Key="HomeHeaderButtonStyle" TargetType="Button" BasedOn="{StaticResource HeaderButtonStyle}">
+            <Setter Property="MinHeight" Value="50" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Background" Value="#201F23" />
+            <Setter Property="BorderBrush" Value="#3A3940" />
+            <Setter Property="FontSize" Value="16" />
+        </Style>
         <Style x:Key="SearchToolButtonStyle" TargetType="Button" BasedOn="{StaticResource TvButtonStyle}">
             <Setter Property="MinHeight" Value="60" />
             <Setter Property="Padding" Value="0" />
@@ -90,6 +109,35 @@
             <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+        <Style x:Key="IconRailButtonStyle" TargetType="Button" BasedOn="{StaticResource TvButtonStyle}">
+            <Setter Property="Width" Value="52" />
+            <Setter Property="Height" Value="52" />
+            <Setter Property="MinHeight" Value="52" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+        </Style>
+        <Style x:Key="SelectedIconRailButtonStyle" TargetType="Button" BasedOn="{StaticResource IconRailButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style x:Key="IconRailBrandButtonStyle" TargetType="Button" BasedOn="{StaticResource IconRailButtonStyle}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+        <Style x:Key="ControllerHintTextStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource BodyFont}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
         </Style>
         <Style x:Key="AdvancedNavButtonStyle" TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
             <Setter Property="MinHeight" Value="44" />
@@ -122,6 +170,11 @@
             <Setter Property="CharacterSpacing" Value="-10" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+        <Style x:Key="HomeSectionTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource SectionTitleStyle}">
+            <Setter Property="FontSize" Value="25" />
+            <Setter Property="LineHeight" Value="34" />
+            <Setter Property="Margin" Value="0,0,0,16" />
         </Style>
         <Style x:Key="SurfaceBorderStyle" TargetType="Border">
             <Setter Property="Background" Value="{StaticResource PanelBrush}" />

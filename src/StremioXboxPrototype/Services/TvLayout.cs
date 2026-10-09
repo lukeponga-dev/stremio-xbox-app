@@ -12,20 +12,27 @@ public static class TvLayout
         // remain full bleed; this inset protects controls from TV overscan.
         var horizontalInset = Math.Max(width * 0.05, 16);
         var verticalInset = Math.Max(height * 0.05, 12);
-        var gap = width < 1000 ? 16 : 24;
-        var sidebarWidth = 168 + 8 + horizontalInset;
+        var gap = width < 1000 ? 24 : 48;
+        // The rail stays narrow; the separate content gap provides the safe
+        // left inset seen in the TV layout without pushing the icons inward.
+        var sidebarWidth = 80;
         var contentWidth = Math.Max(1, width - sidebarWidth - horizontalInset - gap);
         return new TvViewportLayout(horizontalInset, verticalInset, gap, sidebarWidth,
-            contentWidth < 760, width >= 1000);
+            contentWidth < 860, width >= 1000);
     }
 
     public static double GetShelfCardWidth(double viewport)
     {
-        if (viewport <= 0 || !double.IsFinite(viewport)) return 240;
-        // Prioritize legible posters and titles at sofa distance. A partial next
-        // card makes horizontal scrolling apparent without shrinking the shelf.
-        var wholeCards = Math.Max(1, (int)Math.Floor(viewport / 240 - 0.25));
-        return viewport / (wholeCards + 0.25);
+        if (viewport <= 0 || !double.IsFinite(viewport)) return 160;
+        // The compact row fits roughly seven posters at the 1294px reference
+        // viewport while retaining a usable minimum on Xbox-sized layouts.
+        return Math.Clamp(viewport / 7.5, 160, 200);
+    }
+
+    public static double GetContinueWatchingCardWidth(double viewport)
+    {
+        if (viewport <= 0 || !double.IsFinite(viewport)) return 194;
+        return Math.Clamp(viewport / 5.7, 194, 280);
     }
 }
 

@@ -76,10 +76,14 @@ Check(PrototypeSettings.GetWatchHistory().Count == 12, "A malformed entry does n
 foreach (var viewport in new[] { 600d, 960, 1280, 1560, 1920, 2560, 3840 })
 {
     var width = TvLayout.GetShelfCardWidth(viewport);
-    var count = Math.Floor(viewport / width);
-    Check(width >= 240 && Math.Abs(viewport / width - count - 0.25) < 0.001, $"Readable cards and next-card cue at {viewport}");
+    Check(width >= 160 && width <= 200 && Math.Abs(width - Math.Clamp(viewport / 7.5, 160, 200)) < 0.001,
+        $"Compact popular posters at {viewport}");
+    var featuredWidth = TvLayout.GetContinueWatchingCardWidth(viewport);
+    Check(featuredWidth >= 194 && featuredWidth <= 280 && featuredWidth > width,
+        $"Continue Watching stays featured at {viewport}");
 }
-Check(TvLayout.GetShelfCardWidth(double.NaN) == 240, "Safe sizing before layout");
+Check(TvLayout.GetShelfCardWidth(double.NaN) == 160 &&
+      TvLayout.GetContinueWatchingCardWidth(double.NaN) == 194, "Safe sizing before layout");
 foreach (var (width, height) in new[]
 {
     (640d, 360d), (960d, 540d), (1280d, 720d), (1920d, 1080d),
@@ -93,9 +97,16 @@ foreach (var (width, height) in new[]
     Check(Math.Abs(layout.HorizontalInset - width * 0.05) < 0.001 &&
         Math.Abs(layout.VerticalInset - height * 0.05) < 0.001,
         $"Controls retain five-percent safe spacing at {width} x {height}");
-    Check(Math.Abs(layout.SidebarWidth - layout.HorizontalInset - 8 - 168) < 0.001,
-        $"Navigation fits inside sidebar at {width} x {height}");
+    Check(layout.SidebarWidth == 80 &&
+          layout.ContentGap == (width < 1000 ? 24 : 48),
+        $"Reference rail and safe content gap at {width} x {height}");
 }
+var referenceLayout = TvLayout.GetViewportLayout(1294, 1024);
+var referenceContentWidth = 1294 - referenceLayout.SidebarWidth - referenceLayout.ContentGap - referenceLayout.HorizontalInset;
+Check(referenceLayout.SidebarWidth + referenceLayout.ContentGap == 128 &&
+      TvLayout.GetShelfCardWidth(referenceContentWidth) == 160 &&
+      TvLayout.GetContinueWatchingCardWidth(referenceContentWidth) == 194,
+    "1294px reference proportions for rail and poster shelves");
 var xboxLayout = TvLayout.GetViewportLayout(960, 540);
 Check(xboxLayout.StackHeader && !xboxLayout.ShowDetailsPoster,
     "Xbox effective viewport gives header actions and details adequate space");

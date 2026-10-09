@@ -39,6 +39,17 @@ public sealed partial class MainPage : Page
     public MainPage()
     {
         InitializeComponent();
+        // Explicit neighbors keep the Add-ons form reachable from the icon rail
+        // and let a controller leave the multiline URL editor predictably.
+        AddonUrlsBox.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(AddonUrlsBoxKeyDown), true);
+        AddonsButton.XYFocusRight = AddonUrlsBox;
+        AddonUrlsBox.XYFocusLeft = AddonsButton;
+        AddonUrlsBox.XYFocusDown = SaveProvidersButton;
+        SaveProvidersButton.XYFocusUp = AddonUrlsBox;
+        SaveProvidersButton.XYFocusLeft = AddonsButton;
+        SaveProvidersButton.XYFocusRight = SyncProvidersButton;
+        SyncProvidersButton.XYFocusUp = AddonUrlsBox;
+        SyncProvidersButton.XYFocusLeft = SaveProvidersButton;
         AddonUrlsBox.Text = PrototypeSettings.GetStreamAddonText();
         UpdateAddonSummary();
         StreamingServiceUrlBox.Text = PrototypeSettings.GetStreamingServiceUrlText();
@@ -174,6 +185,8 @@ public sealed partial class MainPage : Page
     private void MainPageKeyDown(object sender, KeyRoutedEventArgs e)
     {
         if (e.Key != VirtualKey.GamepadY) return;
+        if (AddonsPanel.Visibility == Visibility.Visible && AddonUrlsBox.FocusState != FocusState.Unfocused)
+            return;
         e.Handled = true;
         if (DiscoverPanel.Visibility != Visibility.Visible)
             ShowDiscover(this, new RoutedEventArgs());
@@ -358,8 +371,11 @@ public sealed partial class MainPage : Page
         if (args.Item is MetaItem item)
             Windows.UI.Xaml.Automation.AutomationProperties.SetName(container, item.Name);
         if (args.Phase == 0) args.RegisterUpdateCallback(PosterContainerChanging);
-        else if (sender == MovieGrid || sender == SeriesGrid || sender == ContinueWatchingGrid)
-            FindPosterCard(container)?.SetCardWidth(TvLayout.GetShelfCardWidth(sender.ActualWidth));
+        else if (ReferenceEquals(sender, MovieGrid) || ReferenceEquals(sender, SeriesGrid) ||
+                 ReferenceEquals(sender, ContinueWatchingGrid))
+            FindPosterCard(container)?.SetCardWidth(ReferenceEquals(sender, ContinueWatchingGrid)
+                ? TvLayout.GetContinueWatchingCardWidth(sender.ActualWidth)
+                : TvLayout.GetShelfCardWidth(sender.ActualWidth), ReferenceEquals(sender, ContinueWatchingGrid));
         if (args.Phase > 0)
             FindPosterCard(container)?.SetFocused(container.FocusState != FocusState.Unfocused);
     }
@@ -369,7 +385,9 @@ public sealed partial class MainPage : Page
         var shelf = (GridView)sender;
         for (var index = 0; index < shelf.Items.Count; index++)
             if (shelf.ContainerFromIndex(index) is DependencyObject container)
-                FindPosterCard(container)?.SetCardWidth(TvLayout.GetShelfCardWidth(e.NewSize.Width));
+                FindPosterCard(container)?.SetCardWidth(ReferenceEquals(sender, ContinueWatchingGrid)
+                    ? TvLayout.GetContinueWatchingCardWidth(e.NewSize.Width)
+                    : TvLayout.GetShelfCardWidth(e.NewSize.Width), ReferenceEquals(sender, ContinueWatchingGrid));
     }
 
     private void ViewportSizeChanged(object sender, SizeChangedEventArgs e)
@@ -378,16 +396,20 @@ public sealed partial class MainPage : Page
         // Background surfaces occupy the full window. Only interactive content
         // receives TV-safe insets, recalculated whenever the window changes size.
         SidebarColumn.Width = new GridLength(layout.SidebarWidth);
-        SidebarSurface.Padding = new Thickness(layout.HorizontalInset, layout.VerticalInset, 8, layout.VerticalInset);
-        ContentSurface.Padding = new Thickness(layout.ContentGap, layout.VerticalInset,
+        var railPadding = (layout.SidebarWidth - 53) / 2;
+        SidebarSurface.Padding = new Thickness(railPadding, Math.Max(24, e.NewSize.Height * 0.03),
+            railPadding, Math.Max(24, e.NewSize.Height * 0.025));
+        ContentSurface.Padding = new Thickness(layout.ContentGap, Math.Max(24, e.NewSize.Height * 0.035),
             layout.HorizontalInset, layout.VerticalInset);
         HeaderActionsColumn.Width = layout.StackHeader ? new GridLength(0) : GridLength.Auto;
         Grid.SetColumn(HeaderActions, layout.StackHeader ? 0 : 1);
         Grid.SetRow(HeaderActions, layout.StackHeader ? 1 : 0);
-        HeaderActions.Margin = layout.StackHeader ? new Thickness(0, 12, 0, 0) : new Thickness(0);
+        HeaderActions.Margin = layout.StackHeader ? new Thickness(0, 12, 0, 0) : new Thickness(0, 5, 0, 0);
         HeaderText.Margin = layout.StackHeader ? new Thickness(0) : new Thickness(0, 0, 24, 0);
         PageSubtitle.Visibility = e.NewSize.Height < 600 ? Visibility.Collapsed : Visibility.Visible;
-        PageTitle.FontSize = e.NewSize.Height < 600 ? 30 : 36;
+        PageTitle.FontSize = e.NewSize.Height < 600 ? 30 : e.NewSize.Width < 1500 ? 36 : 44;
+        PageTitle.LineHeight = e.NewSize.Width < 1500 ? 48 : 56;
+        PageSubtitle.FontSize = e.NewSize.Width < 1500 ? 16 : 20;
         var contentWidth = e.NewSize.Width - layout.SidebarWidth - layout.ContentGap - layout.HorizontalInset;
         var compactSearch = contentWidth < 560;
         Grid.SetColumnSpan(SearchBox, compactSearch ? 4 : 1);
@@ -574,6 +596,20 @@ public sealed partial class MainPage : Page
         finally
         {
             if (ReferenceEquals(_request, request)) EndRequest();
+        }
+    }
+
+    private void AddonUrlsBoxKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == VirtualKey.GamepadDPadDown || e.Key == VirtualKey.GamepadLeftThumbstickDown)
+        {
+            e.Handled = true;
+            SaveProvidersButton.Focus(FocusState.Programmatic);
+        }
+        else if (e.Key == VirtualKey.GamepadDPadLeft || e.Key == VirtualKey.GamepadLeftThumbstickLeft)
+        {
+            e.Handled = true;
+            AddonsButton.Focus(FocusState.Programmatic);
         }
     }
 
@@ -931,6 +967,7 @@ public sealed partial class MainPage : Page
         SetSelectedNavigation(AddonsButton);
         UpdateAddonSummary();
         ShowPanel(AddonsPanel, "Stream add-ons", "Add providers or sync them from your Stremio account");
+        AddonUrlsBox.Focus(FocusState.Programmatic);
     }
 
     private void UpdateAddonSummary()
@@ -998,7 +1035,7 @@ public sealed partial class MainPage : Page
         foreach (var button in new[] { HomeButton, DiscoverButton, LibraryNavButton, AddonsButton, SettingsButton })
         {
             button.Style = (Style)Application.Current.Resources[ReferenceEquals(button, selected)
-                ? "SelectedNavButtonStyle" : "NavButtonStyle"];
+                ? "SelectedIconRailButtonStyle" : "IconRailButtonStyle"];
         }
     }
 

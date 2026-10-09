@@ -1,5 +1,32 @@
 # Design QA
 
+## Compact Home reference — 9 October 2026
+
+- Source visual truth: `C:\Users\lukeg\Downloads\stitch_watchstream_brand_guidelines (1)\screen.png` (1294 × 1024 pixels). This supersedes the larger Home reference below.
+- Intended implementation state: dark Home with Continue Watching and live popular-movie posters at a 1294 × 1024 effective-pixel viewport.
+- Implementation screenshot and pixel dimensions: unavailable. No native UWP capture was available, so there is no density-normalized full-view or focused-region comparison.
+- Source shows an 80px rail, content starting at about 128px, a roughly 174 × 285 featured image, and roughly 140 × 210 popular images. The layout helpers and card sizing were revised toward those proportions; actual rendered alignment remains unverified.
+- Typography, spacing, color/gradient balance, live-poster image quality, and content copy still require same-state visual review. Sample titles and artwork in the reference are not bundled; the app continues to show live catalog content. Controller focus also requires an Xbox test.
+
+Validation: the unsigned Debug/x64 UWP build passed, all 69 watch-history/layout checks passed, and `git diff --check` passed. These checks do not establish visual fidelity. Capture the native Home screen at 1294 × 1024 with Continue Watching populated, compare it with the source, and review the five fidelity surfaces before approving the design.
+
+final result: blocked
+
+## Home layout reference — 9 October 2026
+
+- Source visual truth: `C:\Users\lukeg\Downloads\stitch_watchstream_brand_guidelines\screen.png` (1600 × 1349 pixels, Home with Continue Watching and popular movies).
+- Intended comparison viewport: 1600 × 1349 effective pixels, dark theme, populated Home state.
+- Implementation screenshot: unavailable. This native UWP screen cannot be captured through the available browser tooling; the locally registered app was not redeployed or opened for a same-state capture.
+- Full-view and focused-region comparison: blocked without a rendered implementation image. No pixel-density normalization or same-state visual comparison was possible.
+
+The XAML now uses a narrow rail, reference-spaced header, subdued violet/black background, large Continue Watching card, compact popular posters, and a progress/resuming treatment. Live catalog artwork and title text replace the mock's sample titles. The reference's extra TV icon was not added because the app has no corresponding page.
+
+Fidelity surfaces still requiring visual review: Sora/Inter typography and wrapping, rail and shelf spacing at the target viewport, gradient balance and focus contrast, poster crop/quality from live URLs, and Home/Continue Watching copy. Controller focus and scroll behaviour also require native runtime testing.
+
+Validation: unsigned x64 Debug UWP build passed without warnings; all 68 watch-history/layout checks passed; `git diff --check` passed. These establish compilation and sizing logic, not visual fidelity. Rebuild/deploy the app and capture the populated Home screen at the target viewport for a side-by-side comparison before treating the design as verified.
+
+final result: blocked
+
 ## Full-window TV layout — 7 October 2026
 
 - Full-window bounds are selected before first-page navigation. The frame and pages explicitly stretch horizontally and vertically.
