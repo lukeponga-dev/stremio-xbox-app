@@ -7,7 +7,7 @@
 
   <Identity Name="pongadev.watchstream"
             Publisher="CN=72F532F7-EE7F-4B17-8DC0-38902DFF476C"
-            Version="1.0.6.0" />
+            Version="1.0.7.0" />
 
   <mp:PhoneIdentity PhoneProductId="73930288-e8ee-4acb-849e-9dfb16353cd1"
                     PhonePublisherId="00000000-0000-0000-0000-000000000000" />
@@ -39,6 +39,7 @@
                           Square44x44Logo="Assets\Square44x44Logo.png"
                           AppListEntry="default">
         <uap:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="#131315" />
+        <uap:DefaultTile/>
       </uap:VisualElements>
     </Application>
   </Applications>
