@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <TargetFramework>net9.0-windows10.0.26100.0</TargetFramework>
     <!-- The UWP XAML and MSIX targets also read the explicit platform version
          during command-line packaging. Keep it aligned with TargetFramework. -->
     <TargetPlatformVersion>10.0.26100.0</TargetPlatformVersion>
