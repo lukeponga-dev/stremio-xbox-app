@@ -5,48 +5,48 @@
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   IgnorableNamespaces="uap mp">
 
-  <Identity Name="pongadev.watchstream"
-            Publisher="CN=72F532F7-EE7F-4B17-8DC0-38902DFF476C"
-            Version="1.0.10.0" />
+	<Identity Name="pongadev.watchstream"
+			Publisher="CN=72F532F7-EE7F-4B17-8DC0-38902DFF476C"
+			  Version="1.0.12.0" />
 
-  <mp:PhoneIdentity PhoneProductId="73930288-e8ee-4acb-849e-9dfb16353cd1"
-                    PhonePublisherId="00000000-0000-0000-0000-000000000000" />
+	<mp:PhoneIdentity PhoneProductId="73930288-e8ee-4acb-849e-9dfb16353cd1"
+					  PhonePublisherId="00000000-0000-0000-0000-000000000000" />
 
-  <Properties>
-    <DisplayName>watchstream</DisplayName>
-    <PublisherDisplayName>Kiwi Cloud</PublisherDisplayName>
-    <Logo>Assets\StoreLogo.png</Logo>
-  </Properties>
+	<Properties>
+		<DisplayName>watch-stream</DisplayName>
+		<PublisherDisplayName>Kiwi Cloud</PublisherDisplayName>
+		<Logo>Assets\StoreLogo.png</Logo>
+	</Properties>
 
-  <Dependencies>
-    <TargetDeviceFamily Name="Windows.Universal"
-                        MinVersion="10.0.17763.0"
-                        MaxVersionTested="10.0.26100.0" />
-  </Dependencies>
+	<Dependencies>
+		<TargetDeviceFamily Name="Windows.Universal"
+							MinVersion="10.0.17763.0"
+							MaxVersionTested="10.0.26100.0" />
+	</Dependencies>
 
-  <Resources>
-    <Resource Language="en-US" />
-  </Resources>
+	<Resources>
+		<Resource Language="en-US" />
+	</Resources>
 
-  <Applications>
-    <Application Id="App"
-                 Executable="$targetnametoken$.exe"
-                 EntryPoint="StremioXboxPrototype.App">
-      <uap:VisualElements DisplayName="watchstream"
-                 Description="Controller-first media discovery and playback for Xbox"
-                          BackgroundColor="#080A12"
-                          Square150x150Logo="Assets\Square150x150Logo.png"
-                          Square44x44Logo="Assets\Square44x44Logo.png"
-                          AppListEntry="default">
-        <uap:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="#131315" />
-        <uap:DefaultTile/>
-      </uap:VisualElements>
-    </Application>
-  </Applications>
+	<Applications>
+		<Application Id="App"
+					 Executable="$targetnametoken$.exe"
+					 EntryPoint="WatchStream.App">
+			<uap:VisualElements DisplayName="watchstream"
+					   Description="Controller-first media discovery and playback for Xbox"
+								BackgroundColor="#080A12"
+								Square150x150Logo="Assets\Square150x150Logo.png"
+								Square44x44Logo="Assets\Square44x44Logo.png"
+								AppListEntry="default">
+				<uap:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="#131315" />
+				<uap:DefaultTile/>
+			</uap:VisualElements>
+		</Application>
+	</Applications>
 
-  <Capabilities>
-    <Capability Name="internetClient" />
-    <Capability Name="privateNetworkClientServer" />
-    <DeviceCapability Name="microphone" />
-  </Capabilities>
+	<Capabilities>
+		<Capability Name="internetClient" />
+		<Capability Name="privateNetworkClientServer" />
+		<DeviceCapability Name="microphone" />
+	</Capabilities>
 </Package>

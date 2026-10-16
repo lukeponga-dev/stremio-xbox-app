@@ -1,0 +1,2 @@
+MainPackage=C:\Users\lukeg\source\repos\stremio-xbox-app\src\StremioXboxPrototype\bin\Release\net9.0-windows10.0.26100.0\win-x64\Upload\StremioXboxPrototype_1.0.11.0_x64.msix
+SymbolPackage=C:\Users\lukeg\source\repos\stremio-xbox-app\src\StremioXboxPrototype\bin\Release\net9.0-windows10.0.26100.0\win-x64\Upload\StremioXboxPrototype_1.0.11.0\StremioXboxPrototype_1.0.11.0_x64.appxsym

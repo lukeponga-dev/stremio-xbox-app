@@ -41,6 +41,8 @@
     <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
     <AppxBundlePlatforms>x64</AppxBundlePlatforms>
+    <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+    <PackageCertificateThumbprint>00A063686E2514451534474D3706185794531226</PackageCertificateThumbprint>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Assets\**\*" />
