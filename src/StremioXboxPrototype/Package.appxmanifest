@@ -31,14 +31,14 @@
 	<Applications>
 		<Application Id="App"
 					 Executable="$targetnametoken$.exe"
-					 EntryPoint="WatchStream.App">
+					 EntryPoint="StremioXboxPrototype.App">
 			<uap:VisualElements DisplayName="watchstream"
 					   Description="Controller-first media discovery and playback for Xbox"
 								BackgroundColor="#080A12"
-								Square150x150Logo="Assets\Square150x150Logo.png"
-								Square44x44Logo="Assets\Square44x44Logo.png"
+								Square150x150Logo="Assets\Square150x150Logo.scale-200.png"
+								Square44x44Logo="Assets\Square44x44Logo.scale-200.png"
 								AppListEntry="default">
-				<uap:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="#131315" />
+				<uap:SplashScreen Image="Assets\SplashScreen.scale-200.png" BackgroundColor="#131315" />
 				<uap:DefaultTile/>
 			</uap:VisualElements>
 		</Application>
