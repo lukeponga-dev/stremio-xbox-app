@@ -19,8 +19,12 @@ if ([string]::IsNullOrWhiteSpace([string]$identity.Name) -or
     [string]::IsNullOrWhiteSpace([string]$identity.Publisher)) {
     throw 'Package identity must include both Name and Publisher.'
 }
-if ([version]$identity.Version -lt [version]'1.0.0.0') {
-    throw "Package version '$($identity.Version)' is not a valid release version."
+if ([string]$identity.Name -ne 'pongadev.Watch-Stream') {
+    throw "Package identity '$($identity.Name)' does not match the Partner Center product identity 'pongadev.Watch-Stream'."
+}
+$releaseVersion = [version]$identity.Version
+if ($releaseVersion -lt [version]'1.0.0.0' -or $releaseVersion.Revision -ne 0) {
+    throw "Package version '$($identity.Version)' is not Store-ready. Use a version >= 1.0.0.0 with revision 0."
 }
 
 $app = $manifest.Package.Applications.Application
