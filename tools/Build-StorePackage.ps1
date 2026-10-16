@@ -41,7 +41,7 @@ $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $outputDirectory = Join-Path $packageRoot "StoreUpload_${packageVersion}_$stamp"
 New-Item -ItemType Directory -Path $outputDirectory | Out-Null
 
-Write-Host "Building watchstream $packageVersion for Microsoft Store (Release, x64)..."
+Write-Host "Building Watch-Stream $packageVersion for Microsoft Store (Release, x64)..."
 # Restore Release-specific Native AOT targets even after a Debug build. Publish
 # produces the executable before packaging and supplies the native payload.
 & $msbuildPath $solutionPath `
