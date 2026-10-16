@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0-windows10.0.26100.0</TargetFramework>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
     <!-- The UWP XAML and MSIX targets also read the explicit platform version
          during command-line packaging. Keep it aligned with TargetFramework. -->
     <TargetPlatformVersion>10.0.26100.0</TargetPlatformVersion>
@@ -41,8 +41,6 @@
     <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
     <AppxBundlePlatforms>x64</AppxBundlePlatforms>
-    <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
-    <PackageCertificateThumbprint>00A063686E2514451534474D3706185794531226</PackageCertificateThumbprint>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Assets\**\*" />
