@@ -27,11 +27,11 @@ $signTool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Filter
 if (!$signTool) { throw 'Windows SDK SignTool not found.' }
 $output = Join-Path $project ('AppPackages\XboxSideload_{0}_{1}' -f $manifest.Package.Identity.Version, (Get-Date -Format 'yyyyMMdd-HHmmss'))
 New-Item -ItemType Directory -Path $output | Out-Null
-$target = Join-Path $output ('watchstream_{0}_x64.msix' -f $manifest.Package.Identity.Version)
+$target = Join-Path $output ('Watch-Stream_{0}_x64.msix' -f $manifest.Package.Identity.Version)
 Copy-Item -LiteralPath $packages[0].FullName -Destination $target
 & $signTool.FullName sign /fd SHA256 /s My /sha1 $thumbprint $target
 if ($LASTEXITCODE -ne 0) { throw 'Package signing failed.' }
-[IO.File]::WriteAllBytes((Join-Path $output 'watchstream-development.cer'), $cert.Export([Security.Cryptography.X509Certificates.X509ContentType]::Cert))
+[IO.File]::WriteAllBytes((Join-Path $output 'Watch-Stream-development.cer'), $cert.Export([Security.Cryptography.X509Certificates.X509ContentType]::Cert))
 $dependencies = Join-Path $source.FullName 'Dependencies\x64'
 if (Test-Path -LiteralPath $dependencies) { Copy-Item -LiteralPath $dependencies -Destination (Join-Path $output 'Dependencies-x64') -Recurse }
 Add-Type -AssemblyName System.Security
