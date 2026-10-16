@@ -86,8 +86,8 @@ The project is x64-only because current Xbox UWP development and submission no l
 
 Open `StremioXboxPrototype.sln`, select `x64` and `Local Machine`, then run without the debugger for representative memory measurements. Debugger-attached runs do not enforce Xbox's normal app memory limit.
 
-The solution includes separate `watchstream (Local Machine)` and
-`watchstream (Xbox)` launch profiles. If local deployment reports a signing
+The solution includes separate `Watch-Stream (Local Machine)` and
+`Watch-Stream (Xbox)` launch profiles. If local deployment reports a signing
 certificate error, create and trust a current-user development certificate with:
 
 ```powershell
@@ -138,11 +138,11 @@ The prototype never executes add-on code. It sends native-direct HTTP(S) URLs st
 
 ### Connect the streaming server
 
-Open **Server** under **Developer / Advanced** in the left navigation. The default address is the hosted Stremio service at `https://watchstream-stremio-server.onrender.com/`. The app checks it on startup using Stremio's `/settings` endpoint; detailed status stays on the Server screen. Home shows a friendly reconnect notice only when disconnected or unreachable. **Connect and save** validates the response and remembers a changed address; **Disconnect server** disables server playback until you reconnect. A failed connection test preserves the previously saved address. Existing installs using the previous local, Render, or `192.168.1.103:32768` defaults migrate automatically; custom addresses and explicit disconnection are preserved.
+Open **Server** under **Developer / Advanced** in the left navigation. The default address is the hosted Stremio service at `https://Watch-Stream-stremio-server.onrender.com/`. The app checks it on startup using Stremio's `/settings` endpoint; detailed status stays on the Server screen. Home shows a friendly reconnect notice only when disconnected or unreachable. **Connect and save** validates the response and remembers a changed address; **Disconnect server** disables server playback until you reconnect. A failed connection test preserves the previously saved address. Existing installs using the previous local, Render, or `192.168.1.103:32768` defaults migrate automatically; custom addresses and explicit disconnection are preserved.
 
 ### Deploy the Render Stremio service
 
-The repository includes [`render.yaml`](render.yaml), which provisions the official `stremio/server` Docker image as a Render web service named `watchstream-stremio-server` in Singapore. In Render, create a new Blueprint from this repository and apply the Blueprint. The resulting URL should be `https://watchstream-stremio-server.onrender.com/`; verify `/settings` reports a Stremio server version before using torrent-backed playback. Render terminates HTTPS at its public edge, so the container's optional direct HTTPS certificate request may log `Could not get a valid HTTPS certificate`; this does not affect the app because it uses Render's `https://…onrender.com` URL over the server's HTTP API. The free Render plan may spin down when idle and has ephemeral storage, so a paid instance with persistent storage is recommended for reliable long-running torrent sessions.
+The repository includes [`render.yaml`](render.yaml), which provisions the official `stremio/server` Docker image as a Render web service named `Watch-Stream-stremio-server` in Singapore. In Render, create a new Blueprint from this repository and apply the Blueprint. The resulting URL should be `https://Watch-Stream-stremio-server.onrender.com/`; verify `/settings` reports a Stremio server version before using torrent-backed playback. Render terminates HTTPS at its public edge, so the container's optional direct HTTPS certificate request may log `Could not get a valid HTTPS certificate`; this does not affect the app because it uses Render's `https://…onrender.com` URL over the server's HTTP API. The free Render plan may spin down when idle and has ephemeral storage, so a paid instance with persistent storage is recommended for reliable long-running torrent sessions.
 
 Keep the local server running and the Xbox on the same network. A streaming server supplies playback, while **Add-ons** or account synchronization supplies stream providers. Opening a title loads sources automatically after configuring providers; select a source to play it. Native direct streams also work when the server is unavailable.
 
