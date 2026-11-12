@@ -10,6 +10,7 @@
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <DefaultLanguage>en-US</DefaultLanguage>
     <PublishAot Condition="'$(Configuration)' == 'Release'">true</PublishAot>
+    <PublishAot Condition="'$(Configuration)'=='releaswe'">true</PublishAot>
     <PublishProfile>win-x64.pubxml</PublishProfile>
     <DisableRuntimeMarshalling>true</DisableRuntimeMarshalling>
     <HotReloadEnabled>true</HotReloadEnabled>
@@ -24,14 +25,16 @@
     <RootNamespace>StremioXboxPrototype</RootNamespace>
     <AssemblyName>StremioXboxPrototype</AssemblyName>
     <UseWindowsForms>False</UseWindowsForms>
-    <PackageCertificateKeyFile>StremioXboxPrototype_TemporaryKey.pfx</PackageCertificateKeyFile>
     <GenerateAppInstallerFile>True</GenerateAppInstallerFile>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
     <GenerateTestArtifacts>False</GenerateTestArtifacts>
-    <AppxBundle>Never</AppxBundle>
-    <AppInstallerUri>https://192.168.1.102:11443</AppInstallerUri>
+    <AppxBundle>Auto</AppxBundle>
+    <AppInstallerUri>C:\Users\lukeg\source\repos\stremio-xbox-prototype\stremio-xbox-prototype\src\StremioXboxPrototype\bin</AppInstallerUri>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
+    <AppxBundlePlatforms>x64</AppxBundlePlatforms>
+    <Configurations>Debug;Release;releaswe</Configurations>
+    <PackageCertificateThumbprint>00A063686E2514451534474D3706185794531226</PackageCertificateThumbprint>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Assets\**\*" />
