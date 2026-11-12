@@ -17,4 +17,5 @@ namespace StremioXboxPrototype.Models;
 [JsonSerializable(typeof(StreamResponse))]
 [JsonSerializable(typeof(StremioTorrentCreateRequest))]
 [JsonSerializable(typeof(List<MetaItem>))]
+[JsonSerializable(typeof(WatchProgress))]
 internal sealed partial class StremioJsonContext : JsonSerializerContext;

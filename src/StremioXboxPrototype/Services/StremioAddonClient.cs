@@ -147,7 +147,8 @@ public sealed class StremioAddonClient
         CancellationToken cancellationToken)
     {
         var timer = Stopwatch.StartNew();
-        DiagnosticsService.Current.Info(area, $"GET {uri.Host}{uri.AbsolutePath}");
+        // Configured add-ons can embed account tokens in their URL path.
+        DiagnosticsService.Current.Info(area, $"GET {uri.Host}");
         try
         {
             using var response = await Http.GetAsync(uri, cancellationToken);

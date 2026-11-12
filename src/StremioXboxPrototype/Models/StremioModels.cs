@@ -131,6 +131,9 @@ public sealed class AddonManifest
     [JsonPropertyName("description")]
     public string? Description { get; set; }
 
+    [JsonPropertyName("logo")]
+    public string? Logo { get; set; }
+
     // The official protocol permits each resource to be either a string or
     // an object with its own types and idPrefixes. JsonElement preserves both.
     [JsonPropertyName("resources")]
@@ -226,11 +229,29 @@ public sealed class MetaItem
     [JsonPropertyName("releaseInfo")]
     public string? ReleaseInfo { get; set; }
 
+    [JsonPropertyName("imdbRating")]
+    public string? ImdbRating { get; set; }
+
+    [JsonPropertyName("runtime")]
+    public string? Runtime { get; set; }
+
     [JsonPropertyName("videos")]
     public List<VideoItem> Videos { get; set; } = new();
 
     [JsonIgnore]
+    public WatchProgress? WatchProgress { get; set; }
+
+    [JsonIgnore]
     public string Subtitle => string.IsNullOrWhiteSpace(ReleaseInfo) ? Type : $"{Type} · {ReleaseInfo}";
+
+    [JsonIgnore]
+    public string CardMetadata => string.Join(" · ", new[]
+    {
+        ReleaseInfo,
+        string.IsNullOrWhiteSpace(ImdbRating) ? null : $"★ {ImdbRating}",
+        Runtime
+    }.Where(value => !string.IsNullOrWhiteSpace(value))) is { Length: > 0 } details
+        ? details : "Details unavailable";
 }
 
 public sealed class VideoItem
@@ -285,6 +306,9 @@ public sealed class StreamItem
 
     [JsonPropertyName("sources")]
     public List<string> Sources { get; set; } = new();
+
+    [JsonPropertyName("announce")]
+    public List<string> Announce { get; set; } = new();
 
     [JsonPropertyName("nzbUrl")]
     public string? NzbUrl { get; set; }
@@ -362,8 +386,24 @@ public sealed class StreamSource
 
 public sealed class StremioTorrentCreateRequest
 {
+    [JsonPropertyName("torrent")]
+    public StremioTorrentIdentity Torrent { get; set; } = new();
+
+    [JsonPropertyName("guessFileIdx")]
+    public JsonElement GuessFileIdx { get; set; }
+
     [JsonPropertyName("peerSearch")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public StremioPeerSearch? PeerSearch { get; set; }
+
+    [JsonPropertyName("fileMustInclude")]
+    public List<string>? FileMustInclude { get; set; }
+}
+
+public sealed class StremioTorrentIdentity
+{
+    [JsonPropertyName("infoHash")]
+    public string InfoHash { get; set; } = "";
 }
 
 public sealed class StremioPeerSearch
@@ -396,4 +436,13 @@ public sealed record StreamResolution(StreamResolutionKind Kind, string Label, U
 
 public sealed record AddonEndpoint(string Name, Uri ManifestUri);
 
-public sealed record PlaybackRequest(Uri Uri, string Title, string Source);
+public sealed record WatchProgress(MetaItem Item, string VideoId, double PositionSeconds, double DurationSeconds, DateTimeOffset UpdatedAt)
+{
+    [JsonIgnore]
+    public double Percent => DurationSeconds > 0 ? Math.Clamp(PositionSeconds / DurationSeconds * 100, 0, 100) : 0;
+    [JsonIgnore]
+    public string RemainingText => $"{Math.Max(1, (int)Math.Ceiling((DurationSeconds - PositionSeconds) / 60))} min left";
+}
+
+public sealed record PlaybackRequest(Uri Uri, string Title, string Source, MetaItem? Item = null, string? VideoId = null);
+public sealed record StreamPlaybackRequest(StreamItem Stream, Uri ServiceUri, string Title, MetaItem? Item = null, string? VideoId = null);

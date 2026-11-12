@@ -10,20 +10,41 @@ namespace StremioXboxPrototype;
 public sealed partial class DetailsPage : Page
 {
     private readonly StremioAddonClient _client = new();
-    private readonly StremioStreamingServiceClient _streamingServiceClient = new();
     private MetaItem? _item;
     private CancellationTokenSource? _request;
+    private bool _streamsLoaded;
+    private bool _isOpeningStream;
+    private WatchProgress? _resume;
 
     public DetailsPage() => InitializeComponent();
+
+    private void ViewportSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var layout = TvLayout.GetViewportLayout(e.NewSize.Width, e.NewSize.Height);
+        DetailsContent.Padding = new Thickness(layout.HorizontalInset, layout.VerticalInset,
+            layout.HorizontalInset, layout.VerticalInset);
+        // Give controls the full width on the effective 960px Xbox layout; retain
+        // the decorative poster column only when it leaves enough room to read.
+        var posterWidth = Math.Clamp(e.NewSize.Width * 0.18, 180, 280);
+        PosterColumn.Width = new GridLength(layout.ShowDetailsPoster ? posterWidth : 0);
+        PosterSurface.Visibility = layout.ShowDetailsPoster ? Visibility.Visible : Visibility.Collapsed;
+        PosterSurface.Width = posterWidth;
+        PosterSurface.Height = posterWidth * 1.5;
+        DetailsScroll.Margin = new Thickness(layout.ShowDetailsPoster ? layout.ContentGap : 0, 0, 0, 0);
+    }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
+        ResetStreamOpening();
         _item = e.Parameter as MetaItem;
         if (_item is null) return;
+        // Metadata enrichment replaces the compact shelf item, so keep the saved
+        // episode identity separately before fetching the full title details.
+        _resume = _item.WatchProgress;
         ApplyItem(_item);
         UpdateLibraryButton();
-        LoadStreamsButton.Focus(FocusState.Programmatic);
+        LibraryButton.Focus(FocusState.Programmatic);
 
         try
         {
@@ -38,6 +59,8 @@ public sealed partial class DetailsPage : Page
         {
             DiagnosticsService.Current.Warn("details", "Metadata enrichment failed: " + exception.Message);
         }
+
+        await LoadStreamsAsync();
     }
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
@@ -56,7 +79,8 @@ public sealed partial class DetailsPage : Page
 
         EpisodePicker.Visibility = item.Videos.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         EpisodePicker.ItemsSource = item.Videos;
-        if (item.Videos.Count > 0 && EpisodePicker.SelectedIndex < 0) EpisodePicker.SelectedIndex = 0;
+        if (item.Videos.Count > 0)
+            EpisodePicker.SelectedItem = item.Videos.FirstOrDefault(video => video.Id == _resume?.VideoId) ?? item.Videos[0];
     }
 
     private void ToggleLibrary(object sender, RoutedEventArgs e)
@@ -76,7 +100,7 @@ public sealed partial class DetailsPage : Page
     private async void LoadStreams(object sender, RoutedEventArgs e) => await LoadStreamsAsync();
     private async void EpisodeChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (StreamList.Items.Count > 0) await LoadStreamsAsync();
+        if (_streamsLoaded) await LoadStreamsAsync();
     }
 
     private async Task LoadStreamsAsync()
@@ -85,37 +109,93 @@ public sealed partial class DetailsPage : Page
         var addons = PrototypeSettings.GetStreamAddons();
         if (addons.Count == 0)
         {
-            StreamStatusText.Text = "No stream add-ons configured. Add manifest URLs from the Add-ons screen, or use Playback lab for a direct URL.";
+            StreamStatusText.Text = "Add a provider from Add-ons, or sign in to sync your Stremio providers.";
             StreamList.ItemsSource = null;
+            _streamsLoaded = false;
             return;
         }
 
         _request?.Cancel();
-        _request = new CancellationTokenSource();
-        var cancellationToken = _request.Token;
+        var request = new CancellationTokenSource();
+        _request = request;
+        var cancellationToken = request.Token;
         BusyIndicator.IsActive = true;
-        StreamStatusText.Text = $"Querying {addons.Count} add-on(s)…";
-        var videoId = (EpisodePicker.SelectedItem as VideoItem)?.Id ?? _item.Id;
+        LoadStreamsButton.IsEnabled = false;
+        StreamStatusText.Text = $"Checking {addons.Count} provider(s) for playable streams…";
+        StreamList.ItemsSource = null;
+        var videoId = (EpisodePicker.SelectedItem as VideoItem)?.Id ?? _resume?.VideoId ?? _item.Id;
 
         var requests = addons.Select(addon => GetStreamsFromAddonAsync(addon, _item.Type, videoId, cancellationToken)).ToList();
 
         var streams = new List<StreamItem>();
-        while (requests.Count > 0)
+        try
         {
-            var completed = await Task.WhenAny(requests);
-            requests.Remove(completed);
-            streams.AddRange(await completed);
-            var ordered = streams.OrderByDescending(stream => stream.Resolution.Kind == StreamResolutionKind.NativeDirect)
-                .ThenBy(stream => stream.Name ?? stream.Title ?? stream.Provider)
-                .ToList();
-            StreamList.ItemsSource = ordered;
-            StreamStatusText.Text = $"{ordered.Count} stream(s) found. Checking {requests.Count} provider(s)…";
-        }
+            while (requests.Count > 0)
+            {
+                var completed = await Task.WhenAny(requests);
+                requests.Remove(completed);
+                cancellationToken.ThrowIfCancellationRequested();
+                streams.AddRange((await completed).Where(IsPlayable));
+                cancellationToken.ThrowIfCancellationRequested();
 
-        BusyIndicator.IsActive = false;
-        StreamStatusText.Text = streams.Count == 0
-            ? "No streams returned. Each provider failed independently or had no result."
-            : $"{streams.Count} streams: {streams.Count(s => s.Resolution.Kind == StreamResolutionKind.NativeDirect)} native-direct.";
+                var ordered = OrderAndDeduplicateStreams(streams);
+                StreamList.ItemsSource = ordered;
+                StreamStatusText.Text = DescribeStreams(ordered, requests.Count > 0);
+            }
+
+            var playable = OrderAndDeduplicateStreams(streams);
+            StreamList.ItemsSource = playable;
+            _streamsLoaded = true;
+            StreamStatusText.Text = playable.Count == 0
+                ? "No playable streams found. Try another episode or check your providers in Add-ons."
+                : DescribeStreams(playable, checkingProviders: false) +
+                  (PrototypeSettings.GetWatchProgress(_item.Type, _item.Id, videoId) is WatchProgress progress
+                      ? $" Choose a source to resume · {progress.RemainingText}."
+                      : "");
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            if (ReferenceEquals(_request, request))
+            {
+                BusyIndicator.IsActive = false;
+                LoadStreamsButton.IsEnabled = true;
+                _request = null;
+            }
+            request.Dispose();
+        }
+    }
+
+    private static bool IsPlayable(StreamItem stream) =>
+        stream.Resolution.Kind is StreamResolutionKind.NativeDirect or StreamResolutionKind.RequiresStreamingService;
+
+    private static string DescribeStreams(IReadOnlyCollection<StreamItem> streams, bool checkingProviders)
+    {
+        var direct = streams.Count(stream => stream.Resolution.Kind == StreamResolutionKind.NativeDirect);
+        var service = streams.Count(stream => stream.Resolution.Kind == StreamResolutionKind.RequiresStreamingService);
+        var parts = new List<string>();
+        if (direct > 0) parts.Add($"{direct} direct");
+        if (service > 0) parts.Add($"{service} torrent/server-backed");
+        if (parts.Count == 0) return checkingProviders ? "Checking providers…" : "No playable streams found.";
+
+        var status = string.Join(" + ", parts) + " stream(s) found";
+        if (service > 0 && PrototypeSettings.GetStreamingServiceUrl() is null)
+            status += ". Connect a Stremio Service to use torrent sources.";
+        if (checkingProviders) status += " Checking more providers…";
+        return status;
+    }
+
+    private static List<StreamItem> OrderAndDeduplicateStreams(IEnumerable<StreamItem> streams) => StreamPlaybackOrder.Order(streams)
+        .GroupBy(StreamIdentity, StringComparer.OrdinalIgnoreCase)
+        .Select(group => group.First())
+        .ToList();
+
+    private static string StreamIdentity(StreamItem stream)
+    {
+        if (stream.Resolution.PlaybackUri is not null) return stream.Resolution.PlaybackUri.AbsoluteUri;
+        if (!string.IsNullOrWhiteSpace(stream.InfoHash)) return $"torrent:{stream.InfoHash}:{stream.FileIndex}";
+        if (!string.IsNullOrWhiteSpace(stream.Url)) return stream.Url;
+        return $"{stream.Provider}:{stream.Name}:{stream.Title}:{stream.Description}";
     }
 
     private async Task<IReadOnlyList<StreamItem>> GetStreamsFromAddonAsync(AddonEndpoint addon, string type,
@@ -133,12 +213,21 @@ public sealed partial class DetailsPage : Page
         }
     }
 
-    private async void OpenStream(object sender, ItemClickEventArgs e)
+    private async void PlayStream(object sender, ItemClickEventArgs e)
     {
-        if (e.ClickedItem is not StreamItem stream || _item is null) return;
+        if (e.ClickedItem is not StreamItem stream || _item is null || _isOpeningStream) return;
+        DiagnosticsService.Current.Info("streams", $"Selected source from {stream.Provider}: {stream.Resolution.Kind}");
+        _isOpeningStream = true;
+        StreamList.IsEnabled = false;
+        LoadStreamsButton.IsEnabled = false;
+        StreamStatusText.Text = stream.Resolution.Kind == StreamResolutionKind.NativeDirect
+            ? "Opening stream…"
+            : "Preparing stream through Stremio Service…";
+
         if (stream.Resolution.Kind == StreamResolutionKind.NativeDirect && stream.Resolution.PlaybackUri is not null)
         {
-            Frame.Navigate(typeof(PlayerPage), new PlaybackRequest(stream.Resolution.PlaybackUri, _item.Name, stream.Provider));
+            OpenPlayer(new PlaybackRequest(stream.Resolution.PlaybackUri, _item.Name, stream.Provider,
+                _item, (EpisodePicker.SelectedItem as VideoItem)?.Id ?? _resume?.VideoId ?? _item.Id));
             return;
         }
 
@@ -149,43 +238,47 @@ public sealed partial class DetailsPage : Page
             {
                 await new ContentDialog
                 {
-                    Title = "Stremio Service required",
-                    Content = "Configure a reachable Stremio Service URL on the Add-ons screen, then select this stream again.",
+                    Title = "Connect your playback server",
+                    Content = "Open Server under Developer / Advanced, connect your server, then try this stream again.",
                     CloseButtonText = "OK"
                 }.ShowAsync();
+                ResetStreamOpening();
                 return;
             }
 
-            BusyIndicator.IsActive = true;
-            StreamStatusText.Text = "Preparing stream through Stremio Service…";
-            try
-            {
-                _request?.Cancel();
-                _request = new CancellationTokenSource();
-                var playbackUri = await _streamingServiceClient.ResolveTorrentAsync(serviceUrl, stream, _request.Token);
-                Frame.Navigate(typeof(PlayerPage), new PlaybackRequest(playbackUri, _item.Name, stream.Provider + " via Stremio Service"));
-            }
-            catch (OperationCanceledException) { }
-            catch (Exception exception)
-            {
-                BusyIndicator.IsActive = false;
-                StreamStatusText.Text = "Stream preparation failed.";
-                DiagnosticsService.Current.Error("streaming-service", exception.Message);
-                await new ContentDialog
-                {
-                    Title = "Could not prepare stream",
-                    Content = exception.Message + " Check that the service is running and reachable from the Xbox.",
-                    CloseButtonText = "Choose another stream"
-                }.ShowAsync();
-            }
+            OpenPlayer(new StreamPlaybackRequest(stream, serviceUrl, _item.Name,
+                _item, (EpisodePicker.SelectedItem as VideoItem)?.Id ?? _resume?.VideoId ?? _item.Id));
             return;
         }
 
         await new ContentDialog
         {
             Title = "Stream is not native-direct",
-            Content = stream.Resolution.Label + ". This prototype deliberately does not process torrents, archives, external pages, or proxy-header streams on the console.",
+            Content = stream.Resolution.Label + ". This source cannot be played directly on Xbox. Choose a native stream or configure a compatible Stremio Service, then try again.",
             CloseButtonText = "Choose another stream"
         }.ShowAsync();
+        ResetStreamOpening();
+    }
+
+    private void OpenPlayer(object request)
+    {
+        try
+        {
+            if (Frame.Navigate(typeof(PlayerPage), request)) return;
+            throw new InvalidOperationException("The player page could not be opened.");
+        }
+        catch (Exception exception)
+        {
+            ResetStreamOpening();
+            StreamStatusText.Text = "Could not open player: " + exception.Message;
+            DiagnosticsService.Current.Error("player-navigation", exception.ToString());
+        }
+    }
+
+    private void ResetStreamOpening()
+    {
+        _isOpeningStream = false;
+        StreamList.IsEnabled = true;
+        LoadStreamsButton.IsEnabled = true;
     }
 }

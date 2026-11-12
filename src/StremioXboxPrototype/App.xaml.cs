@@ -1,5 +1,6 @@
 using Windows.ApplicationModel.Activation;
 using Windows.System.Profile;
+using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
@@ -10,10 +11,17 @@ sealed partial class App : Application
     public App()
     {
         InitializeComponent();
+        // Full-screen launch is an Xbox presentation preference. On desktop
+        // certification hosts, setting it during App construction can fail in
+        // the XAML activation path before a page is shown.
+        if (IsXbox)
+        {
+            ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.FullScreen;
+        }
 
         // RequiresPointerMode is an Xbox-specific setting. Assigning it while
         // debugging the package on desktop Windows can fail during activation.
-        if (AnalyticsInfo.VersionInfo.DeviceFamily == "Windows.Xbox")
+        if (IsXbox)
         {
             RequiresPointerMode = ApplicationRequiresPointerMode.WhenRequested;
         }
@@ -36,7 +44,13 @@ sealed partial class App : Application
         var frame = Window.Current.Content as Frame;
         if (frame is null)
         {
-            frame = new Frame();
+            frame = new Frame
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                VerticalContentAlignment = VerticalAlignment.Stretch
+            };
             Window.Current.Content = frame;
         }
 
@@ -46,5 +60,16 @@ sealed partial class App : Application
         }
 
         Window.Current.Activate();
+
+        if (IsXbox)
+        {
+            // Opt out of Xbox's automatic outer border after activation. Pages
+            // draw edge to edge and reserve safe spacing around controls only.
+            var view = ApplicationView.GetForCurrentView();
+            view.SetDesiredBoundsMode(ApplicationViewBoundsMode.UseCoreWindow);
+            view.TryEnterFullScreenMode();
+        }
     }
+
+    private static bool IsXbox => AnalyticsInfo.VersionInfo.DeviceFamily == "Windows.Xbox";
 }

@@ -9,8 +9,8 @@
             Publisher="CN=72F532F7-EE7F-4B17-8DC0-38902DFF476C"
             Version="0.1.7.0" />
 
-  <mp:PhoneIdentity PhoneProductId="6b9fc68c-b81e-4f5a-bf55-1de70bd11f2f"
-                    PhonePublisherId="00000000-0000-0000-0000-000000000000" />
+	<mp:PhoneIdentity PhoneProductId="73930288-e8ee-4acb-849e-9dfb16353cd1"
+					  PhonePublisherId="00000000-0000-0000-0000-000000000000" />
 
   <Properties>
     <DisplayName>Streamio For Xbox</DisplayName>
@@ -25,9 +25,9 @@
 	  <TargetDeviceFamily Name="Windows.Xbox" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />  
   </Dependencies>
 
-  <Resources>
-    <Resource Language="en-US" />
-  </Resources>
+	<Resources>
+		<Resource Language="en-US" />
+	</Resources>
 
   <Applications>
     <Application Id="App"
@@ -45,8 +45,9 @@
     </Application>
   </Applications>
 
-  <Capabilities>
-    <Capability Name="internetClient" />
-    <Capability Name="privateNetworkClientServer" />
-  </Capabilities>
+	<Capabilities>
+		<Capability Name="internetClient" />
+		<Capability Name="privateNetworkClientServer" />
+		<DeviceCapability Name="microphone" />
+	</Capabilities>
 </Package>

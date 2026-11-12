@@ -9,17 +9,34 @@ namespace StremioXboxPrototype.Services;
 
 public sealed class StremioStreamingServiceClient
 {
+    // Redirects are inspected explicitly when the service returns the prepared
+    // playback URL, so automatic redirect following must remain disabled.
     private static readonly HttpClient Http = new(new HttpClientHandler { AllowAutoRedirect = false })
     {
-        Timeout = TimeSpan.FromSeconds(20)
+        // Connection checks and torrent preparation have different time limits.
+        // Individual operations apply bounded cancellation tokens below.
+        Timeout = Timeout.InfiniteTimeSpan
     };
+    // Preparing a torrent is expensive. Reuse its playback URL briefly, keyed by
+    // server, hash, and selected file, while keeping the cache process-local.
     private static readonly ConcurrentDictionary<string, (Uri PlaybackUri, DateTimeOffset Expires)> PreparedTorrentCache = new();
 
-    public async Task TestAsync(Uri serviceUrl, CancellationToken cancellationToken = default)
+    public async Task<string> TestAsync(Uri serviceUrl, CancellationToken cancellationToken = default)
     {
-        using var response = await Http.GetAsync(new Uri(Normalize(serviceUrl), "settings"), cancellationToken);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(25));
+        using var response = await Http.GetAsync(new Uri(Normalize(serviceUrl), "settings"), timeout.Token);
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"Stremio Service returned HTTP {(int)response.StatusCode}.");
+        using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var settings = await JsonDocument.ParseAsync(body, cancellationToken: cancellationToken);
+        var values = settings.RootElement;
+        if (values.ValueKind == JsonValueKind.Object && values.TryGetProperty("values", out var nested)) values = nested;
+        if (values.ValueKind != JsonValueKind.Object ||
+            !values.TryGetProperty("serverVersion", out var version) ||
+            version.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(version.GetString()))
+            throw new InvalidDataException("This address did not return Stremio server settings. Check the address and port.");
+        return version.GetString()!;
     }
 
     public async Task<Uri> ResolveTorrentAsync(Uri serviceUrl, StreamItem stream,
@@ -32,6 +49,9 @@ public sealed class StremioStreamingServiceClient
             throw new InvalidDataException("The add-on returned an invalid torrent info hash.");
 
         var root = Normalize(serviceUrl);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromMinutes(2));
+        var operationToken = timeout.Token;
         var fileIndex = stream.FileIndex ?? -1;
         var cacheKey = $"{root.AbsoluteUri}|{infoHash}|{fileIndex}";
         if (PreparedTorrentCache.TryGetValue(cacheKey, out var cached) && cached.Expires > DateTimeOffset.UtcNow)
@@ -40,28 +60,91 @@ public sealed class StremioStreamingServiceClient
             return cached.PlaybackUri;
         }
 
-        var sources = new List<string> { $"dht:{infoHash}" };
-        foreach (var encodedSource in stream.Sources.Where(value => !string.IsNullOrWhiteSpace(value)))
+        var sources = new List<string>();
+        foreach (var encodedSource in stream.Sources.Concat(stream.Announce).Where(value => !string.IsNullOrWhiteSpace(value)))
         {
             AddPeerSource(sources, encodedSource);
         }
         foreach (var tracker in GetMagnetTrackers(GetTorrentUri(stream))) AddPeerSource(sources, tracker);
 
+        // Match Stremio's direct route when the add-on already selected a file
+        // and supplied no peer overrides. Let the server use its default discovery.
+        if (fileIndex >= 0 && sources.Count == 0)
+            return new Uri(root, $"{infoHash}/{fileIndex}");
+
+        using var guess = JsonDocument.Parse(fileIndex >= 0 ? "false" : "{}");
+
         var request = new StremioTorrentCreateRequest
         {
-            PeerSearch = new StremioPeerSearch { Sources = sources.Distinct(StringComparer.Ordinal).ToList() }
+            Torrent = new StremioTorrentIdentity { InfoHash = infoHash },
+            GuessFileIdx = guess.RootElement.Clone(),
+            PeerSearch = sources.Count == 0 ? null : new StremioPeerSearch
+            {
+                Sources = new[] { $"dht:{infoHash}" }.Concat(sources).Distinct(StringComparer.Ordinal).ToList()
+            },
+            FileMustInclude = string.IsNullOrWhiteSpace(stream.FileMustInclude)
+                ? null
+                : new List<string> { stream.FileMustInclude.Trim() }
         };
         var json = JsonSerializer.Serialize(request, StremioJsonContext.Default.StremioTorrentCreateRequest);
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
         var timer = Stopwatch.StartNew();
-        using var response = await Http.PostAsync(new Uri(root, $"{infoHash}/create"), content, cancellationToken);
-        if (!response.IsSuccessStatusCode)
-            throw new HttpRequestException($"Stremio Service could not prepare the stream (HTTP {(int)response.StatusCode}).");
+        HttpResponseMessage response;
+        try
+        {
+            response = await Http.PostAsync(new Uri(root, $"{infoHash}/create"), content, operationToken);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new TimeoutException("The server did not return torrent metadata within two minutes. Its API can be online while peer discovery is stalled. Try another source or a server with working torrent connectivity.");
+        }
+        int? guessedFileIndex;
+        using (response)
+        {
+            if (!response.IsSuccessStatusCode)
+                throw new HttpRequestException($"Stremio Service could not prepare the stream (HTTP {(int)response.StatusCode}).");
+            guessedFileIndex = await ReadGuessedFileIndexAsync(response, operationToken);
+        }
 
-        var playbackUri = await GetPlaybackUriAsync(root, infoHash, fileIndex, cancellationToken);
+        var selectedFileIndex = fileIndex >= 0 ? fileIndex : guessedFileIndex ?? -1;
+        DiagnosticsService.Current.Info("streaming-service",
+            selectedFileIndex >= 0
+                ? $"Torrent metadata selected file index {selectedFileIndex}"
+                : "Torrent metadata did not select a file; asking the service to guess");
+
+        // Use the public HTTP stream route directly. The official server's
+        // external=1 response can advertise its container/LAN HTTPS endpoint;
+        // that redirect is not reachable through Render's public TLS edge.
+        // The selected file index is already known from the create response, so
+        // no redirect is needed for remote playback.
+        var trackerQuery = sources.Count == 0 ? "" : "?" + string.Join("&",
+            sources.Distinct(StringComparer.Ordinal).Select(source => "tr=" + Uri.EscapeDataString(source)));
+        var playbackUri = new Uri(root, $"{infoHash}/{selectedFileIndex}{trackerQuery}");
         PreparedTorrentCache[cacheKey] = (playbackUri, DateTimeOffset.UtcNow.AddMinutes(15));
         DiagnosticsService.Current.Info("streaming-service", $"Torrent prepared in {timer.ElapsedMilliseconds} ms");
         return playbackUri;
+    }
+
+    private static async Task<int?> ReadGuessedFileIndexAsync(HttpResponseMessage response,
+        CancellationToken cancellationToken)
+    {
+        if (response.Content.Headers.ContentLength == 0) return null;
+        try
+        {
+            await using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var document = await JsonDocument.ParseAsync(body, cancellationToken: cancellationToken);
+            if (document.RootElement.ValueKind != JsonValueKind.Object ||
+                !document.RootElement.TryGetProperty("guessedFileIdx", out var value)) return null;
+            return value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var index) && index >= 0
+                ? index
+                : null;
+        }
+        catch (JsonException)
+        {
+            // Some compatible services return an empty/non-JSON create response.
+            // The stream endpoint can still select a file with -1.
+            return null;
+        }
     }
 
     private static Uri Normalize(Uri value)
@@ -116,16 +199,4 @@ public sealed class StremioStreamingServiceClient
             : "tracker:" + source);
     }
 
-    private static async Task<Uri> GetPlaybackUriAsync(Uri root, string infoHash, int fileIndex,
-        CancellationToken cancellationToken)
-    {
-        var externalUri = new Uri(root, $"{infoHash}/{fileIndex}?external=1");
-        using var request = new HttpRequestMessage(HttpMethod.Get, externalUri);
-        using var response = await Http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        if ((int)response.StatusCode is >= 300 and < 400 && response.Headers.Location is not null)
-            return response.Headers.Location.IsAbsoluteUri ? response.Headers.Location : new Uri(root, response.Headers.Location);
-        if (!response.IsSuccessStatusCode)
-            throw new HttpRequestException($"Stremio Service could not open the prepared torrent (HTTP {(int)response.StatusCode}).");
-        return new Uri(root, $"{infoHash}/{fileIndex}");
-    }
 }

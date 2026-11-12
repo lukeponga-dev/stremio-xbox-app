@@ -1,0 +1,29 @@
+name: Project validation
+
+on:
+  push:
+    branches: [main, "fix/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Validate UWP packaging configuration
+        shell: pwsh
+        run: ./tools/Test-ProjectConfiguration.ps1
+
+      - name: Run portable seeder-count regression checks
+        run: dotnet run --project tests/StreamSeederCount.Tests/StreamSeederCount.Tests.csproj --configuration Release

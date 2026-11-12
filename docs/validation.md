@@ -2,6 +2,15 @@
 
 Record the OS build, app commit, network, display mode, and exact media URL or add-on response for every run.
 
+## Xbox deployment preflight — 9 October 2026
+
+- Modern UWP configuration restored: `net10.0-windows10.0.26100.0`, `WinExe`, `UseUwp=true`; Release uses Native AOT.
+- Debug/x64 build: passed. Release/x64 Native AOT and Store MSIX validation: passed for version 1.0.8.0. All 74 local layout/history checks passed.
+- The configured console address responded on Device Portal TCP 11443 with HTTP 401. This confirms the portal is reachable, but authentication is still required.
+- Xbox sideload signing: passed after the approved development-certificate setup. The 1.0.8.0 x64 MSIX in `src/StremioXboxPrototype/AppPackages/XboxSideload_1.0.8.0_20261009-191916/` was signed and its CMS signature verified. The new self-signed certificate matches the package publisher and expires on 9 October 2029. The former PFX was backed up under ignored `SigningTemp/`.
+- Not yet tested: certificate trust on the Xbox, signed-package installation, launch, controller flow, streaming, playback, suspension, memory, or Store acceptance. The console's Device Portal requires authentication (HTTP 401); do not mark any hardware rows below as passed from local builds.
+- Next gate: authenticate to the Xbox Device Portal or pair Visual Studio's Remote Machine profile. In Device Portal's Apps manager, select the signed MSIX and its exported `.cer`; include `Dependencies-x64/Microsoft.VCLibs.x64.14.00.appx` if requested. Install, launch, and run the hardware checks below.
+
 ## Required hardware tiers
 
 | Tier | Device | OS build | Display | Result owner |
@@ -22,6 +31,14 @@ Record the OS build, app commit, network, display mode, and exact media URL or a
 | Back returns without losing context | 100% |  |  |
 | Focus restores to the previously opened card | 100% |  |  |
 | Search usable with platform text entry | 100% |  |  |
+| Controller keyboard supports letters, space, delete, clear, and Done | 100% |  |  |
+| Voice search handles success, cancellation, missing microphone, and denied permission | Friendly recovery |  |  |
+| Focused posters show purple border, 3% zoom, full title, and available metadata without clipping | 100% |  |  |
+| Reduced-motion setting survives restart and preserves focus border | 100% |  |  |
+| Safe margins, Settings advanced tools, and Back focus restoration remain reachable | 100% |  |  |
+| Shelves show a deliberate next-card cue; horizontal focus reveals the whole selected card | Approximately 20% cue |  |  |
+| Home loading skeletons, empty results, and retry state | Friendly recovery |  |  |
+| Offline server reconnect notice preserves public catalog browsing | 100% |  |  |
 | Login/profile state is readable at TV distance | 100% |  |  |
 | Profile sync cannot be started twice | 100% |  |  |
 | Sign out confirms and returns to Home | 100% |  |  |
