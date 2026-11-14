@@ -1,1 +1,5 @@
-MainPackage=C:\Users\lukeg\source\repos\stremio-xbox-app\src\StremioXboxPrototype\bin\x64\Debug\net9.0-windows10.0.26100.0\win-x64\StremioXboxPrototype_1.0.12.0_x64_Debug.msix
+MainPackage=C:\Users\lukeg\source\repos\stremio-xbox-prototype\stremio-xbox-prototype\src\StremioXboxPrototype\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\StremioXboxPrototype_0.1.12.0_x64.msix
+ResourcePack=C:\Users\lukeg\source\repos\stremio-xbox-prototype\stremio-xbox-prototype\src\StremioXboxPrototype\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\StremioXboxPrototype_0.1.12.0_scale-100.msix
+ResourcePack=C:\Users\lukeg\source\repos\stremio-xbox-prototype\stremio-xbox-prototype\src\StremioXboxPrototype\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\StremioXboxPrototype_0.1.12.0_scale-125.msix
+ResourcePack=C:\Users\lukeg\source\repos\stremio-xbox-prototype\stremio-xbox-prototype\src\StremioXboxPrototype\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\StremioXboxPrototype_0.1.12.0_scale-150.msix
+ResourcePack=C:\Users\lukeg\source\repos\stremio-xbox-prototype\stremio-xbox-prototype\src\StremioXboxPrototype\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\StremioXboxPrototype_0.1.12.0_scale-400.msix

@@ -37,6 +37,7 @@
     <AppxBundlePlatforms>x64</AppxBundlePlatforms>
     <Configurations>Debug;Release;releaswe</Configurations>
     <PackageCertificateThumbprint>00A063686E2514451534474D3706185794531226</PackageCertificateThumbprint>
+    <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Assets\**\*" />
