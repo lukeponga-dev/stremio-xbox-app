@@ -361,14 +361,16 @@
     <Language Code="zu-za" InMinimumRequirementSet="true" />
   </SupportedLocales>
   <ProductReservedInfo>
-    <MainPackageIdentityName>pongadev.watchstream</MainPackageIdentityName>
+    <MainPackageIdentityName>pongadev.KiwiCloud</MainPackageIdentityName>
     <ReservedNames>
-      <ReservedName>watchstream</ReservedName>
+      <ReservedName>Kiwi Cloud</ReservedName>
+      <ReservedName>Streamio For Xbox</ReservedName>
     </ReservedNames>
   </ProductReservedInfo>
   <AccountPackageIdentityNames>
-    <MainPackageIdentityName>pongadev.KiwiCloud</MainPackageIdentityName>
-    <MainPackageIdentityName>pongadev.WatchstremioEdition</MainPackageIdentityName>
+    <MainPackageIdentityName>pongadev.StreamioX</MainPackageIdentityName>
+    <MainPackageIdentityName>pongadev.WatchStream</MainPackageIdentityName>
+    <MainPackageIdentityName>pongadev.Watch-Stream</MainPackageIdentityName>
   </AccountPackageIdentityNames>
-  <PackageInfoList LandingUrl="https://devcenterapi.dce.mp.microsoft.com/dashboard/Application?appId=9P618PRBSP86" />
+  <PackageInfoList LandingUrl="https://devcenterapi.dce.mp.microsoft.com/dashboard/Application?appId=9P0N023CJDGX" />
 </StoreAssociation>

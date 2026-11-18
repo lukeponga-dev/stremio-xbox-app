@@ -3,7 +3,9 @@
     "watchstream (Local Machine)": {
       "commandName": "MsixPackage",
       "hotReloadEnabled": false,
-      "remoteDebugEnabled": false
+      "remoteDebugEnabled": false,
+      "remoteDebugMachine": "192.168.1.103",
+      "authenticationMode": "Universal"
     },
     "watchstream (Xbox)": {
       "commandName": "MsixPackage",

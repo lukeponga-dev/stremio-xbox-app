@@ -1,4 +1,8 @@
+using System;
+using System.IO;
+using System.Threading.Tasks;
 using Windows.ApplicationModel.Activation;
+using Windows.Storage;
 using Windows.System.Profile;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
@@ -11,65 +15,109 @@ sealed partial class App : Application
     public App()
     {
         InitializeComponent();
-        // Full-screen launch is an Xbox presentation preference. On desktop
-        // certification hosts, setting it during App construction can fail in
-        // the XAML activation path before a page is shown.
-        if (IsXbox)
-        {
-            ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.FullScreen;
-        }
 
-        // RequiresPointerMode is an Xbox-specific setting. Assigning it while
-        // debugging the package on desktop Windows can fail during activation.
         if (IsXbox)
         {
-            RequiresPointerMode = ApplicationRequiresPointerMode.WhenRequested;
+            try
+            {
+                ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.FullScreen;
+                RequiresPointerMode = ApplicationRequiresPointerMode.WhenRequested;
+            }
+            catch (Exception ex)
+            {
+                WriteStartupCrash("App.ctor.XboxSetup", ex);
+            }
         }
 
         Suspending += (_, _) => Services.DiagnosticsService.Current.Info("lifecycle", "Application suspended");
         Resuming += (_, _) => Services.DiagnosticsService.Current.Info("lifecycle", "Application resumed");
+
         UnhandledException += (_, args) =>
         {
-            // Network and dispatcher operations are deliberately cancelled during
-            // navigation, suspension, and shutdown. They must not terminate UWP.
             if (args.Exception is OperationCanceledException)
             {
                 args.Handled = true;
+                return;
             }
+
+            WriteStartupCrash("App.UnhandledException", args.Exception);
+        };
+
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            WriteStartupCrash("TaskScheduler.UnobservedTaskException", args.Exception);
+            args.SetObserved();
         };
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        var frame = Window.Current.Content as Frame;
-        if (frame is null)
+        try
         {
-            frame = new Frame
+            var frame = Window.Current.Content as Frame;
+            if (frame is null)
             {
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch,
-                HorizontalContentAlignment = HorizontalAlignment.Stretch,
-                VerticalContentAlignment = VerticalAlignment.Stretch
-            };
-            Window.Current.Content = frame;
+                frame = new Frame
+                {
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    VerticalAlignment = VerticalAlignment.Stretch,
+                    HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                    VerticalContentAlignment = VerticalAlignment.Stretch
+                };
+                frame.NavigationFailed += (_, navArgs) =>
+                {
+                    WriteStartupCrash($"NavigationFailed:{navArgs.SourcePageType?.Name}", navArgs.Exception);
+                };
+                Window.Current.Content = frame;
+            }
+
+            if (frame.Content is null)
+            {
+                frame.Navigate(typeof(MainPage));
+            }
+
+            Window.Current.Activate();
+
+            if (IsXbox)
+            {
+                var view = ApplicationView.GetForCurrentView();
+                view.SetDesiredBoundsMode(ApplicationViewBoundsMode.UseCoreWindow);
+                view.TryEnterFullScreenMode();
+            }
         }
-
-        if (frame.Content is null)
+        catch (Exception ex)
         {
-            frame.Navigate(typeof(MainPage));
-        }
-
-        Window.Current.Activate();
-
-        if (IsXbox)
-        {
-            // Opt out of Xbox's automatic outer border after activation. Pages
-            // draw edge to edge and reserve safe spacing around controls only.
-            var view = ApplicationView.GetForCurrentView();
-            view.SetDesiredBoundsMode(ApplicationViewBoundsMode.UseCoreWindow);
-            view.TryEnterFullScreenMode();
+            WriteStartupCrash("App.OnLaunched", ex);
+            throw;
         }
     }
 
-    private static bool IsXbox => AnalyticsInfo.VersionInfo.DeviceFamily == "Windows.Xbox";
+    private static bool IsXbox
+    {
+        get
+        {
+            try
+            {
+                return string.Equals(AnalyticsInfo.VersionInfo.DeviceFamily, "Windows.Xbox", StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    internal static void WriteStartupCrash(string stage, Exception? ex)
+    {
+        try
+        {
+            var path = Path.Combine(ApplicationData.Current.LocalFolder.Path, "startup_crash.log");
+            var text = $"[{DateTime.UtcNow:O}] [{stage}]\n{ex}\n====================================\n";
+            File.AppendAllText(path, text);
+        }
+        catch
+        {
+            // Ignore secondary file I/O failure during crash
+        }
+    }
 }

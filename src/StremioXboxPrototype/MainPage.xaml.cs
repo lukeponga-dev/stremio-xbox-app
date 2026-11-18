@@ -41,36 +41,46 @@ public sealed partial class MainPage : Page
 
     public MainPage()
     {
-        InitializeComponent();
-        // Keep the top actions and import form reachable with a controller.
-        AddonUrlsBox.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(AddonUrlsBoxKeyDown), true);
-        AddonsButton.XYFocusRight = AddonSyncAccountButton;
-        AddonSyncAccountButton.XYFocusLeft = AddonsButton;
-        AddonSyncAccountButton.XYFocusRight = AddProviderButton;
-        AddonSyncAccountButton.XYFocusDown = AddonCards;
-        AddProviderButton.XYFocusLeft = AddonSyncAccountButton;
-        AddProviderButton.XYFocusDown = AddonCards;
-        AddonUrlsBox.XYFocusLeft = AddonsButton;
-        AddonUrlsBox.XYFocusDown = SaveProvidersButton;
-        SaveProvidersButton.XYFocusUp = AddonUrlsBox;
-        SaveProvidersButton.XYFocusLeft = AddonsButton;
-        SaveProvidersButton.XYFocusRight = SyncProvidersButton;
-        SyncProvidersButton.XYFocusUp = AddonUrlsBox;
-        SyncProvidersButton.XYFocusLeft = SaveProvidersButton;
-        AddonUrlsBox.Text = "";
-        UpdateAddonSummary();
-        StreamingServiceUrlBox.Text = PrototypeSettings.GetStreamingServiceUrlText();
-        StreamingServerUrlText.Text = PrototypeSettings.GetStreamingServiceUrlText();
-        SelectComboItem(StreamingCacheCombo, PrototypeSettings.GetStreamingCache());
-        LocalFilesAddonToggle.IsOn = PrototypeSettings.GetLocalFilesAddonEnabled();
-        SelectComboItem(RemoteHttpsCombo, PrototypeSettings.GetRemoteHttpsMode());
-        SelectComboItem(TorrentProfileCombo, PrototypeSettings.GetTorrentProfile());
-        PosterAnimationsToggle.IsOn = PrototypeSettings.GetPosterAnimationsEnabled();
-        BuildSearchKeyboard();
-        MovieSkeletons.ItemsSource = SeriesSkeletons.ItemsSource = Enumerable.Range(0, 8).ToList();
-        _memoryTimer.Tick += (_, _) => UpdateMemory();
-        SystemNavigationManager.GetForCurrentView().BackRequested += BackRequested;
-        Loaded += PageLoaded;
+        try
+        {
+            InitializeComponent();
+
+            AddonUrlsBox.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(AddonUrlsBoxKeyDown), true);
+            AddonsButton.XYFocusRight = AddonSyncAccountButton;
+            AddonSyncAccountButton.XYFocusLeft = AddonsButton;
+            AddonSyncAccountButton.XYFocusRight = AddProviderButton;
+            AddonSyncAccountButton.XYFocusDown = AddonCards;
+            AddProviderButton.XYFocusLeft = AddonSyncAccountButton;
+            AddProviderButton.XYFocusDown = AddonCards;
+            AddonUrlsBox.XYFocusLeft = AddonsButton;
+            AddonUrlsBox.XYFocusDown = SaveProvidersButton;
+            SaveProvidersButton.XYFocusUp = AddonUrlsBox;
+            SaveProvidersButton.XYFocusLeft = AddonsButton;
+            SaveProvidersButton.XYFocusRight = SyncProvidersButton;
+            SyncProvidersButton.XYFocusUp = AddonUrlsBox;
+            SyncProvidersButton.XYFocusLeft = SaveProvidersButton;
+            AddonUrlsBox.Text = "";
+
+            UpdateAddonSummary();
+            StreamingServiceUrlBox.Text = PrototypeSettings.GetStreamingServiceUrlText();
+            StreamingServerUrlText.Text = PrototypeSettings.GetStreamingServiceUrlText();
+            SelectComboItem(StreamingCacheCombo, PrototypeSettings.GetStreamingCache());
+            LocalFilesAddonToggle.IsOn = PrototypeSettings.GetLocalFilesAddonEnabled();
+            SelectComboItem(RemoteHttpsCombo, PrototypeSettings.GetRemoteHttpsMode());
+            SelectComboItem(TorrentProfileCombo, PrototypeSettings.GetTorrentProfile());
+            PosterAnimationsToggle.IsOn = PrototypeSettings.GetPosterAnimationsEnabled();
+
+            BuildSearchKeyboard();
+            MovieSkeletons.ItemsSource = SeriesSkeletons.ItemsSource = Enumerable.Range(0, 8).ToList();
+            _memoryTimer.Tick += (_, _) => UpdateMemory();
+            SystemNavigationManager.GetForCurrentView().BackRequested += BackRequested;
+            Loaded += PageLoaded;
+        }
+        catch (Exception ex)
+        {
+            App.WriteStartupCrash("MainPage.ctor", ex);
+            throw;
+        }
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -256,8 +266,8 @@ public sealed partial class MainPage : Page
 
     private void BuildSearchKeyboard()
     {
-        // Build the compact TV keyboard in code so every key receives identical
-        // controller focus behavior without a large repeated XAML declaration.
+        var keyStyle = ResolveStyle("KeyboardKeyButtonStyle");
+
         foreach (var keys in new[] { "1234567890", "QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM" })
         {
             var row = new Grid();
@@ -266,10 +276,12 @@ public sealed partial class MainPage : Page
                 row.ColumnDefinitions.Add(new ColumnDefinition());
                 var button = new Button
                 {
-                    Content = keys[index].ToString(), Tag = keys[index].ToString().ToLowerInvariant(),
-                    Style = (Style)Application.Current.Resources["KeyboardKeyButtonStyle"],
-                    HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(3, 0, 3, 0)
+                    Content = keys[index].ToString(),
+                    Tag = keys[index].ToString().ToLowerInvariant(),
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    Margin = new Thickness(3, 0, 3, 0)
                 };
+                if (keyStyle is not null) button.Style = keyStyle;
                 button.Click += SearchKeyboardKey;
                 Grid.SetColumn(button, index);
                 row.Children.Add(button);
@@ -277,6 +289,7 @@ public sealed partial class MainPage : Page
             }
             KeyboardRows.Children.Add(row);
         }
+
         var actions = new Grid();
         var labels = new[] { "Space", "Delete", "Clear", "Done" };
         for (var index = 0; index < labels.Length; index++)
@@ -284,15 +297,44 @@ public sealed partial class MainPage : Page
             actions.ColumnDefinitions.Add(new ColumnDefinition());
             var button = new Button
             {
-                Content = labels[index], Tag = labels[index],
-                Style = (Style)Application.Current.Resources["KeyboardKeyButtonStyle"],
-                HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(3, 0, 3, 0)
+                Content = labels[index],
+                Tag = labels[index],
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(3, 0, 3, 0)
             };
+            if (keyStyle is not null) button.Style = keyStyle;
             button.Click += SearchKeyboardKey;
             Grid.SetColumn(button, index);
             actions.Children.Add(button);
         }
         KeyboardRows.Children.Add(actions);
+    }
+
+    private Style? ResolveStyle(string key)
+    {
+        if (Resources.TryGetValue(key, out var pageRes) && pageRes is Style pageStyle)
+            return pageStyle;
+
+        if (Application.Current.Resources.TryGetValue(key, out var appRes) && appRes is Style appStyle)
+            return appStyle;
+
+        DiagnosticsService.Current.Warn("ui", $"Missing XAML style resource: {key}");
+        return null;
+    }
+
+    private void SetSelectedNavigation(Button selected)
+    {
+        if (selected == PlaybackLabButton || selected == ServerButton || selected == DiagnosticsButton)
+            selected = SettingsButton;
+
+        foreach (var button in new[] { HomeButton, DiscoverButton, LibraryNavButton, AddonsButton, SettingsButton })
+        {
+            var style = ResolveStyle(ReferenceEquals(button, selected)
+                ? "SelectedIconRailButtonStyle"
+                : "IconRailButtonStyle");
+            if (style is not null)
+                button.Style = style;
+        }
     }
 
     private void ToggleSearchKeyboard(object sender, RoutedEventArgs e)
@@ -1186,18 +1228,6 @@ public sealed partial class MainPage : Page
         SettingsButton.Focus(FocusState.Programmatic);
         UpdateMemory();
         _memoryTimer.Start();
-    }
-
-    private void SetSelectedNavigation(Button selected)
-    {
-        // Advanced tools belong to Settings, which stays selected in the rail.
-        if (selected == PlaybackLabButton || selected == ServerButton || selected == DiagnosticsButton)
-            selected = SettingsButton;
-        foreach (var button in new[] { HomeButton, DiscoverButton, LibraryNavButton, AddonsButton, SettingsButton })
-        {
-            button.Style = (Style)Application.Current.Resources[ReferenceEquals(button, selected)
-                ? "SelectedIconRailButtonStyle" : "IconRailButtonStyle"];
-        }
     }
 
     private void ShowPanel(UIElement panel, string title, string subtitle)
