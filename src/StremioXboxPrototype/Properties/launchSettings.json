@@ -8,9 +8,9 @@
     "watchstream (Xbox)": {
       "commandName": "MsixPackage",
       "hotReloadEnabled": false,
-      "remoteDebugEnabled": false,
+      "remoteDebugEnabled": true,
       "authenticationMode": "Universal",
-      "remoteDebugMachine": ""
+      "remoteDebugMachine": "192.168.1.103"
     },
     "WSL": {
       "commandName": "WSL2",
