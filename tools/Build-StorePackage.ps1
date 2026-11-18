@@ -15,13 +15,18 @@ if (-not (Test-Path -LiteralPath $vswherePath)) {
 
 [xml]$manifest = Get-Content -LiteralPath $manifestPath
 $packageVersion = [version]$manifest.Package.Identity.Version
+$highestPublishedVersion = [version]'1.0.19.0'
 
-if ($packageVersion.Major -eq 0) {
-    throw "Package version $packageVersion is not Store-ready. Use a version such as 1.0.0.0."
+if ($packageVersion.Major -lt 1) {
+    throw "Package version $packageVersion is not Store-ready. Use a non-zero major version such as 1.0.20.0."
 }
 
 if ($packageVersion.Revision -ne 0) {
     throw "Package version $packageVersion is invalid for a Store build. The fourth number must remain 0."
+}
+
+if ($packageVersion -le $highestPublishedVersion) {
+    throw "Package version $packageVersion must be higher than the highest published Partner Center version $highestPublishedVersion."
 }
 
 $visualStudioPath = & $vswherePath -latest -products * -requires Microsoft.VisualStudio.Workload.Universal -property installationPath
@@ -41,7 +46,7 @@ $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $outputDirectory = Join-Path $packageRoot "StoreUpload_${packageVersion}_$stamp"
 New-Item -ItemType Directory -Path $outputDirectory | Out-Null
 
-Write-Host "Building Watch-Stream $packageVersion for Microsoft Store (Release, x64)..."
+Write-Host "Building Streamio For Xbox $packageVersion for Microsoft Store (Release, x64)..."
 # Restore Release-specific Native AOT targets even after a Debug build. Publish
 # produces the executable before packaging and supplies the native payload.
 & $msbuildPath $solutionPath `
@@ -97,6 +102,9 @@ try {
         $builtManifest.Package.Identity.Publisher -ne $manifest.Package.Identity.Publisher -or
         $builtManifest.Package.Identity.ProcessorArchitecture -ne 'x64') {
         throw 'The MSIX payload identity or architecture does not match this release.'
+    }
+    if ($builtManifest.Package.Properties.PublisherDisplayName -ne $manifest.Package.Properties.PublisherDisplayName) {
+        throw 'The MSIX payload publisher display name does not match the source manifest.'
     }
     $executable = $builtManifest.Package.Applications.Application.Executable
     if (-not $packageArchive.GetEntry($executable)) {
