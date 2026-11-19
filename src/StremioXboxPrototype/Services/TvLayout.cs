@@ -10,12 +10,12 @@ public static class TvLayout
         if (!double.IsFinite(height) || height <= 0) height = 540;
         // Keep safe spacing proportional even on large viewports. Backgrounds
         // remain full bleed; this inset protects controls from TV overscan.
-        var horizontalInset = Math.Max(width * 0.05, 16);
+        var horizontalInset = Math.Max(width * 0.025, 16);
         var verticalInset = Math.Max(height * 0.05, 12);
-        var gap = width < 1000 ? 24 : 48;
+        var gap = width < 1000 ? 20 : 32;
         // The rail stays narrow; the separate content gap provides the safe
         // left inset seen in the TV layout without pushing the icons inward.
-        var sidebarWidth = 80;
+        var sidebarWidth = 0;
         var contentWidth = Math.Max(1, width - sidebarWidth - horizontalInset - gap);
         return new TvViewportLayout(horizontalInset, verticalInset, gap, sidebarWidth,
             contentWidth < 860, width >= 1000);
@@ -26,13 +26,13 @@ public static class TvLayout
         if (viewport <= 0 || !double.IsFinite(viewport)) return 160;
         // The compact row fits roughly seven posters at the 1294px reference
         // viewport while retaining a usable minimum on Xbox-sized layouts.
-        return Math.Clamp(viewport / 7.5, 160, 200);
+        return Math.Clamp(viewport / 5.1, 220, 300);
     }
 
     public static double GetContinueWatchingCardWidth(double viewport)
     {
         if (viewport <= 0 || !double.IsFinite(viewport)) return 194;
-        return Math.Clamp(viewport / 5.7, 194, 280);
+        return Math.Clamp(viewport / 5.1, 220, 300);
     }
 
     public static AddonGridLayout GetAddonGridLayout(double availableWidth)

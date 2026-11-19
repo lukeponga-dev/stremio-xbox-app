@@ -26,6 +26,7 @@ public sealed partial class MainPage : Page
     private CancellationTokenSource? _posterRequest;
     private CancellationTokenSource? _voiceRequest;
     private PosterCard? _focusedCard;
+    private MetaItem? _featuredItem;
     private readonly Dictionary<string, MetaItem> _metadataCache = new();
     private bool _startupCompleted;
     private Button? _firstKeyboardKey;
@@ -48,9 +49,12 @@ public sealed partial class MainPage : Page
             AddonUrlsBox.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(AddonUrlsBoxKeyDown), true);
             AddonsButton.XYFocusRight = AddonSyncAccountButton;
             AddonSyncAccountButton.XYFocusLeft = AddonsButton;
-            AddonSyncAccountButton.XYFocusRight = AddProviderButton;
+            AddonSyncAccountButton.XYFocusRight = AddonViewAllButton;
+            AddonViewAllButton.XYFocusLeft = AddonSyncAccountButton;
+            AddonViewAllButton.XYFocusRight = AddProviderButton;
+            AddonViewAllButton.XYFocusDown = AddonCards;
             AddonSyncAccountButton.XYFocusDown = AddonCards;
-            AddProviderButton.XYFocusLeft = AddonSyncAccountButton;
+            AddProviderButton.XYFocusLeft = AddonViewAllButton;
             AddProviderButton.XYFocusDown = AddonCards;
             AddonUrlsBox.XYFocusLeft = AddonsButton;
             AddonUrlsBox.XYFocusDown = SaveProvidersButton;
@@ -106,7 +110,7 @@ public sealed partial class MainPage : Page
     {
         if (_startupCompleted) return;
         _startupCompleted = true;
-        HomeButton.Focus(FocusState.Programmatic);
+        TopHomeButton.Focus(FocusState.Programmatic);
         // Catalog and server checks are independent, so start both without making
         // the first screen wait for a sleeping hosted server.
         _ = LoadHomeAsync();
@@ -153,6 +157,17 @@ public sealed partial class MainPage : Page
             request.Token.ThrowIfCancellationRequested();
             MovieGrid.ItemsSource = movies.Result.Take(20).ToList();
             SeriesGrid.ItemsSource = series.Result.Take(20).ToList();
+            RecentlyAddedGrid.ItemsSource = movies.Result.Concat(series.Result).OrderByDescending(item => item.ReleaseInfo).Take(20).ToList();
+            _featuredItem = movies.Result.FirstOrDefault(item => !string.IsNullOrWhiteSpace(item.Background)) ?? movies.Result.FirstOrDefault() ?? series.Result.FirstOrDefault();
+            if (_featuredItem is not null)
+            {
+                FeaturedTitleText.Text = _featuredItem.Name;
+                FeaturedMetadataText.Text = string.Join("  |  ", new[] { _featuredItem.ReleaseInfo, _featuredItem.Type == "series" ? "Series" : "Movie", string.IsNullOrWhiteSpace(_featuredItem.ImdbRating) ? null : "★ " + _featuredItem.ImdbRating }.Where(value => !string.IsNullOrWhiteSpace(value)));
+                FeaturedDescriptionText.Text = string.IsNullOrWhiteSpace(_featuredItem.Description) ? "Explore more from your Stremio add-ons." : _featuredItem.Description;
+                var artworkUrl = _featuredItem.Background ?? _featuredItem.Poster;
+                if (Uri.TryCreate(artworkUrl, UriKind.Absolute, out var artworkUri) && (artworkUri.Scheme == Uri.UriSchemeHttp || artworkUri.Scheme == Uri.UriSchemeHttps))
+                    FeaturedArtwork.Source = new BitmapImage(artworkUri) { DecodePixelWidth = 1600 };
+            }
             NetworkStatusText.Text = $"Loaded {movies.Result.Count + series.Result.Count} catalog items";
             DiagnosticsService.Current.Info("catalog", NetworkStatusText.Text);
             var empty = MovieGrid.Items.Count + SeriesGrid.Items.Count + ContinueWatchingGrid.Items.Count == 0;
@@ -335,6 +350,13 @@ public sealed partial class MainPage : Page
             if (style is not null)
                 button.Style = style;
         }
+
+        var topSelected = selected == HomeButton ? TopHomeButton
+            : selected == DiscoverButton ? TopSearchButton
+            : selected == LibraryNavButton ? TopLibraryButton
+            : selected == AddonsButton ? TopAddonsButton : null;
+        foreach (var button in new[] { TopHomeButton, TopMoviesButton, TopSeriesButton, TopLibraryButton, TopAddonsButton, TopSearchButton })
+            button.Style = ResolveStyle(ReferenceEquals(button, topSelected) ? "TopNavSelectedButtonStyle" : "TopNavButtonStyle") ?? button.Style;
     }
 
     private void ToggleSearchKeyboard(object sender, RoutedEventArgs e)
@@ -450,11 +472,10 @@ public sealed partial class MainPage : Page
         // Background surfaces occupy the full window. Only interactive content
         // receives TV-safe insets, recalculated whenever the window changes size.
         SidebarColumn.Width = new GridLength(layout.SidebarWidth);
-        var railPadding = (layout.SidebarWidth - 53) / 2;
+        var railPadding = 12;
         SidebarSurface.Padding = new Thickness(railPadding, Math.Max(24, e.NewSize.Height * 0.03),
             railPadding, Math.Max(24, e.NewSize.Height * 0.025));
-        ContentSurface.Padding = new Thickness(layout.ContentGap, Math.Max(24, e.NewSize.Height * 0.035),
-            layout.HorizontalInset, layout.VerticalInset);
+        ContentSurface.Padding = new Thickness(50, 10, 45, 12);
         HeaderActionsColumn.Width = layout.StackHeader ? new GridLength(0) : GridLength.Auto;
         Grid.SetColumn(HeaderActions, layout.StackHeader ? 0 : 1);
         Grid.SetRow(HeaderActions, layout.StackHeader ? 1 : 0);
@@ -464,7 +485,7 @@ public sealed partial class MainPage : Page
         PageTitle.FontSize = e.NewSize.Height < 600 ? 30 : e.NewSize.Width < 1500 ? 36 : 44;
         PageTitle.LineHeight = e.NewSize.Width < 1500 ? 48 : 56;
         PageSubtitle.FontSize = e.NewSize.Width < 1500 ? 16 : 20;
-        var contentWidth = e.NewSize.Width - layout.SidebarWidth - layout.ContentGap - layout.HorizontalInset;
+        var contentWidth = e.NewSize.Width - 95;
         var compactSearch = contentWidth < 560;
         Grid.SetColumnSpan(SearchBox, compactSearch ? 4 : 1);
         foreach (var button in new[] { SearchSubmitButton, KeyboardButton, VoiceSearchButton })
@@ -569,6 +590,13 @@ public sealed partial class MainPage : Page
     {
         SetSelectedNavigation(SettingsButton);
         ShowPanel(SettingsPanel, "Settings", "Make the TV experience comfortable for you");
+    }
+
+    private void OpenFeaturedItem(object sender, RoutedEventArgs e)
+    {
+        if (_featuredItem is null) return;
+        _lastFocusedItem = FocusManager.GetFocusedElement() as Control;
+        Frame.Navigate(typeof(DetailsPage), _featuredItem);
     }
 
     private void OpenItem(object sender, ItemClickEventArgs e)
@@ -985,6 +1013,9 @@ public sealed partial class MainPage : Page
         SetDiscoverResultsVisible(true);
         SearchBox.Text = "";
         var label = type == "movie" ? "Popular movies" : "Popular series";
+        var selectedTop = type == "movie" ? TopMoviesButton : TopSeriesButton;
+        foreach (var button in new[] { TopHomeButton, TopMoviesButton, TopSeriesButton, TopLibraryButton, TopAddonsButton, TopSearchButton })
+            button.Style = ResolveStyle(ReferenceEquals(button, selectedTop) ? "TopNavSelectedButtonStyle" : "TopNavButtonStyle") ?? button.Style;
         BeginRequest("Loading " + label.ToLowerInvariant());
         var request = _request!;
         DiscoverGrid.ItemsSource = null;
@@ -1126,18 +1157,39 @@ public sealed partial class MainPage : Page
     {
         if (width <= 0) return;
         var layout = TvLayout.GetAddonGridLayout(width);
-        AddonCards.Width = layout.GridWidth;
-        if (AddonCards.ItemsPanelRoot is ItemsWrapGrid panel)
-        {
-            panel.ItemWidth = layout.TileWidth;
-            panel.ItemHeight = 224;
-        }
+        AddonCards.Width = width;
         AddonImportActions.Orientation = layout.StackImportActions ? Orientation.Vertical : Orientation.Horizontal;
-        Grid.SetRow(AddProviderButton, layout.StackTopActions ? 1 : 0);
-        Grid.SetColumn(AddProviderButton, layout.StackTopActions ? 0 : 1);
-        AddProviderButton.HorizontalAlignment = layout.StackTopActions ? HorizontalAlignment.Left : HorizontalAlignment.Right;
         SaveProvidersButton.XYFocusDown = layout.StackImportActions ? SyncProvidersButton : null;
         SyncProvidersButton.XYFocusUp = layout.StackImportActions ? SaveProvidersButton : AddonUrlsBox;
+    }
+
+    private void FocusAddonList(object sender, RoutedEventArgs e)
+    {
+        AddonCards.Focus(FocusState.Programmatic);
+        if (AddonCards.Items.Count > 0 && AddonCards.ContainerFromIndex(0) is ListViewItem firstItem)
+            firstItem.Focus(FocusState.Programmatic);
+    }
+
+    private async void RemoveAddonCard(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.Tag is not AddonCardView addon ||
+            addon.RemoveVisibility != Visibility.Visible) return;
+
+        var confirmation = new ContentDialog
+        {
+            Title = $"Remove {addon.Name}?",
+            Content = "This removes the provider from this Xbox. You can import it again later.",
+            PrimaryButtonText = "Remove",
+            CloseButtonText = "Cancel"
+        };
+        if (await confirmation.ShowAsync() != ContentDialogResult.Primary) return;
+
+        PrototypeSettings.SetStreamAddons(PrototypeSettings.GetStreamAddons()
+            .Where(item => !string.Equals(item.ManifestUri.AbsoluteUri, addon.ManifestUrl, StringComparison.OrdinalIgnoreCase)));
+        _addonMetadata.Remove(addon.ManifestUrl);
+        UpdateAddonSummary();
+        AddonSummaryText.Text = $"Removed {addon.Name}.";
+        AddonCards.Focus(FocusState.Programmatic);
     }
 
     private async void AddonTileClicked(object sender, ItemClickEventArgs e)
@@ -1261,7 +1313,9 @@ public sealed partial class MainPage : Page
         }
         PageTitle.Text = title;
         PageSubtitle.Text = subtitle;
-        MainHeader.Visibility = ReferenceEquals(panel, AddonsPanel) ? Visibility.Collapsed : Visibility.Visible;
+        MainHeader.Visibility = Visibility.Visible;
+        HeaderText.Visibility = ReferenceEquals(panel, HomePanel) ? Visibility.Collapsed : Visibility.Visible;
+        HeaderActions.Visibility = Visibility.Collapsed;
         HeaderSearchButton.Visibility = ReferenceEquals(panel, DiscoverPanel) ? Visibility.Collapsed : Visibility.Visible;
         HomeRefreshButton.Visibility = ReferenceEquals(panel, HomePanel) ? Visibility.Visible : Visibility.Collapsed;
         if (focusWasInContent && FocusManager.FindFirstFocusableElement(panel) is Control firstControl)
@@ -1317,7 +1371,7 @@ public sealed partial class MainPage : Page
         {
             e.Handled = true;
             ShowHome(this, new RoutedEventArgs());
-            HomeButton.Focus(FocusState.Programmatic);
+            TopHomeButton.Focus(FocusState.Programmatic);
         }
     }
 

@@ -70,12 +70,11 @@ public sealed partial class PosterCard : UserControl
     {
         _isFeatured = featured;
         Width = width;
-        PosterFrame.Width = width - 20;
-        PosterFrame.Height = PosterFrame.Width * (featured ? 1.64 : 1.5);
-        PosterRow.Height = new GridLength(PosterFrame.Height);
-        TitleText.FontSize = featured ? 20 : 18;
-        MetadataText.FontSize = featured ? 14 : 15;
-        TypeText.FontSize = featured ? 16 : 15;
+        PosterFrame.Width = width - 12;
+        PosterFrame.Height = PosterFrame.Width * 0.56;
+        TitleText.FontSize = featured ? 19 : 17;
+        MetadataText.FontSize = featured ? 14 : 13;
+        TypeText.FontSize = featured ? 14 : 12;
         UpdateCardHeight();
     }
 

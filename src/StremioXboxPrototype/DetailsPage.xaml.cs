@@ -20,17 +20,10 @@ public sealed partial class DetailsPage : Page
 
     private void ViewportSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        var layout = TvLayout.GetViewportLayout(e.NewSize.Width, e.NewSize.Height);
-        DetailsContent.Padding = new Thickness(layout.HorizontalInset, layout.VerticalInset,
-            layout.HorizontalInset, layout.VerticalInset);
-        // Give controls the full width on the effective 960px Xbox layout; retain
-        // the decorative poster column only when it leaves enough room to read.
-        var posterWidth = Math.Clamp(e.NewSize.Width * 0.18, 180, 280);
-        PosterColumn.Width = new GridLength(layout.ShowDetailsPoster ? posterWidth : 0);
-        PosterSurface.Visibility = layout.ShowDetailsPoster ? Visibility.Visible : Visibility.Collapsed;
-        PosterSurface.Width = posterWidth;
-        PosterSurface.Height = posterWidth * 1.5;
-        DetailsScroll.Margin = new Thickness(layout.ShowDetailsPoster ? layout.ContentGap : 0, 0, 0, 0);
+        var compact = e.NewSize.Width < 1180 || e.NewSize.Height < 650;
+        DetailsContent.Padding = compact ? new Thickness(28, 16, 28, 16) : new Thickness(48, 22, 48, 22);
+        DetailsContent.RowDefinitions[1].Height = new GridLength(compact ? 250 : 300);
+        DetailsContent.RowDefinitions[2].Height = new GridLength(1, GridUnitType.Star);
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -72,15 +65,41 @@ public sealed partial class DetailsPage : Page
     private void ApplyItem(MetaItem item)
     {
         TitleText.Text = item.Name;
-        SubtitleText.Text = item.Subtitle;
-        DescriptionText.Text = item.Description ?? "No description supplied by the metadata add-on.";
-        if (Uri.TryCreate(item.Poster, UriKind.Absolute, out var poster)) Poster.Source = new BitmapImage(poster);
+        SubtitleText.Text = item.CardMetadata;
+        var description = item.Description ?? "No description supplied by the metadata add-on.";
+        DescriptionText.Text = description;
+        AboutDescriptionText.Text = description;
+        AboutMetadataText.Text = string.Join(Environment.NewLine, new[]
+        {
+            $"Type: {item.Type}",
+            $"Release: {item.ReleaseInfo ?? "Unknown"}",
+            $"Rating: {(string.IsNullOrWhiteSpace(item.ImdbRating) ? "Not rated" : "★ " + item.ImdbRating)}",
+            $"Runtime: {item.Runtime ?? "Not supplied"}",
+            $"Episodes: {(item.Videos.Count > 0 ? item.Videos.Count.ToString() : "Not supplied")}"
+        });
         if (Uri.TryCreate(item.Background, UriKind.Absolute, out var background)) Backdrop.Source = new BitmapImage(background);
 
         EpisodePicker.Visibility = item.Videos.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         EpisodePicker.ItemsSource = item.Videos;
         if (item.Videos.Count > 0)
             EpisodePicker.SelectedItem = item.Videos.FirstOrDefault(video => video.Id == _resume?.VideoId) ?? item.Videos[0];
+    }
+
+    private void GoBack(object sender, RoutedEventArgs e)
+    {
+        if (Frame.CanGoBack) Frame.GoBack();
+    }
+
+    private async void PlayFirstStream(object sender, RoutedEventArgs e)
+    {
+        if (StreamList.Items.Count > 0 && StreamList.Items[0] is StreamItem first)
+        {
+            await PlaySelectedStreamAsync(first);
+            return;
+        }
+        await LoadStreamsAsync();
+        if (StreamList.Items.Count > 0 && StreamList.Items[0] is StreamItem available)
+            await PlaySelectedStreamAsync(available);
     }
 
     private void ToggleLibrary(object sender, RoutedEventArgs e)
@@ -215,7 +234,13 @@ public sealed partial class DetailsPage : Page
 
     private async void PlayStream(object sender, ItemClickEventArgs e)
     {
-        if (e.ClickedItem is not StreamItem stream || _item is null || _isOpeningStream) return;
+        if (e.ClickedItem is StreamItem stream)
+            await PlaySelectedStreamAsync(stream);
+    }
+
+    private async Task PlaySelectedStreamAsync(StreamItem stream)
+    {
+        if (_item is null || _isOpeningStream) return;
         DiagnosticsService.Current.Info("streams", $"Selected source from {stream.Provider}: {stream.Resolution.Kind}");
         _isOpeningStream = true;
         StreamList.IsEnabled = false;
