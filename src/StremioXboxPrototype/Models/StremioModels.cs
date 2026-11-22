@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using StremioXboxPrototype.Services;
 
 namespace StremioXboxPrototype.Models;
 
@@ -344,8 +345,106 @@ public sealed class StreamItem
     public StreamResolution Resolution { get; set; } = StreamResolution.Unsupported("Not resolved");
 
     [JsonIgnore]
-    public string DisplayName => string.Join(" · ", new[] { Provider, Name, Description ?? Title }
-        .Where(value => !string.IsNullOrWhiteSpace(value)));
+    public string CardProvider => string.IsNullOrWhiteSpace(Provider) ? "Unknown provider" : Provider.Trim();
+
+    [JsonIgnore]
+    public string ProviderGlyph
+    {
+        get
+        {
+            if (Provider.Contains("torrentio", StringComparison.OrdinalIgnoreCase)) return "🧲";
+            if (Provider.Contains("mediafusion", StringComparison.OrdinalIgnoreCase)) return "∞";
+            if (Provider.Contains("debrid", StringComparison.OrdinalIgnoreCase)) return "☁";
+            if (Provider.Contains("subtitle", StringComparison.OrdinalIgnoreCase)) return "💬";
+            return "▶";
+        }
+    }
+
+    [JsonIgnore]
+    public string CardQuality
+    {
+        get
+        {
+            var text = string.Join(" ", Name, Title, Description, BehaviorHints?.Filename);
+            var tags = new List<string>();
+            if (text.Contains("2160p", StringComparison.OrdinalIgnoreCase) || text.Contains("4k", StringComparison.OrdinalIgnoreCase)) tags.Add("4K");
+            else if (text.Contains("1080p", StringComparison.OrdinalIgnoreCase) || text.Contains("1080", StringComparison.OrdinalIgnoreCase)) tags.Add("1080p");
+            else if (text.Contains("720p", StringComparison.OrdinalIgnoreCase)) tags.Add("720p");
+            if (text.Contains("hdr", StringComparison.OrdinalIgnoreCase) || text.Contains("dolby vision", StringComparison.OrdinalIgnoreCase)) tags.Add("HDR");
+            if (text.Contains("atmos", StringComparison.OrdinalIgnoreCase)) tags.Add("ATMOS");
+            return tags.Count > 0 ? string.Join("  ·  ", tags) : "Quality not specified";
+        }
+    }
+
+    [JsonIgnore]
+    public string CardMetrics
+    {
+        get
+        {
+            var size = StreamFileSize.Read(this);
+            var seeds = StreamSeederCount.Read(AdditionalSources, Description, Title, Name);
+            var details = new List<string>();
+            if (size.HasValue) details.Add(size.Value >= 1024L * 1024 * 1024
+                ? $"{size.Value / 1024d / 1024d / 1024d:0.0} GB"
+                : $"{size.Value / 1024d / 1024d:0} MB");
+            if (seeds.HasValue) details.Add($"{seeds.Value:N0} seeds");
+            if (!string.IsNullOrWhiteSpace(InfoHash)) details.Add("Torrent");
+            return details.Count > 0 ? string.Join("  ·  ", details) : "Availability details not supplied";
+        }
+    }
+
+    [JsonIgnore]
+    public string CardAudioVideo
+    {
+        get
+        {
+            var text = string.Join(" ", Name, Title, Description, BehaviorHints?.Filename).ToUpperInvariant();
+            var video = new[] { "AV1", "HEVC", "H.265", "X265", "H.264", "X264", "VP9" }
+                .FirstOrDefault(codec => text.Contains(codec, StringComparison.Ordinal));
+            var audio = new[] { "TRUEHD", "ATMOS", "DTS-HD", "DTS", "EAC3", "DDP", "AAC", "AC3", "FLAC" }
+                .Where(codec => text.Contains(codec, StringComparison.Ordinal)).Distinct().ToList();
+            var details = new List<string>();
+            if (video is not null) details.Add("Video: " + video);
+            if (audio.Count > 0) details.Add("Audio: " + string.Join("/", audio));
+            return details.Count > 0 ? string.Join("  ·  ", details) : "Audio/video details not supplied";
+        }
+    }
+
+    [JsonIgnore]
+    public string CardTitle
+    {
+        get
+        {
+            var value = new[] { BehaviorHints?.Filename, Title, Name, Description }
+                .FirstOrDefault(candidate => !string.IsNullOrWhiteSpace(candidate));
+            if (!string.IsNullOrWhiteSpace(value)) return value.Trim();
+            if (Uri.TryCreate(Url, UriKind.Absolute, out var uri)) return uri.Host;
+            return "Stream from " + CardProvider;
+        }
+    }
+
+    [JsonIgnore]
+    public string CardSubtitle
+    {
+        get
+        {
+            var details = new List<string>();
+            if (!string.IsNullOrWhiteSpace(Name) && !Name.Equals(CardTitle, StringComparison.OrdinalIgnoreCase))
+                details.Add(Name.Trim());
+            if (!string.IsNullOrWhiteSpace(Description) && !Description.Equals(CardTitle, StringComparison.OrdinalIgnoreCase))
+                details.Add(Description.Trim());
+            if (!string.IsNullOrWhiteSpace(Resolution.Label)) details.Add(Resolution.Label);
+            if (BehaviorHints?.VideoSize is long size && size > 0)
+                details.Add(size >= 1024L * 1024 * 1024
+                    ? $"{size / 1024d / 1024d / 1024d:0.0} GB"
+                    : $"{size / 1024d / 1024d:0} MB");
+            if (!string.IsNullOrWhiteSpace(InfoHash)) details.Add("Torrent");
+            return details.Count > 0 ? string.Join("  ·  ", details) : "Details not supplied by provider";
+        }
+    }
+
+    [JsonIgnore]
+    public string DisplayName => CardTitle;
 
     [JsonIgnore]
     public string ResolutionLabel => Resolution.Label;
