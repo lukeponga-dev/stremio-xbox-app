@@ -1,5 +1,5 @@
-MainPackage=C:\Users\lukeg\source\repos\stremio-xbox-prototype\stremio-xbox-prototype\src\StremioXboxPrototype\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\StremioXboxPrototype_1.0.21.0_x64.msix
-ResourcePack=C:\Users\lukeg\source\repos\stremio-xbox-prototype\stremio-xbox-prototype\src\StremioXboxPrototype\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\StremioXboxPrototype_1.0.21.0_scale-100.msix
-ResourcePack=C:\Users\lukeg\source\repos\stremio-xbox-prototype\stremio-xbox-prototype\src\StremioXboxPrototype\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\StremioXboxPrototype_1.0.21.0_scale-125.msix
-ResourcePack=C:\Users\lukeg\source\repos\stremio-xbox-prototype\stremio-xbox-prototype\src\StremioXboxPrototype\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\StremioXboxPrototype_1.0.21.0_scale-150.msix
-ResourcePack=C:\Users\lukeg\source\repos\stremio-xbox-prototype\stremio-xbox-prototype\src\StremioXboxPrototype\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\StremioXboxPrototype_1.0.21.0_scale-400.msix
+MainPackage=C:\Users\lukeg\source\repos\stremio-xbox-prototype\stremio-xbox-prototype\src\StremioXboxPrototype\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\StremioXboxPrototype_1.0.24.0_x64.msix
+ResourcePack=C:\Users\lukeg\source\repos\stremio-xbox-prototype\stremio-xbox-prototype\src\StremioXboxPrototype\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\StremioXboxPrototype_1.0.24.0_scale-100.msix
+ResourcePack=C:\Users\lukeg\source\repos\stremio-xbox-prototype\stremio-xbox-prototype\src\StremioXboxPrototype\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\StremioXboxPrototype_1.0.24.0_scale-125.msix
+ResourcePack=C:\Users\lukeg\source\repos\stremio-xbox-prototype\stremio-xbox-prototype\src\StremioXboxPrototype\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\StremioXboxPrototype_1.0.24.0_scale-150.msix
+ResourcePack=C:\Users\lukeg\source\repos\stremio-xbox-prototype\stremio-xbox-prototype\src\StremioXboxPrototype\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\StremioXboxPrototype_1.0.24.0_scale-400.msix

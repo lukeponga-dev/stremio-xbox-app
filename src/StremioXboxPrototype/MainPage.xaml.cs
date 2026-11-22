@@ -142,7 +142,7 @@ public sealed partial class MainPage : Page
     private async Task LoadHomeAsync()
     {
         RefreshContinueWatching();
-        BeginRequest("Loading public catalogs…");
+        BeginRequest("Loading public catalogs...");
         var request = _request!;
         HomeLoadingPanel.Visibility = ContinueWatchingGrid.Items.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
         HomeShelves.Visibility = ContinueWatchingGrid.Items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -162,8 +162,8 @@ public sealed partial class MainPage : Page
             if (_featuredItem is not null)
             {
                 FeaturedTitleText.Text = _featuredItem.Name;
-                FeaturedMetadataText.Text = string.Join("  |  ", new[] { _featuredItem.ReleaseInfo, _featuredItem.Type == "series" ? "Series" : "Movie", string.IsNullOrWhiteSpace(_featuredItem.ImdbRating) ? null : "★ " + _featuredItem.ImdbRating }.Where(value => !string.IsNullOrWhiteSpace(value)));
-                FeaturedDescriptionText.Text = string.IsNullOrWhiteSpace(_featuredItem.Description) ? "Explore more from your Stremio add-ons." : _featuredItem.Description;
+        FeaturedMetadataText.Text = string.Join("  |  ", new[] { _featuredItem.ReleaseInfo, _featuredItem.Type == "series" ? "Series" : "Movie", string.IsNullOrWhiteSpace(_featuredItem.ImdbRating) ? null : "Rating " + _featuredItem.ImdbRating }.Where(value => !string.IsNullOrWhiteSpace(value)));
+                FeaturedDescriptionText.Text = string.IsNullOrWhiteSpace(_featuredItem.Description) ? "Explore more from your configured add-ons." : _featuredItem.Description;
                 var artworkUrl = _featuredItem.Background ?? _featuredItem.Poster;
                 if (Uri.TryCreate(artworkUrl, UriKind.Absolute, out var artworkUri) && (artworkUri.Scheme == Uri.UriSchemeHttp || artworkUri.Scheme == Uri.UriSchemeHttps))
                     FeaturedArtwork.Source = new BitmapImage(artworkUri) { DecodePixelWidth = 1600 };
@@ -250,9 +250,9 @@ public sealed partial class MainPage : Page
         SearchKeyboardPanel.Visibility = Visibility.Collapsed;
         SetDiscoverResultsVisible(true);
         InputPane.GetForCurrentView().TryHide();
-        BeginRequest("Searching…");
+        BeginRequest("Searching...");
         var request = _request!;
-        DiscoverStatusText.Text = $"Searching for “{query}”…";
+        DiscoverStatusText.Text = $"Searching for \"{query}\"...";
         DiscoverGrid.ItemsSource = null;
         try
         {
@@ -263,8 +263,8 @@ public sealed partial class MainPage : Page
             DiscoverGrid.ItemsSource = movies.Result.Concat(series.Result).ToList();
             NetworkStatusText.Text = $"{DiscoverGrid.Items.Count} search results";
             DiscoverStatusText.Text = DiscoverGrid.Items.Count == 0
-                ? $"No matches for “{query}”. Try another title or a shorter name."
-                : $"Results for “{query}”";
+                ? $"No matches for \"{query}\". Try another title or a shorter name."
+                : $"Results for \"{query}\"";
             if (DiscoverGrid.Items.Count > 0) DiscoverGrid.Focus(FocusState.Programmatic);
         }
         catch (OperationCanceledException) { }
@@ -398,7 +398,7 @@ public sealed partial class MainPage : Page
         VoiceSearchButton.IsEnabled = false;
         SearchKeyboardPanel.Visibility = Visibility.Collapsed;
         SetDiscoverResultsVisible(_discoverHasResults);
-        DiscoverStatusText.Text = "Say a movie or series title…";
+            DiscoverStatusText.Text = "Say a movie or series title...";
         try
         {
             using var recognizer = new SpeechRecognizer();
@@ -632,7 +632,7 @@ public sealed partial class MainPage : Page
             return;
         }
 
-        BeginRequest("Validating add-on manifests…");
+        BeginRequest("Validating add-on manifests...");
         var request = _request!;
         var accepted = new List<AddonEndpoint>();
         try
@@ -740,7 +740,7 @@ public sealed partial class MainPage : Page
             (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps) ||
             !string.IsNullOrEmpty(uri.UserInfo) || !string.IsNullOrEmpty(uri.Query) || !string.IsNullOrEmpty(uri.Fragment))
         {
-            StreamingServiceStatus.Text = "Enter an absolute HTTP or HTTPS Stremio Service URL.";
+            StreamingServiceStatus.Text = "Enter an absolute HTTP or HTTPS compatible streaming service URL.";
             return;
         }
 
@@ -772,9 +772,9 @@ public sealed partial class MainPage : Page
         _serverRequest = request;
         ConnectServerButton.IsEnabled = false;
         HomeReconnectButton.IsEnabled = false;
-        HomeConnectionText.Text = "Connecting to playback server…";
-        ServerConnectionState.Text = "Checking…";
-        StreamingServiceStatus.Text = $"Connecting to {uri.Host}:{uri.Port}…";
+            HomeConnectionText.Text = "Connecting to playback server...";
+            ServerConnectionState.Text = "Checking...";
+            StreamingServiceStatus.Text = $"Connecting to {uri.Host}:{uri.Port}...";
         try
         {
             var version = await _streamingServiceClient.TestAsync(uri, request.Token);
@@ -784,9 +784,9 @@ public sealed partial class MainPage : Page
             if (save) PrototypeSettings.SetStreamingServiceUrl(uri);
             StreamingServiceUrlBox.Text = PrototypeSettings.GetStreamingServiceUrlText();
             StreamingServerUrlText.Text = PrototypeSettings.GetStreamingServiceUrlText();
-            ServerConnectionState.Text = "✓ Online";
+            ServerConnectionState.Text = "Online";
             HomeConnectionNotice.Visibility = Visibility.Collapsed;
-            StreamingServiceStatus.Text = $"Connected to {uri.Host}:{uri.Port} · Stremio {version}. Ready to stream.";
+            StreamingServiceStatus.Text = $"Connected to {uri.Host}:{uri.Port} | Stremio {version}. Ready to stream.";
             DiagnosticsService.Current.Info("streaming-service", $"Connected to {uri.Host}");
         }
         catch (OperationCanceledException) when (request.IsCancellationRequested) { }
@@ -827,7 +827,7 @@ public sealed partial class MainPage : Page
     private void ShowServer(object sender, RoutedEventArgs e)
     {
         SetSelectedNavigation(ServerButton);
-        ShowPanel(ServerPanel, "Stremio server", "Connect your TV to your streaming server");
+        ShowPanel(ServerPanel, "streaming service", "Connect your TV to your streaming server");
         StreamingServiceUrlBox.Focus(FocusState.Programmatic);
     }
 
@@ -853,13 +853,13 @@ public sealed partial class MainPage : Page
             return;
         }
 
-        BeginRequest("Signing in to Stremio…");
+        BeginRequest("Signing in to Stremio...");
         try
         {
             var login = await _accountClient.LoginAsync(AccountEmailBox.Text, AccountPasswordBox.Password, _request!.Token);
             AccountPasswordBox.Password = "";
             UpdateAccountNavigation(true, login.User?.Email ?? AccountEmailBox.Text, login.User?.Id, 0, login.User?.Avatar);
-            SetAccountStatus($"Signed in as {login.User?.Email ?? AccountEmailBox.Text}. Syncing add-ons…", AccountStatus.Neutral);
+            SetAccountStatus($"Signed in as {login.User?.Email ?? AccountEmailBox.Text}. Syncing add-ons...", AccountStatus.Neutral);
             _isSyncing = true;
             SyncAddonsButton.IsEnabled = false;
             await SyncAccountAddonsAsync(login.AuthKey, _request.Token);
@@ -876,7 +876,7 @@ public sealed partial class MainPage : Page
 
     private async void SignInWithFacebook(object sender, RoutedEventArgs e)
     {
-        BeginRequest("Starting Facebook sign-in…");
+        BeginRequest("Starting Facebook sign-in...");
         try
         {
             var attempt = _accountClient.CreateFacebookLoginAttempt();
@@ -887,7 +887,7 @@ public sealed partial class MainPage : Page
             var login = await _accountClient.CompleteFacebookLoginAsync(attempt.State, _request!.Token);
             AccountEmailBox.Text = login.User?.Email ?? "";
             UpdateAccountNavigation(true, login.User?.Email ?? "Facebook user", login.User?.Id, 0, login.User?.Avatar);
-            SetAccountStatus($"Signed in as {login.User?.Email ?? "Facebook user"}. Syncing add-ons…", AccountStatus.Neutral);
+            SetAccountStatus($"Signed in as {login.User?.Email ?? "Facebook user"}. Syncing add-ons...", AccountStatus.Neutral);
             _isSyncing = true;
             SyncAddonsButton.IsEnabled = false;
             await SyncAccountAddonsAsync(login.AuthKey, _request.Token);
@@ -911,7 +911,7 @@ public sealed partial class MainPage : Page
             return;
         }
 
-        BeginRequest("Syncing Stremio add-ons…");
+        BeginRequest("Syncing Stremio add-ons...");
         _isSyncing = true;
         SyncAddonsButton.IsEnabled = false;
         AddonSyncAccountButton.IsEnabled = false;
@@ -1019,7 +1019,7 @@ public sealed partial class MainPage : Page
         BeginRequest("Loading " + label.ToLowerInvariant());
         var request = _request!;
         DiscoverGrid.ItemsSource = null;
-        DiscoverStatusText.Text = "Loading " + label.ToLowerInvariant() + "…";
+        DiscoverStatusText.Text = "Loading " + label.ToLowerInvariant() + "...";
         try
         {
             var items = await _client.GetCatalogAsync(type, cancellationToken: request.Token);
@@ -1043,13 +1043,13 @@ public sealed partial class MainPage : Page
         LibraryGrid.ItemsSource = items;
         EmptyLibraryText.Visibility = items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         SetSelectedNavigation(LibraryNavButton);
-        ShowPanel(LibraryPanel, "My library", "Titles saved locally on this Xbox");
+        ShowPanel(LibraryPanel, "My library", "Titles saved locally on this device");
     }
 
     private void ShowPlaybackLab(object sender, RoutedEventArgs e)
     {
         SetSelectedNavigation(PlaybackLabButton);
-        ShowPanel(PlaybackLabPanel, "Playback lab", "Test a direct stream through the native Xbox media pipeline");
+        ShowPanel(PlaybackLabPanel, "Playback lab", "Test a direct stream through the native media pipeline");
         DirectUrlBox.Focus(FocusState.Programmatic);
     }
 
@@ -1066,7 +1066,7 @@ public sealed partial class MainPage : Page
     private void UpdateAddonSummary()
     {
         var addons = PrototypeSettings.GetStreamAddons();
-        AddonCountText.Text = addons.Count == 0 ? "1 built-in" : $"1 built-in · {addons.Count} stream provider{(addons.Count == 1 ? "" : "s")}";
+        AddonCountText.Text = addons.Count == 0 ? "1 built-in" : $"1 built-in | {addons.Count} stream provider{(addons.Count == 1 ? "" : "s")}";
         if (AddonsPanel.Visibility == Visibility.Visible) RenderAddonCards();
     }
 
@@ -1076,7 +1076,7 @@ public sealed partial class MainPage : Page
         var cards = new List<AddonCardView>
         {
             new("Cinemeta", "Built-in", "Movies & Series",
-                "Official movie and series catalog used by WatchStream.", StremioAddonClient.CinemetaManifest.AbsoluteUri, false,
+                "Movie and series catalogue available in OpenStream TV.", StremioAddonClient.CinemetaManifest.AbsoluteUri, false,
                 GetAddonLogoUri(StremioAddonClient.CinemetaManifest))
         };
         foreach (var addon in PrototypeSettings.GetStreamAddons())
@@ -1146,7 +1146,7 @@ public sealed partial class MainPage : Page
             ShowAccount(sender, e);
             return;
         }
-        AddonSummaryText.Text = "Syncing add-ons from your Stremio account…";
+        AddonSummaryText.Text = "Syncing add-ons from your Stremio account...";
         SyncAccountAddons(sender, e);
     }
 
@@ -1198,7 +1198,7 @@ public sealed partial class MainPage : Page
         var details = new ContentDialog
         {
             Title = addon.Name,
-            Content = $"{addon.Category}{(addon.Version.Length > 0 ? " · " + addon.Version : "")}\n\n{addon.Description}\n\n{addon.ManifestUrl}",
+            Content = $"{addon.Category}{(addon.Version.Length > 0 ? " | " + addon.Version : "")}\n\n{addon.Description}\n\n{addon.ManifestUrl}",
             PrimaryButtonText = addon.RemoveVisibility == Visibility.Visible ? "Remove" : "Copy manifest URL",
             SecondaryButtonText = addon.RemoveVisibility == Visibility.Visible ? "Copy manifest URL" : "",
             CloseButtonText = "Back"

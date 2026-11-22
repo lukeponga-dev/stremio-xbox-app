@@ -31,9 +31,9 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xE8B7;" FontSize="27" Foreground="#8B6CFF" />
-                    <TextBlock Text="Stremio" FontSize="25" FontWeight="Bold" VerticalAlignment="Center" />
+                    <TextBlock Text="OpenStream TV" FontSize="25" FontWeight="Bold" VerticalAlignment="Center" />
                 </StackPanel>
-                <TextBlock Grid.Column="1" Text="Discover  ·  Details" FontSize="16"
+                <TextBlock Grid.Column="1" Text="Discover  &gt;  Details" FontSize="16"
                            Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center"
                            HorizontalAlignment="Center" />
                 <Button x:Name="BackButton" Grid.Column="2" Content="Back" Style="{StaticResource TvButtonStyle}"
@@ -125,7 +125,7 @@
                                         </StackPanel>
                                         <Border Grid.Column="1" Background="#2865E9" CornerRadius="8"
                                                 Padding="16,8" VerticalAlignment="Center">
-                                            <TextBlock Text="▶  Play" FontSize="15" FontWeight="SemiBold"
+                                            <TextBlock Text="Play" FontSize="15" FontWeight="SemiBold"
                                                        Foreground="#FFFFFF" />
                                         </Border>
                                     </Grid>

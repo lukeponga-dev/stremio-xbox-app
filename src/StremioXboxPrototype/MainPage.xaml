@@ -38,8 +38,8 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <Button x:Name="BrandHomeButton" Grid.Row="0" Style="{StaticResource IconRailBrandButtonStyle}"
-                        Click="ShowHome" ToolTipService.ToolTip="WatchStream Home" AutomationProperties.Name="WatchStream Home">
-                    <TextBlock Text="WATCHSTREAM" FontFamily="{StaticResource HeadingFont}" FontSize="16" FontWeight="Bold" Foreground="#171B22" />
+                        Click="ShowHome" ToolTipService.ToolTip="OpenStream TV Home" AutomationProperties.Name="OpenStream TV Home">
+                    <TextBlock Text="OPENSTREAM TV" FontFamily="{StaticResource HeadingFont}" FontSize="16" FontWeight="Bold" Foreground="#171B22" />
                 </Button>
                 <ScrollViewer Grid.Row="1" Margin="0,24,0,12" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Spacing="14">
@@ -93,7 +93,7 @@
                         <Border Width="46" Height="46" CornerRadius="12" Background="{StaticResource FocusBloomBrush}">
                             <FontIcon Glyph="&#xE768;" FontSize="25" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
-                        <TextBlock Text="Stremio" FontFamily="{StaticResource HeadingFont}" FontSize="27" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,28,0" />
+                        <TextBlock Text="OpenStream TV" FontFamily="{StaticResource HeadingFont}" FontSize="27" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,28,0" />
                         <Button x:Name="TopHomeButton" Content="Home" Style="{StaticResource TopNavSelectedButtonStyle}" Click="ShowHome" />
                         <Button x:Name="TopMoviesButton" Content="Movies" Style="{StaticResource TopNavButtonStyle}" Click="ShowMovieCatalog" />
                         <Button x:Name="TopSeriesButton" Content="Series" Style="{StaticResource TopNavButtonStyle}" Click="ShowSeriesCatalog" />
@@ -163,11 +163,11 @@
                                         <StackPanel Margin="14,22,0,22" VerticalAlignment="Center" MaxWidth="610" Spacing="8">
                                             <TextBlock Text="FEATURED FOR YOU" FontSize="12" CharacterSpacing="170" Foreground="#B8D3F2" FontWeight="SemiBold" />
                                             <TextBlock x:Name="FeaturedTitleText" Text="Discover something great to watch today" FontFamily="{StaticResource HeadingFont}" FontSize="42" FontWeight="Bold" Foreground="#F5F8FC" TextWrapping="Wrap" MaxLines="2" />
-                                            <TextBlock x:Name="FeaturedMetadataText" Text="Explore movies and series from your Stremio add-ons." FontSize="17" Foreground="#D0DDED" TextWrapping="Wrap" />
+                                            <TextBlock x:Name="FeaturedMetadataText" Text="Discover movies and series from your configured add-ons." FontSize="17" Foreground="#D0DDED" TextWrapping="Wrap" />
                                             <TextBlock x:Name="FeaturedDescriptionText" Text="Your next favourite is waiting." FontSize="17" Foreground="#D0DDED" TextWrapping="Wrap" MaxLines="2" />
                                             <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,10,0,0">
-                                                <Button Content="▶  Play" Style="{StaticResource FeaturedPlayButtonStyle}" Width="190" Click="OpenFeaturedItem" />
-                                                <Button Content="ⓘ  More info" Style="{StaticResource HeaderButtonStyle}" Width="160" Click="OpenFeaturedItem" />
+                                                <Button Content="Play" Style="{StaticResource FeaturedPlayButtonStyle}" Width="190" Click="OpenFeaturedItem" />
+                                                <Button Content="More info" Style="{StaticResource HeaderButtonStyle}" Width="160" Click="OpenFeaturedItem" />
                                             </StackPanel>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,22,18" Spacing="12">
@@ -185,7 +185,7 @@
                                 <StackPanel>
                                     <Grid Margin="0,0,12,0">
                                         <TextBlock Text="Recommended For You" Style="{StaticResource HomeSectionTitleStyle}" />
-                                        <Button Content="See all ›" Width="120" HorizontalAlignment="Right" Style="{StaticResource ShelfLinkButtonStyle}" Click="ShowMovieCatalog" />
+                                        <Button Content="See all &gt;" Width="120" HorizontalAlignment="Right" Style="{StaticResource ShelfLinkButtonStyle}" Click="ShowMovieCatalog" />
                                     </Grid>
                                     <GridView x:Name="MovieGrid" SizeChanged="ShelfSizeChanged" ContainerContentChanging="PosterContainerChanging"
                                               IsItemClickEnabled="True" ItemClick="OpenItem" SelectionMode="None"
@@ -196,7 +196,7 @@
                                 <StackPanel>
                                     <Grid Margin="0,0,12,0">
                                         <TextBlock Text="Trending Series" Style="{StaticResource HomeSectionTitleStyle}" />
-                                        <Button Content="See all ›" Width="120" HorizontalAlignment="Right" Style="{StaticResource ShelfLinkButtonStyle}" Click="ShowSeriesCatalog" />
+                                        <Button Content="See all &gt;" Width="120" HorizontalAlignment="Right" Style="{StaticResource ShelfLinkButtonStyle}" Click="ShowSeriesCatalog" />
                                     </Grid>
                                     <GridView x:Name="SeriesGrid" SizeChanged="ShelfSizeChanged" ContainerContentChanging="PosterContainerChanging"
                                               IsItemClickEnabled="True" ItemClick="OpenItem" SelectionMode="None"
@@ -211,8 +211,8 @@
                             </StackPanel>
                         </ScrollViewer>
                         <ScrollViewer x:Name="HomeLoadingPanel" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                            <StackPanel Spacing="14">
-                                <TextBlock Text="Finding something good to watch…" FontSize="18" Foreground="{StaticResource MutedTextBrush}" />
+                                        <StackPanel Spacing="14">
+                                        <TextBlock Text="Finding something good to watch..." FontSize="18" Foreground="{StaticResource MutedTextBrush}" />
                                 <StackPanel>
                                     <TextBlock Text="Popular movies" Style="{StaticResource SectionTitleStyle}" />
                                     <ScrollViewer HorizontalScrollMode="Disabled" VerticalScrollMode="Disabled" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden">
@@ -265,9 +265,9 @@
                     <StackPanel Spacing="16" Margin="0,22,0,0">
                         <TextBlock Text="Browse popular titles" FontSize="25" FontWeight="SemiBold" />
                         <TextBlock Text="Choose a collection or search for a title." FontSize="18" Foreground="{StaticResource MutedTextBrush}" />
-                        <StackPanel x:Name="DiscoverBrowseActions" Orientation="Horizontal" Spacing="16" Margin="0,12,0,0">
-                            <Button Content="Popular movies  ›" Style="{StaticResource TvButtonStyle}" Click="ShowMovieCatalog" />
-                            <Button Content="Popular series  ›" Style="{StaticResource TvButtonStyle}" Click="ShowSeriesCatalog" />
+                            <StackPanel x:Name="DiscoverBrowseActions" Orientation="Horizontal" Spacing="16" Margin="0,12,0,0">
+                            <Button Content="Popular movies  &gt;" Style="{StaticResource TvButtonStyle}" Click="ShowMovieCatalog" />
+                            <Button Content="Popular series  &gt;" Style="{StaticResource TvButtonStyle}" Click="ShowSeriesCatalog" />
                         </StackPanel>
                     </StackPanel>
                     </ScrollViewer>
@@ -297,7 +297,7 @@
                         <Border Background="{StaticResource PanelBrush}" CornerRadius="10" Padding="22" Margin="0,18,0,0">
                             <StackPanel Spacing="10">
                                 <TextBlock Text="This path measures" FontSize="22" FontWeight="SemiBold" />
-                                <TextBlock Text="• media open time and failures&#x0a;• buffering transitions&#x0a;• playback end and interruption&#x0a;• app memory usage"
+                                <TextBlock Text="- Media open time and failures&#x0a;- Buffering transitions&#x0a;- Playback end and interruption&#x0a;- App memory usage"
                                            FontSize="19" LineHeight="31" />
                             </StackPanel>
                         </Border>
@@ -313,7 +313,7 @@
                     <StackPanel Spacing="4" Margin="0,0,0,22">
                         <TextBlock Text="Addons" FontFamily="{StaticResource HeadingFont}" FontSize="46"
                                    FontWeight="Bold" CharacterSpacing="-18" />
-                        <TextBlock Text="Manage the catalogs and stream providers connected to WatchStream."
+                        <TextBlock Text="Manage the catalogues and stream providers connected to OpenStream TV."
                                    FontSize="16" Foreground="{StaticResource MutedTextBrush}" />
                     </StackPanel>
 
@@ -329,11 +329,11 @@
                             <TextBlock x:Name="AddonCountText" VerticalAlignment="Center"
                                        Foreground="{StaticResource MutedTextBrush}" FontSize="15" />
                         </StackPanel>
-                        <Button x:Name="AddonSyncAccountButton" Grid.Column="1" Content="⟳  Sync Add-ons"
-                                Style="{StaticResource TvButtonStyle}" Click="SyncAddonsFromPage" />
-                        <Button x:Name="AddonViewAllButton" Grid.Column="2" Content="View All  ›"
-                                Style="{StaticResource AddonCardActionStyle}" Click="FocusAddonList" />
-                        <Button x:Name="AddProviderButton" Grid.Column="3" Content="＋  Import Manifest"
+                        <Button x:Name="AddonSyncAccountButton" Grid.Column="1" Content="Sync Add-ons"
+                        Style="{StaticResource TvButtonStyle}" Click="SyncAddonsFromPage" />
+                        <Button x:Name="AddonViewAllButton" Grid.Column="2" Content="View All"
+                        Style="{StaticResource AddonCardActionStyle}" Click="FocusAddonList" />
+                        <Button x:Name="AddProviderButton" Grid.Column="3" Content="Import Manifest"
                                 Style="{StaticResource PrimaryButtonStyle}" Click="ToggleAddProviderForm" />
                     </Grid>
 
@@ -343,7 +343,7 @@
                                     BorderBrush="#34465C" BorderThickness="1" CornerRadius="14" Padding="20">
                                 <StackPanel Spacing="12">
                                     <TextBlock Text="Import stream add-on manifest" FontSize="23" FontWeight="SemiBold" />
-                                    <TextBlock Text="Paste HTTPS Stremio manifest URLs. Providers are validated before they are saved."
+                                    <TextBlock Text="Paste compatible add-on manifest URLs. Providers are validated before they are saved."
                                                FontSize="16" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
                                     <TextBox x:Name="AddonUrlsBox" Header="Manifest URLs" PlaceholderText="https://example.com/manifest.json"
                                              AcceptsReturn="True" TextWrapping="Wrap" Height="130" />
@@ -463,7 +463,7 @@
                             </ComboBox>
 
                             <TextBlock Grid.Row="4" Text="Server" FontSize="20" VerticalAlignment="Center" />
-                            <TextBlock x:Name="ServerConnectionState" Grid.Row="4" Grid.Column="1" Text="Checking…" FontSize="20"
+                            <TextBlock x:Name="ServerConnectionState" Grid.Row="4" Grid.Column="1" Text="Checking..." FontSize="20"
                                        FontWeight="SemiBold" VerticalAlignment="Center" />
 
                             <TextBlock Grid.Row="5" Text="Streaming server URL:" FontSize="20" VerticalAlignment="Center" />
@@ -479,7 +479,7 @@
                                 <TextBlock Text="Your server handles torrent-backed playback. Render-hosted servers should use the public HTTPS URL without port 12470."
                                            FontSize="18" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
                                 <TextBox x:Name="StreamingServiceUrlBox" Header="Streaming service URL"
-                                         PlaceholderText="https://watchstream-stremio-server.onrender.com/" />
+                                         PlaceholderText="https://your-service.example/" />
                                 <StackPanel Orientation="Horizontal" Spacing="14">
                                     <Button x:Name="ConnectServerButton" Content="Connect and save" Style="{StaticResource PrimaryButtonStyle}"
                                             Width="230" Click="SaveStreamingService" />
@@ -494,6 +494,8 @@
                 <ScrollViewer x:Name="AccountPanel" Visibility="Collapsed">
                     <StackPanel HorizontalAlignment="Stretch" Spacing="18">
                         <StackPanel x:Name="SignedOutAccountContent" Spacing="18">
+                            <TextBlock Text="OpenStream TV is an independent application. It is not affiliated with or endorsed by Stremio. Stremio account and add-on compatibility is provided through third-party services." FontSize="15" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
+                            <TextBlock Text="OpenStream TV is an independent application. It is not affiliated with or endorsed by Stremio. Stremio account and add-on compatibility is provided through third-party services." FontSize="15" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
                             <TextBlock Text="Connect directly to Stremio at api.strem.io. Your password is sent only to Stremio for login; the returned session key is stored in Windows Credential Locker and verified when the app starts."
                                        FontSize="20" TextWrapping="Wrap" />
                             <Button Content="Continue with Facebook" Style="{StaticResource PrimaryButtonStyle}"
@@ -548,7 +550,7 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Border Background="{StaticResource PanelBrush}" CornerRadius="10" Padding="18" Margin="0,0,0,18">
-                        <StackPanel Spacing="12"><TextBlock x:Name="MemoryText" Text="Memory: measuring…" FontFamily="Consolas" FontSize="18" /><TextBlock x:Name="NetworkStatusText" Text="Ready" FontSize="18" TextWrapping="Wrap" /></StackPanel>
+                        <StackPanel Spacing="12"><TextBlock x:Name="MemoryText" Text="Memory: measuring..." FontFamily="Consolas" FontSize="18" /><TextBlock x:Name="NetworkStatusText" Text="Ready" FontSize="18" TextWrapping="Wrap" /></StackPanel>
                     </Border>
                     <ListView Grid.Row="1" ItemsSource="{x:Bind Diagnostics}">
                         <ListView.ItemTemplate>
@@ -563,7 +565,7 @@
             <Border Grid.Row="2" Background="#E60A1119" BorderBrush="#263648" BorderThickness="0,1,0,0" Padding="4,8" Margin="-50,0,-45,-16">
                 <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                     <StackPanel Orientation="Horizontal" Spacing="28" VerticalAlignment="Center" Margin="14,0">
-                        <TextBlock Text="Ⓐ  Select" FontSize="14" VerticalAlignment="Center" /><TextBlock Text="Ⓑ  Back" FontSize="14" VerticalAlignment="Center" /><TextBlock Text="Ⓨ  Search" FontSize="14" VerticalAlignment="Center" />
+                        <TextBlock Text="[A] Select" FontSize="14" VerticalAlignment="Center" /><TextBlock Text="[B] Back" FontSize="14" VerticalAlignment="Center" /><TextBlock Text="[Y] Search" FontSize="14" VerticalAlignment="Center" />
                     </StackPanel>
                     <TextBlock Grid.Column="1" Text="All Your Streams. One Place." Foreground="#A8B8CB" FontSize="14" VerticalAlignment="Center" Margin="0,0,16,0" />
                 </Grid>

@@ -73,7 +73,7 @@ public sealed partial class DetailsPage : Page
         {
             $"Type: {item.Type}",
             $"Release: {item.ReleaseInfo ?? "Unknown"}",
-            $"Rating: {(string.IsNullOrWhiteSpace(item.ImdbRating) ? "Not rated" : "★ " + item.ImdbRating)}",
+            $"Rating: {(string.IsNullOrWhiteSpace(item.ImdbRating) ? "Not rated" : item.ImdbRating)}",
             $"Runtime: {item.Runtime ?? "Not supplied"}",
             $"Episodes: {(item.Videos.Count > 0 ? item.Videos.Count.ToString() : "Not supplied")}"
         });
@@ -128,7 +128,7 @@ public sealed partial class DetailsPage : Page
         var addons = PrototypeSettings.GetStreamAddons();
         if (addons.Count == 0)
         {
-            StreamStatusText.Text = "Add a provider from Add-ons, or sign in to sync your Stremio providers.";
+            StreamStatusText.Text = "Add a compatible provider from Add-ons, or sign in to sync your configured providers.";
             StreamList.ItemsSource = null;
             _streamsLoaded = false;
             return;
@@ -140,7 +140,7 @@ public sealed partial class DetailsPage : Page
         var cancellationToken = request.Token;
         BusyIndicator.IsActive = true;
         LoadStreamsButton.IsEnabled = false;
-        StreamStatusText.Text = $"Checking {addons.Count} provider(s) for playable streams…";
+        StreamStatusText.Text = $"Checking {addons.Count} provider(s) for playable streams...";
         StreamList.ItemsSource = null;
         var videoId = (EpisodePicker.SelectedItem as VideoItem)?.Id ?? _resume?.VideoId ?? _item.Id;
 
@@ -169,7 +169,7 @@ public sealed partial class DetailsPage : Page
                 ? "No playable streams found. Try another episode or check your providers in Add-ons."
                 : DescribeStreams(playable, checkingProviders: false) +
                   (PrototypeSettings.GetWatchProgress(_item.Type, _item.Id, videoId) is WatchProgress progress
-                      ? $" Choose a source to resume · {progress.RemainingText}."
+                      ? $" Choose a source to resume | {progress.RemainingText}."
                       : "");
         }
         catch (OperationCanceledException) { }
@@ -195,12 +195,12 @@ public sealed partial class DetailsPage : Page
         var parts = new List<string>();
         if (direct > 0) parts.Add($"{direct} direct");
         if (service > 0) parts.Add($"{service} torrent/server-backed");
-        if (parts.Count == 0) return checkingProviders ? "Checking providers…" : "No playable streams found.";
+        if (parts.Count == 0) return checkingProviders ? "Checking providers..." : "No playable streams found.";
 
         var status = string.Join(" + ", parts) + " stream(s) found";
         if (service > 0 && PrototypeSettings.GetStreamingServiceUrl() is null)
-            status += ". Connect a Stremio Service to use torrent sources.";
-        if (checkingProviders) status += " Checking more providers…";
+            status += ". Connect a compatible streaming service to use torrent sources.";
+        if (checkingProviders) status += " Checking more providers...";
         return status;
     }
 
@@ -246,8 +246,8 @@ public sealed partial class DetailsPage : Page
         StreamList.IsEnabled = false;
         LoadStreamsButton.IsEnabled = false;
         StreamStatusText.Text = stream.Resolution.Kind == StreamResolutionKind.NativeDirect
-            ? "Opening stream…"
-            : "Preparing stream through Stremio Service…";
+            ? "Opening stream..."
+            : "Preparing stream through Stremio Service...";
 
         if (stream.Resolution.Kind == StreamResolutionKind.NativeDirect && stream.Resolution.PlaybackUri is not null)
         {
@@ -279,7 +279,7 @@ public sealed partial class DetailsPage : Page
         await new ContentDialog
         {
             Title = "Stream is not native-direct",
-            Content = stream.Resolution.Label + ". This source cannot be played directly on Xbox. Choose a native stream or configure a compatible Stremio Service, then try again.",
+            Content = stream.Resolution.Label + ". This source cannot be played directly on Xbox. Choose a native stream or configure a compatible streaming service, then try again.",
             CloseButtonText = "Choose another stream"
         }.ShowAsync();
         ResetStreamOpening();
