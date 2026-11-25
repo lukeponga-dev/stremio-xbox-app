@@ -144,31 +144,58 @@ public sealed class StremioAccountClient
 
     public StremioAccountSession? TryGetSession()
     {
-        var email = ApplicationData.Current.LocalSettings.Values[AccountEmailKey] as string;
-        if (string.IsNullOrWhiteSpace(email)) return null;
         try
         {
+            var email = ApplicationData.Current.LocalSettings.Values[AccountEmailKey] as string;
+            if (string.IsNullOrWhiteSpace(email)) return null;
+
             var credential = new PasswordVault().Retrieve(CredentialResource, email);
             credential.RetrievePassword();
             return new StremioAccountSession(email, credential.Password);
         }
-        catch { return null; }
+        catch (Exception exception) when (IsCredentialStorageUnavailable(exception))
+        {
+            return null;
+        }
     }
 
     private static void SaveSession(string email, string authKey)
     {
         ClearSession();
-        new PasswordVault().Add(new PasswordCredential(CredentialResource, email, authKey));
-        ApplicationData.Current.LocalSettings.Values[AccountEmailKey] = email;
+        try
+        {
+            new PasswordVault().Add(new PasswordCredential(CredentialResource, email, authKey));
+            ApplicationData.Current.LocalSettings.Values[AccountEmailKey] = email;
+        }
+        catch (Exception exception) when (IsCredentialStorageUnavailable(exception))
+        {
+            // Authentication has already succeeded remotely. Keep login usable
+            // when the device vault is unavailable, but don't leave a stale
+            // email setting that could be mistaken for a restorable session.
+            try { ApplicationData.Current.LocalSettings.Values.Remove(AccountEmailKey); }
+            catch (Exception settingsException) when (IsCredentialStorageUnavailable(settingsException)) { }
+            DiagnosticsService.Current.Warn("account",
+                "Signed in successfully, but Windows could not securely save this session. You may need to sign in again.");
+        }
     }
 
     private static void ClearSession()
     {
-        var vault = new PasswordVault();
-        try { foreach (var credential in vault.FindAllByResource(CredentialResource)) vault.Remove(credential); }
-        catch { }
-        ApplicationData.Current.LocalSettings.Values.Remove(AccountEmailKey);
+        try
+        {
+            var vault = new PasswordVault();
+            foreach (var credential in vault.FindAllByResource(CredentialResource))
+                vault.Remove(credential);
+        }
+        catch (Exception exception) when (IsCredentialStorageUnavailable(exception)) { }
+
+        try { ApplicationData.Current.LocalSettings.Values.Remove(AccountEmailKey); }
+        catch (Exception exception) when (IsCredentialStorageUnavailable(exception)) { }
     }
+
+    private static bool IsCredentialStorageUnavailable(Exception exception) =>
+        exception is System.Runtime.InteropServices.COMException or
+            UnauthorizedAccessException or InvalidOperationException;
 
     private static async Task<TResponse> PostAsync<TRequest, TResponse>(string method, TRequest request,
         JsonTypeInfo<TRequest> requestType, JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)

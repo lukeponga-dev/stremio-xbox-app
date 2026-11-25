@@ -73,17 +73,18 @@ var values = ApplicationData.Current.LocalSettings.CreateContainer("WatchHistory
 values["broken"] = "invalid JSON";
 values["missing-title"] = "{\"Item\":null,\"PositionSeconds\":120,\"DurationSeconds\":1200}";
 Check(PrototypeSettings.GetWatchHistory().Count == 12, "A malformed entry does not hide valid titles");
-foreach (var viewport in new[] { 600d, 960, 1280, 1560, 1920, 2560, 3840 })
+foreach (var viewport in new[] { 600d, 960, 1099, 1100, 1280, 1560, 1920, 2560, 3840 })
 {
-    var width = TvLayout.GetShelfCardWidth(viewport);
-    Check(width >= 160 && width <= 200 && Math.Abs(width - Math.Clamp(viewport / 7.5, 160, 200)) < 0.001,
-        $"Compact popular posters at {viewport}");
-    var featuredWidth = TvLayout.GetContinueWatchingCardWidth(viewport);
-    Check(featuredWidth >= 194 && featuredWidth <= 280 && featuredWidth > width,
-        $"Continue Watching stays featured at {viewport}");
+    var columns = TvLayout.GetHomeGridColumnCount(viewport);
+    var expectedColumns = viewport >= 1100 ? 4 : 3;
+    var cardWidth = TvLayout.GetHomeGridCardWidth(viewport);
+    var expectedWidth = Math.Clamp((viewport - 28 * (expectedColumns - 1)) / expectedColumns, 180, 360);
+    Check(columns == expectedColumns && Math.Abs(cardWidth - expectedWidth) < 0.001,
+        $"Home grid uses {expectedColumns} columns and correctly sized posters at {viewport}px");
 }
-Check(TvLayout.GetShelfCardWidth(double.NaN) == 160 &&
-      TvLayout.GetContinueWatchingCardWidth(double.NaN) == 194, "Safe sizing before layout");
+Check(TvLayout.GetHomeGridColumnCount(double.NaN) == 3 &&
+      Math.Abs(TvLayout.GetHomeGridCardWidth(double.NaN) - (960 - 56) / 3d) < 0.001,
+    "Home grid uses safe Xbox-sized defaults before layout");
 foreach (var (width, height) in new[]
 {
     (640d, 360d), (960d, 540d), (1280d, 720d), (1920d, 1080d),
@@ -91,22 +92,23 @@ foreach (var (width, height) in new[]
 })
 {
     var layout = TvLayout.GetViewportLayout(width, height);
-    var contentWidth = width - layout.SidebarWidth - layout.ContentGap - layout.HorizontalInset;
+    var contentWidth = width - layout.SidebarWidth - layout.ContentGap - layout.HorizontalInset * 2;
     Check(contentWidth > 360 && height - layout.VerticalInset * 2 > 0,
         $"Usable content fits {width} x {height}");
-    Check(Math.Abs(layout.HorizontalInset - width * 0.05) < 0.001 &&
-        Math.Abs(layout.VerticalInset - height * 0.05) < 0.001,
-        $"Controls retain five-percent safe spacing at {width} x {height}");
-    Check(layout.SidebarWidth == 80 &&
-          layout.ContentGap == (width < 1000 ? 24 : 48),
-        $"Reference rail and safe content gap at {width} x {height}");
+    Check(Math.Abs(layout.HorizontalInset - Math.Clamp(width * 0.035, 18, 56)) < 0.001 &&
+        Math.Abs(layout.VerticalInset - Math.Clamp(height * 0.045, 12, 38)) < 0.001,
+        $"Controls retain responsive TV-safe spacing at {width} x {height}");
+    Check(layout.SidebarWidth == 0 &&
+          layout.ContentGap == (width < 900 ? 16 : width < 1400 ? 24 : 32),
+        $"Full-width canvas and responsive content gap at {width} x {height}");
 }
 var referenceLayout = TvLayout.GetViewportLayout(1294, 1024);
-var referenceContentWidth = 1294 - referenceLayout.SidebarWidth - referenceLayout.ContentGap - referenceLayout.HorizontalInset;
-Check(referenceLayout.SidebarWidth + referenceLayout.ContentGap == 128 &&
-      TvLayout.GetShelfCardWidth(referenceContentWidth) == 160 &&
-      TvLayout.GetContinueWatchingCardWidth(referenceContentWidth) == 194,
-    "1294px reference proportions for rail and poster shelves");
+var referenceContentWidth = 1294 - referenceLayout.SidebarWidth -
+    referenceLayout.ContentGap - referenceLayout.HorizontalInset * 2;
+Check(referenceLayout.SidebarWidth == 0 && referenceLayout.ContentGap == 24 &&
+      TvLayout.GetHomeGridColumnCount(referenceContentWidth) == 4 &&
+      TvLayout.GetHomeGridCardWidth(referenceContentWidth) > 180,
+    "1294px reference proportions for the four-column home grid");
 var xboxLayout = TvLayout.GetViewportLayout(960, 540);
 Check(xboxLayout.StackHeader && !xboxLayout.ShowDetailsPoster,
     "Xbox effective viewport gives header actions and details adequate space");

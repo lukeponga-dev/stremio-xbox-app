@@ -394,6 +394,16 @@ public sealed class StreamItem
     }
 
     [JsonIgnore]
+    public string CardSeeders
+    {
+        get
+        {
+            var count = StreamSeederCount.Read(AdditionalSources, Description, Title, Name);
+            return count.HasValue ? $"Seeders: {count.Value:N0}" : "Seeders: Not provided";
+        }
+    }
+
+    [JsonIgnore]
     public string CardAudioVideo
     {
         get

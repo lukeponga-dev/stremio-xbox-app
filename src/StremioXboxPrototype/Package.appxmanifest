@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" IgnorableNamespaces="uap mp">
-  <Identity Name="pongadev.KiwiCloud" Publisher="CN=72F532F7-EE7F-4B17-8DC0-38902DFF476C" Version="1.0.24.0" />
+  <Identity Name="pongadev.KiwiCloud" Publisher="CN=72F532F7-EE7F-4B17-8DC0-38902DFF476C" Version="1.0.25.0" />
   <mp:PhoneIdentity PhoneProductId="73930288-e8ee-4acb-849e-9dfb16353cd1" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>OpenStream TV</DisplayName>

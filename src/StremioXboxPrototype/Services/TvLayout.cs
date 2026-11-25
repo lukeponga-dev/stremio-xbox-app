@@ -10,29 +10,29 @@ public static class TvLayout
         if (!double.IsFinite(height) || height <= 0) height = 540;
         // Keep safe spacing proportional even on large viewports. Backgrounds
         // remain full bleed; this inset protects controls from TV overscan.
-        var horizontalInset = Math.Max(width * 0.025, 16);
-        var verticalInset = Math.Max(height * 0.05, 12);
-        var gap = width < 1000 ? 20 : 32;
-        // The rail stays narrow; the separate content gap provides the safe
-        // left inset seen in the TV layout without pushing the icons inward.
-        var sidebarWidth = 0;
-        var contentWidth = Math.Max(1, width - sidebarWidth - horizontalInset - gap);
+        var horizontalInset = Math.Clamp(width * 0.035, 18, 56);
+        var verticalInset = Math.Clamp(height * 0.045, 12, 38);
+        var gap = width < 900 ? 16 : width < 1400 ? 24 : 32;
+        // The application uses a full-width content canvas; preserve a safe
+        // overscan margin while allowing the header to reflow before it clips.
+        const double sidebarWidth = 0;
+        var contentWidth = Math.Max(1, width - horizontalInset * 2 - gap);
         return new TvViewportLayout(horizontalInset, verticalInset, gap, sidebarWidth,
-            contentWidth < 860, width >= 1000);
+            contentWidth < 1180, width >= 1180);
     }
 
-    public static double GetShelfCardWidth(double viewport)
+    public static int GetHomeGridColumnCount(double viewport)
     {
-        if (viewport <= 0 || !double.IsFinite(viewport)) return 160;
-        // The compact row fits roughly seven posters at the 1294px reference
-        // viewport while retaining a usable minimum on Xbox-sized layouts.
-        return Math.Clamp(viewport / 5.1, 220, 300);
+        if (!double.IsFinite(viewport) || viewport <= 0) viewport = 960;
+        return viewport >= 1100 ? 4 : 3;
     }
 
-    public static double GetContinueWatchingCardWidth(double viewport)
+    public static double GetHomeGridCardWidth(double viewport)
     {
-        if (viewport <= 0 || !double.IsFinite(viewport)) return 194;
-        return Math.Clamp(viewport / 5.1, 220, 300);
+        if (viewport <= 0 || !double.IsFinite(viewport)) viewport = 960;
+        var columns = GetHomeGridColumnCount(viewport);
+        const double gap = 28;
+        return Math.Clamp((viewport - gap * (columns - 1)) / columns, 180, 360);
     }
 
     public static AddonGridLayout GetAddonGridLayout(double availableWidth)

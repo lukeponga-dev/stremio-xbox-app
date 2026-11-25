@@ -47,14 +47,21 @@ public sealed partial class MainPage : Page
             InitializeComponent();
 
             AddonUrlsBox.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(AddonUrlsBoxKeyDown), true);
+            TopHomeButton.XYFocusRight = TopSearchButton;
+            TopSearchButton.XYFocusLeft = TopHomeButton;
+            TopSearchButton.XYFocusRight = TopLibraryButton;
+            TopLibraryButton.XYFocusLeft = TopSearchButton;
+            TopLibraryButton.XYFocusRight = TopAddonsButton;
+            TopAddonsButton.XYFocusLeft = TopLibraryButton;
+            TopAddonsButton.XYFocusRight = TopSettingsButton;
+            TopSettingsButton.XYFocusLeft = TopAddonsButton;
+            TopSettingsButton.XYFocusRight = TopProfileButton;
+            TopProfileButton.XYFocusLeft = TopSettingsButton;
             AddonsButton.XYFocusRight = AddonSyncAccountButton;
             AddonSyncAccountButton.XYFocusLeft = AddonsButton;
-            AddonSyncAccountButton.XYFocusRight = AddonViewAllButton;
-            AddonViewAllButton.XYFocusLeft = AddonSyncAccountButton;
-            AddonViewAllButton.XYFocusRight = AddProviderButton;
-            AddonViewAllButton.XYFocusDown = AddonCards;
+            AddonSyncAccountButton.XYFocusRight = AddProviderButton;
             AddonSyncAccountButton.XYFocusDown = AddonCards;
-            AddProviderButton.XYFocusLeft = AddonViewAllButton;
+            AddProviderButton.XYFocusLeft = AddonSyncAccountButton;
             AddProviderButton.XYFocusDown = AddonCards;
             AddonUrlsBox.XYFocusLeft = AddonsButton;
             AddonUrlsBox.XYFocusDown = SaveProvidersButton;
@@ -91,10 +98,16 @@ public sealed partial class MainPage : Page
     {
         base.OnNavigatedTo(e);
         RefreshContinueWatching();
-        if (_lastFocusedItem is not null)
-        {
-            _lastFocusedItem.Focus(FocusState.Programmatic);
-        }
+        // Returning from Details/Player should restore the last content position.
+        // If that virtualized control has been recycled, fall back to the Home tab
+        // instead of leaving gamepad focus on a detached element.
+        if (_lastFocusedItem is not null && _lastFocusedItem.IsEnabled &&
+            _lastFocusedItem.Visibility == Visibility.Visible &&
+            _lastFocusedItem.Focus(FocusState.Programmatic))
+            return;
+
+        _lastFocusedItem = null;
+        TopHomeButton.Focus(FocusState.Programmatic);
     }
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
@@ -155,9 +168,12 @@ public sealed partial class MainPage : Page
             var series = _client.GetCatalogAsync("series", cancellationToken: request.Token);
             await Task.WhenAll(movies, series);
             request.Token.ThrowIfCancellationRequested();
-            MovieGrid.ItemsSource = movies.Result.Take(20).ToList();
-            SeriesGrid.ItemsSource = series.Result.Take(20).ToList();
-            RecentlyAddedGrid.ItemsSource = movies.Result.Concat(series.Result).OrderByDescending(item => item.ReleaseInfo).Take(20).ToList();
+            MovieGrid.ItemsSource = movies.Result.Take(8).ToList();
+            TrendingMoviesGrid.ItemsSource = movies.Result.Skip(8).Take(8).ToList();
+            TrendingMoviesShelf.Visibility = TrendingMoviesGrid.Items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            SeriesGrid.ItemsSource = series.Result.Take(12).ToList();
+            PopularSeriesShelf.Visibility = SeriesGrid.Items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            UpdateHomeGridColumns(ContentSurface.ActualWidth);
             _featuredItem = movies.Result.FirstOrDefault(item => !string.IsNullOrWhiteSpace(item.Background)) ?? movies.Result.FirstOrDefault() ?? series.Result.FirstOrDefault();
             if (_featuredItem is not null)
             {
@@ -170,7 +186,7 @@ public sealed partial class MainPage : Page
             }
             NetworkStatusText.Text = $"Loaded {movies.Result.Count + series.Result.Count} catalog items";
             DiagnosticsService.Current.Info("catalog", NetworkStatusText.Text);
-            var empty = MovieGrid.Items.Count + SeriesGrid.Items.Count + ContinueWatchingGrid.Items.Count == 0;
+            var empty = MovieGrid.Items.Count + TrendingMoviesGrid.Items.Count + SeriesGrid.Items.Count + ContinueWatchingGrid.Items.Count == 0;
             HomeShelves.Visibility = empty ? Visibility.Collapsed : Visibility.Visible;
             HomeUnavailablePanel.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
             HomeStateTitle.Text = "No titles found yet";
@@ -354,8 +370,10 @@ public sealed partial class MainPage : Page
         var topSelected = selected == HomeButton ? TopHomeButton
             : selected == DiscoverButton ? TopSearchButton
             : selected == LibraryNavButton ? TopLibraryButton
-            : selected == AddonsButton ? TopAddonsButton : null;
-        foreach (var button in new[] { TopHomeButton, TopMoviesButton, TopSeriesButton, TopLibraryButton, TopAddonsButton, TopSearchButton })
+            : selected == AddonsButton ? TopAddonsButton
+            : selected == SettingsButton || selected == ServerButton || selected == PlaybackLabButton || selected == DiagnosticsButton
+                ? TopSettingsButton : null;
+        foreach (var button in new[] { TopHomeButton, TopSearchButton, TopLibraryButton, TopAddonsButton, TopSettingsButton })
             button.Style = ResolveStyle(ReferenceEquals(button, topSelected) ? "TopNavSelectedButtonStyle" : "TopNavButtonStyle") ?? button.Style;
     }
 
@@ -444,57 +462,198 @@ public sealed partial class MainPage : Page
         }
         container.GotFocus += PosterGotFocus;
         container.LostFocus += PosterLostFocus;
+        container.XYFocusLeft = null;
+        container.XYFocusRight = null;
+        container.XYFocusUp = null;
+        container.XYFocusDown = null;
         if (args.Item is MetaItem item)
             Windows.UI.Xaml.Automation.AutomationProperties.SetName(container, item.Name);
         if (args.Phase == 0) args.RegisterUpdateCallback(PosterContainerChanging);
-        else if (ReferenceEquals(sender, MovieGrid) || ReferenceEquals(sender, SeriesGrid) ||
-                 ReferenceEquals(sender, ContinueWatchingGrid))
-            FindPosterCard(container)?.SetCardWidth(ReferenceEquals(sender, ContinueWatchingGrid)
-                ? TvLayout.GetContinueWatchingCardWidth(sender.ActualWidth)
-                : TvLayout.GetShelfCardWidth(sender.ActualWidth), ReferenceEquals(sender, ContinueWatchingGrid));
+        else if (ReferenceEquals(sender, MovieGrid) || ReferenceEquals(sender, TrendingMoviesGrid) ||
+                 ReferenceEquals(sender, SeriesGrid) || ReferenceEquals(sender, ContinueWatchingGrid))
+            FindPosterCard(container)?.SetCardWidth(
+                TvLayout.GetHomeGridCardWidth(sender.ActualWidth), ReferenceEquals(sender, ContinueWatchingGrid));
+
+        // Let the wrap panel handle movement between poster rows. Only the
+        // first row returns to its section heading and the last row advances to
+        // the next section, so D-pad navigation never skips an entire row.
+        if (!ReferenceEquals(sender, ContinueWatchingGrid) &&
+            GetSectionHeader(sender) is Button sectionHeader)
+        {
+            var columns = TvLayout.GetHomeGridColumnCount(sender.ActualWidth);
+            var row = args.ItemIndex / columns;
+            var lastRow = Math.Max(0, (sender.Items.Count - 1) / columns);
+            if (row == 0) container.XYFocusUp = sectionHeader;
+            if (row == lastRow) container.XYFocusDown = GetNextSectionHeader(sender);
+            if (args.ItemIndex == 0) sectionHeader.XYFocusDown = container;
+        }
+        else if (ReferenceEquals(sender, ContinueWatchingGrid))
+        {
+            if (args.ItemIndex > 0 && sender.ContainerFromIndex(args.ItemIndex - 1) is Control previous)
+                container.XYFocusLeft = previous;
+            if (args.ItemIndex + 1 < sender.Items.Count &&
+                sender.ContainerFromIndex(args.ItemIndex + 1) is Control next)
+                container.XYFocusRight = next;
+        }
+
+        if (args.ItemIndex == 0 &&
+            (ReferenceEquals(sender, ContinueWatchingGrid) || ContinueWatchingGrid.Items.Count == 0))
+        {
+            var firstSection = ContinueWatchingGrid.Items.Count > 0
+                ? ContinueWatchingHeader : RecommendedHeader;
+            FeaturedPlayButton.XYFocusDown = firstSection;
+            FeaturedDetailsButton.XYFocusDown = firstSection;
+        }
+
         if (args.Phase > 0)
             FindPosterCard(container)?.SetFocused(container.FocusState != FocusState.Unfocused);
+    }
+
+    private Button? GetSectionHeader(ListViewBase grid)
+    {
+        if (ReferenceEquals(grid, ContinueWatchingGrid)) return ContinueWatchingHeader;
+        if (ReferenceEquals(grid, MovieGrid)) return RecommendedHeader;
+        if (ReferenceEquals(grid, TrendingMoviesGrid)) return TrendingMoviesHeader;
+        if (ReferenceEquals(grid, SeriesGrid)) return PopularSeriesHeader;
+        return null;
+    }
+
+    private Button? GetNextSectionHeader(ListViewBase grid)
+    {
+        if (ReferenceEquals(grid, ContinueWatchingGrid)) return RecommendedHeader;
+        if (ReferenceEquals(grid, MovieGrid))
+        {
+            if (TrendingMoviesShelf.Visibility == Visibility.Visible) return TrendingMoviesHeader;
+            if (PopularSeriesShelf.Visibility == Visibility.Visible) return PopularSeriesHeader;
+        }
+        if (ReferenceEquals(grid, TrendingMoviesGrid) && PopularSeriesShelf.Visibility == Visibility.Visible)
+            return PopularSeriesHeader;
+        return null;
     }
 
     private void ShelfSizeChanged(object sender, SizeChangedEventArgs e)
     {
         var shelf = (GridView)sender;
+        if (ReferenceEquals(shelf, ContinueWatchingGrid))
+        {
+            shelf.Height = 160;
+            return;
+        }
+
+        UpdateHomeShelfLayout(shelf);
+    }
+
+    private void UpdateHomeShelfLayout(GridView shelf)
+    {
+        var width = shelf.ActualWidth;
+        if (!double.IsFinite(width) || width <= 0) return;
+
+        var columns = width >= 1100 ? 4 : 3;
+        var cardWidth = TvLayout.GetHomeGridCardWidth(width);
+        var panel = FindItemsWrapGrid(shelf);
+        if (panel is not null)
+            panel.MaximumRowsOrColumns = columns;
+
+        // The parent ScrollViewer owns vertical scrolling. Size each GridView
+        // for every wrapped row so its final posters are never clipped by a
+        // fixed-height inner viewport.
+        var rows = shelf.Items.Count == 0 ? 1 : (int)Math.Ceiling(shelf.Items.Count / (double)columns);
+        var cardHeight = (cardWidth - 28) * 1.42 + 80;
+        shelf.Height = rows * cardHeight + Math.Max(0, rows - 1) * 12 + 12;
+
         for (var index = 0; index < shelf.Items.Count; index++)
             if (shelf.ContainerFromIndex(index) is DependencyObject container)
-                FindPosterCard(container)?.SetCardWidth(ReferenceEquals(sender, ContinueWatchingGrid)
-                    ? TvLayout.GetContinueWatchingCardWidth(e.NewSize.Width)
-                    : TvLayout.GetShelfCardWidth(e.NewSize.Width), ReferenceEquals(sender, ContinueWatchingGrid));
+                FindPosterCard(container)?.SetCardWidth(cardWidth);
+    }
+
+    private void UpdateHomeGridColumns(double width)
+    {
+        foreach (var grid in new[] { MovieGrid, TrendingMoviesGrid, SeriesGrid })
+        {
+            var gridWidth = grid.ActualWidth > 0 ? grid.ActualWidth : width;
+            UpdateGridColumns(grid, gridWidth);
+            UpdateHomeShelfLayout(grid);
+        }
+    }
+
+    private static void UpdateGridColumns(GridView grid, double width)
+    {
+        var panel = FindItemsWrapGrid(grid);
+        if (panel is not null)
+            panel.MaximumRowsOrColumns = TvLayout.GetHomeGridColumnCount(width);
+    }
+
+    private static ItemsWrapGrid? FindItemsWrapGrid(DependencyObject root)
+    {
+        if (root is ItemsWrapGrid panel) return panel;
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
+        {
+            var result = FindItemsWrapGrid(VisualTreeHelper.GetChild(root, index));
+            if (result is not null) return result;
+        }
+        return null;
     }
 
     private void ViewportSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        var layout = TvLayout.GetViewportLayout(e.NewSize.Width, e.NewSize.Height);
-        // Background surfaces occupy the full window. Only interactive content
-        // receives TV-safe insets, recalculated whenever the window changes size.
+        var width = Math.Max(1, e.NewSize.Width);
+        var height = Math.Max(1, e.NewSize.Height);
+        var layout = TvLayout.GetViewportLayout(width, height);
+        var compact = width < 900;
+        UpdateHomeGridColumns(width);
+        var horizontalInset = layout.HorizontalInset;
+
+        // Recalculate all safe areas from the effective viewport rather than
+        // assuming a fixed desktop/1080p window. This also protects TV overscan.
         SidebarColumn.Width = new GridLength(layout.SidebarWidth);
-        var railPadding = 12;
-        SidebarSurface.Padding = new Thickness(railPadding, Math.Max(24, e.NewSize.Height * 0.03),
-            railPadding, Math.Max(24, e.NewSize.Height * 0.025));
-        ContentSurface.Padding = new Thickness(50, 10, 45, 12);
+        var railPadding = compact ? 8 : 12;
+        SidebarSurface.Padding = new Thickness(railPadding, Math.Max(16, height * 0.03),
+            railPadding, Math.Max(16, height * 0.025));
+        ContentSurface.Padding = new Thickness(horizontalInset, Math.Max(8, layout.VerticalInset * 0.45),
+            horizontalInset, Math.Max(8, layout.VerticalInset * 0.45));
+
         HeaderActionsColumn.Width = layout.StackHeader ? new GridLength(0) : GridLength.Auto;
         Grid.SetColumn(HeaderActions, layout.StackHeader ? 0 : 1);
         Grid.SetRow(HeaderActions, layout.StackHeader ? 1 : 0);
-        HeaderActions.Margin = layout.StackHeader ? new Thickness(0, 12, 0, 0) : new Thickness(0, 5, 0, 0);
-        HeaderText.Margin = layout.StackHeader ? new Thickness(0) : new Thickness(0, 0, 24, 0);
-        PageSubtitle.Visibility = e.NewSize.Height < 600 ? Visibility.Collapsed : Visibility.Visible;
-        PageTitle.FontSize = e.NewSize.Height < 600 ? 30 : e.NewSize.Width < 1500 ? 36 : 44;
-        PageTitle.LineHeight = e.NewSize.Width < 1500 ? 48 : 56;
-        PageSubtitle.FontSize = e.NewSize.Width < 1500 ? 16 : 20;
-        var contentWidth = e.NewSize.Width - 95;
-        var compactSearch = contentWidth < 560;
+        HeaderActions.Margin = layout.StackHeader ? new Thickness(0, 8, 0, 0) : new Thickness(0, 4, 0, 0);
+        HeaderText.Margin = layout.StackHeader ? new Thickness(0) : new Thickness(0, 0, 16, 0);
+
+        // Keep one predictable, uncluttered navigation row for TV use.
+        TopBrandText.Visibility = Visibility.Visible;
+        TopHomeButton.Visibility = Visibility.Visible;
+        TopSearchButton.Visibility = Visibility.Visible;
+        TopLibraryButton.Visibility = Visibility.Visible;
+        TopAddonsButton.Visibility = Visibility.Visible;
+        TopSettingsButton.Visibility = Visibility.Visible;
+        PageSubtitle.Visibility = height < 560 ? Visibility.Collapsed : Visibility.Visible;
+
+        // Avoid leaving controller focus on a navigation target that just hid.
+        var focusedControl = FocusManager.GetFocusedElement() as Control;
+        if (focusedControl is not null && focusedControl.Visibility != Visibility.Visible)
+            TopHomeButton.Focus(FocusState.Programmatic);
+
+        PageTitle.FontSize = Math.Clamp(width * 0.028, 25, height < 620 ? 32 : 44);
+        PageTitle.LineHeight = PageTitle.FontSize * 1.3;
+        PageSubtitle.FontSize = width < 1100 ? 14 : width < 1500 ? 16 : 19;
+        FeaturedHero.Height = Math.Clamp(height * 0.32, 250, 320);
+        FeaturedTitleText.FontSize = Math.Clamp(width * 0.032, 28, 48);
+        FeaturedDescriptionText.FontSize = width < 1000 ? 14 : 17;
+
+        var contentWidth = Math.Max(1, width - horizontalInset * 2);
+        var compactSearch = contentWidth < 620;
         Grid.SetColumnSpan(SearchBox, compactSearch ? 4 : 1);
         foreach (var button in new[] { SearchSubmitButton, KeyboardButton, VoiceSearchButton })
         {
             Grid.SetRow(button, compactSearch ? 1 : 0);
-            button.Margin = new Thickness(12, compactSearch ? 12 : 0, 0, 0);
+            button.Margin = new Thickness(compactSearch ? 8 : 10, compactSearch ? 8 : 0, 0, 0);
         }
         DiscoverBrowseActions.Orientation = compactSearch ? Orientation.Vertical : Orientation.Horizontal;
-        SearchKeyboardPanel.MaxHeight = Math.Max(80, Math.Min(220, e.NewSize.Height * 0.3));
+        SearchKeyboardPanel.MaxHeight = Math.Max(90, Math.Min(260, height * 0.34));
+
+        // The hero remains prominent without consuming the entire short window.
+        FeaturedHero.Height = Math.Clamp(height * 0.32, 250, 320);
+        FeaturedTitleText.FontSize = Math.Clamp(width * 0.032, 25, 44);
+        FeaturedDescriptionText.Visibility = height < 620 ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private static PosterCard? FindPosterCard(DependencyObject root)
@@ -569,8 +728,8 @@ public sealed partial class MainPage : Page
 
     private void RefreshContinueWatching()
     {
-        // Reuse the poster template and title navigation. The progress attachment
-        // is UI-only (JsonIgnore), so it does not enter persisted catalog metadata.
+        // Attach real playback history for the compact horizontal dashboard cards.
+        // The progress attachment is UI-only (JsonIgnore), not persisted with catalog metadata.
         var items = PrototypeSettings.GetWatchHistory().Select(progress =>
         {
             progress.Item.WatchProgress = progress;
@@ -1013,9 +1172,14 @@ public sealed partial class MainPage : Page
         SetDiscoverResultsVisible(true);
         SearchBox.Text = "";
         var label = type == "movie" ? "Popular movies" : "Popular series";
-        var selectedTop = type == "movie" ? TopMoviesButton : TopSeriesButton;
-        foreach (var button in new[] { TopHomeButton, TopMoviesButton, TopSeriesButton, TopLibraryButton, TopAddonsButton, TopSearchButton })
+        var selectedTop = TopSearchButton;
+        foreach (var button in new[] { TopHomeButton, TopSearchButton, TopLibraryButton, TopAddonsButton, TopSettingsButton })
             button.Style = ResolveStyle(ReferenceEquals(button, selectedTop) ? "TopNavSelectedButtonStyle" : "TopNavButtonStyle") ?? button.Style;
+        if (selectedTop.Visibility == Visibility.Visible)
+        {
+            selectedTop.XYFocusDown = SearchBox;
+            SearchBox.XYFocusUp = selectedTop;
+        }
         BeginRequest("Loading " + label.ToLowerInvariant());
         var request = _request!;
         DiscoverGrid.ItemsSource = null;
@@ -1057,7 +1221,7 @@ public sealed partial class MainPage : Page
     {
         SetSelectedNavigation(AddonsButton);
         UpdateAddonSummary();
-        ShowPanel(AddonsPanel, "Addons", "Browse and manage your providers");
+        ShowPanel(AddonsPanel, "Add-ons", "Manage your installed providers");
         RenderAddonCards();
         AddonSyncAccountButton.Focus(FocusState.Programmatic);
         _ = LoadAddonMetadataAsync();
@@ -1066,7 +1230,8 @@ public sealed partial class MainPage : Page
     private void UpdateAddonSummary()
     {
         var addons = PrototypeSettings.GetStreamAddons();
-        AddonCountText.Text = addons.Count == 0 ? "1 built-in" : $"1 built-in | {addons.Count} stream provider{(addons.Count == 1 ? "" : "s")}";
+        var installedCount = addons.Count + 1; // Include the built-in Cinemeta catalogue.
+        AddonCountText.Text = $"{installedCount} Provider{(installedCount == 1 ? "" : "s")} Installed";
         if (AddonsPanel.Visibility == Visibility.Visible) RenderAddonCards();
     }
 
@@ -1158,6 +1323,12 @@ public sealed partial class MainPage : Page
         if (width <= 0) return;
         var layout = TvLayout.GetAddonGridLayout(width);
         AddonCards.Width = width;
+        if (AddonCards.ItemsPanelRoot is ItemsWrapGrid wrapGrid)
+        {
+            // Two large cards across on TV; fall back to a single column on narrow windows.
+            wrapGrid.ItemWidth = width >= 720 ? (width - 24) / 2 : Math.Max(280, width - 16);
+            wrapGrid.ItemHeight = 184;
+        }
         AddonImportActions.Orientation = layout.StackImportActions ? Orientation.Vertical : Orientation.Horizontal;
         SaveProvidersButton.XYFocusDown = layout.StackImportActions ? SyncProvidersButton : null;
         SyncProvidersButton.XYFocusUp = layout.StackImportActions ? SaveProvidersButton : AddonUrlsBox;
@@ -1318,7 +1489,38 @@ public sealed partial class MainPage : Page
         HeaderActions.Visibility = Visibility.Collapsed;
         HeaderSearchButton.Visibility = ReferenceEquals(panel, DiscoverPanel) ? Visibility.Collapsed : Visibility.Visible;
         HomeRefreshButton.Visibility = ReferenceEquals(panel, HomePanel) ? Visibility.Visible : Visibility.Collapsed;
-        if (focusWasInContent && FocusManager.FindFirstFocusableElement(panel) is Control firstControl)
+
+        // Explicitly bridge the top navigation and the active content region.
+        // This makes D-pad Up/Down predictable even when responsive layouts move
+        // controls into a different row or column.
+        var firstControl = FocusManager.FindFirstFocusableElement(panel) as Control;
+        var topNavigationTarget = ReferenceEquals(panel, HomePanel) ? TopHomeButton
+            : ReferenceEquals(panel, DiscoverPanel) ? TopSearchButton
+            : ReferenceEquals(panel, LibraryPanel) ? TopLibraryButton
+            : ReferenceEquals(panel, AddonsPanel) ? TopAddonsButton
+            : ReferenceEquals(panel, SettingsPanel) ? TopSettingsButton
+            : null;
+        if (firstControl is not null && topNavigationTarget is not null &&
+            topNavigationTarget.Visibility == Visibility.Visible && topNavigationTarget.IsEnabled)
+        {
+            topNavigationTarget.XYFocusDown = firstControl;
+            firstControl.XYFocusUp = topNavigationTarget;
+        }
+
+        var sideNavigationTarget = ReferenceEquals(panel, HomePanel) ? HomeButton
+            : ReferenceEquals(panel, DiscoverPanel) ? DiscoverButton
+            : ReferenceEquals(panel, LibraryPanel) ? LibraryNavButton
+            : ReferenceEquals(panel, AddonsPanel) ? AddonsButton
+            : ReferenceEquals(panel, SettingsPanel) ? SettingsButton
+            : null;
+        if (firstControl is not null && sideNavigationTarget is not null &&
+            sideNavigationTarget.Visibility == Visibility.Visible && sideNavigationTarget.IsEnabled)
+        {
+            sideNavigationTarget.XYFocusRight = firstControl;
+            firstControl.XYFocusLeft = sideNavigationTarget;
+        }
+
+        if (focusWasInContent && firstControl is not null)
             firstControl.Focus(FocusState.Programmatic);
     }
 

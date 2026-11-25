@@ -1,25 +1,27 @@
-<UserControl x:Class="StremioXboxPrototype.Controls.PosterCard" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" IsTabStop="False" Width="300" Height="214">
-    <Grid Padding="0,0,12,10">
-        <Grid.RowDefinitions><RowDefinition Height="170" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-        <Grid x:Name="PosterFrame" Width="288" Height="162" RenderTransformOrigin="0.5,0.5">
+<UserControl x:Class="StremioXboxPrototype.Controls.PosterCard" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" IsTabStop="False" Width="360" Height="470">
+    <Grid Padding="14,12,14,18">
+        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+        <Grid x:Name="PosterFrame" Width="332" Height="448" RenderTransformOrigin="0.5,0.5">
             <Grid.RenderTransform><ScaleTransform x:Name="PosterScale" /></Grid.RenderTransform>
-            <Border x:Name="FocusGlow" Margin="-5" CornerRadius="13" Background="{StaticResource FocusBloomBrush}" Opacity="0" />
-            <Border x:Name="Artwork" CornerRadius="10" BorderThickness="1" BorderBrush="#263648" Background="{StaticResource PanelBrush}">
+            <Border x:Name="FocusAura" Margin="-14" CornerRadius="20" BorderBrush="#9900AFFF" BorderThickness="8" Opacity="0" IsHitTestVisible="False" />
+            <Border x:Name="FocusGlow" Margin="-9" CornerRadius="17" Background="#5500AFFF" BorderBrush="#CC00AFFF" BorderThickness="4" Opacity="0" IsHitTestVisible="False" />
+            <Border x:Name="Artwork" CornerRadius="10" BorderThickness="1" BorderBrush="#263648" Background="{StaticResource PanelBrush}" Opacity="0.92">
                 <TextBlock x:Name="FallbackTitle" TextWrapping="Wrap" TextAlignment="Center" FontSize="18" VerticalAlignment="Center" Margin="12" Foreground="{StaticResource MutedTextBrush}" />
             </Border>
             <Border VerticalAlignment="Bottom" Height="62" CornerRadius="0,0,10,10">
                 <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#00101824" Offset="0" /><GradientStop Color="#F0101824" Offset="1" /></LinearGradientBrush></Border.Background>
             </Border>
-            <TextBlock x:Name="TitleText" VerticalAlignment="Bottom" Margin="12,0,10,9" FontFamily="{StaticResource HeadingFont}" FontSize="17" FontWeight="SemiBold" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+            <TextBlock x:Name="TitleText" VerticalAlignment="Bottom" Margin="12,0,10,9" FontFamily="{StaticResource HeadingFont}" FontSize="20" FontWeight="SemiBold" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
             <Border x:Name="ResumingBadge" Visibility="Collapsed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10" Padding="7,4" CornerRadius="5" Background="#CC0B1420">
                 <TextBlock Text="CONTINUE" FontSize="10" FontWeight="Bold" CharacterSpacing="60" Foreground="#DCEBFA" />
             </Border>
-            <ProgressBar x:Name="WatchProgressBar" Visibility="Collapsed" VerticalAlignment="Bottom" Margin="10,0,10,3" Height="4" Minimum="0" Maximum="100" Foreground="#1684FF" Background="#995B6878" />
-            <Border x:Name="FocusOutline" Margin="-3" CornerRadius="12" BorderBrush="#1684FF" BorderThickness="2" Opacity="0" IsHitTestVisible="False" />
+            <Border x:Name="ProgressGlow" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="8,0,8,1" Height="8" CornerRadius="5" Background="#5500AFFF" Opacity="0" IsHitTestVisible="False" />
+            <ProgressBar x:Name="WatchProgressBar" Visibility="Collapsed" VerticalAlignment="Bottom" Margin="10,0,10,3" Height="4" Minimum="0" Maximum="100" Foreground="#00AFFF" Background="#995B6878" />
+            <Border x:Name="FocusOutline" Margin="-5" CornerRadius="15" BorderBrush="#00AFFF" BorderThickness="5" Opacity="0" IsHitTestVisible="False" />
         </Grid>
         <StackPanel x:Name="FocusDetails" Grid.Row="1" Spacing="2" Visibility="Collapsed">
-            <TextBlock x:Name="MetadataText" FontSize="13" Foreground="{StaticResource MutedTextBrush}" TextTrimming="CharacterEllipsis" MaxLines="1" />
-            <TextBlock x:Name="TypeText" FontSize="12" TextTrimming="CharacterEllipsis" Foreground="{StaticResource AccentTextBrush}" />
+            <TextBlock x:Name="MetadataText" FontSize="14" Foreground="{StaticResource MutedTextBrush}" TextTrimming="CharacterEllipsis" MaxLines="1" />
+            <TextBlock x:Name="TypeText" FontSize="13" TextTrimming="CharacterEllipsis" Foreground="{StaticResource AccentTextBrush}" />
         </StackPanel>
     </Grid>
 </UserControl>

@@ -12,52 +12,136 @@ public sealed partial class DetailsPage : Page
     private readonly StremioAddonClient _client = new();
     private MetaItem? _item;
     private CancellationTokenSource? _request;
+    private CancellationTokenSource? _metadataRequest;
     private bool _streamsLoaded;
     private bool _isOpeningStream;
+    private bool _hasReceivedInitialFocus;
     private WatchProgress? _resume;
 
-    public DetailsPage() => InitializeComponent();
+    public DetailsPage()
+    {
+        InitializeComponent();
+        Loaded += DetailsPageLoaded;
+    }
+
+    private void DetailsPageLoaded(object sender, RoutedEventArgs e)
+    {
+        if (_hasReceivedInitialFocus) return;
+        _hasReceivedInitialFocus = true;
+        LoadStreamsButton.Focus(FocusState.Programmatic);
+    }
+
+    private void DetailsPageKeyDown(object sender, Windows.UI.Xaml.Input.KeyRoutedEventArgs e)
+    {
+        if (e.Key is Windows.System.VirtualKey.GamepadB or Windows.System.VirtualKey.Escape)
+        {
+            if (Frame.CanGoBack) Frame.GoBack();
+            e.Handled = true;
+        }
+    }
 
     private void ViewportSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        var compact = e.NewSize.Width < 1180 || e.NewSize.Height < 650;
-        DetailsContent.Padding = compact ? new Thickness(28, 16, 28, 16) : new Thickness(48, 22, 48, 22);
-        DetailsContent.RowDefinitions[1].Height = new GridLength(compact ? 250 : 300);
+        var width = Math.Max(1, e.NewSize.Width);
+        var height = Math.Max(1, e.NewSize.Height);
+        var compact = width < 1180 || height < 680;
+        var stacked = width < 1100;
+
+        DetailsContent.Padding = new Thickness(
+            Math.Clamp(width * 0.035, 18, 48),
+            Math.Clamp(height * 0.035, 12, 24),
+            Math.Clamp(width * 0.035, 18, 48),
+            Math.Clamp(height * 0.025, 10, 20));
+        // Let the synopsis/actions measure to their content. A fixed hero row
+        // clipped the description and buttons on shorter Xbox/desktop windows.
+        DetailsContent.RowDefinitions[1].Height = GridLength.Auto;
         DetailsContent.RowDefinitions[2].Height = new GridLength(1, GridUnitType.Star);
+
+        DetailsSections.ColumnDefinitions[0].Width = stacked ? new GridLength(1, GridUnitType.Star) : new GridLength(1.05, GridUnitType.Star);
+        DetailsSections.ColumnDefinitions[1].Width = stacked ? new GridLength(0) : new GridLength(0.95, GridUnitType.Star);
+        Grid.SetColumn(StreamsPanel, stacked ? 0 : 1);
+        Grid.SetRow(StreamsPanel, stacked ? 1 : 0);
+        DetailsSections.RowDefinitions[1].Height = stacked ? GridLength.Auto : new GridLength(0);
+        DetailsSections.RowDefinitions[0].Height = GridLength.Auto;
+
+        BreadcrumbText.Visibility = width < 760 ? Visibility.Collapsed : Visibility.Visible;
+        TitleText.FontSize = Math.Clamp(width * 0.045, 28, compact ? 40 : 54);
+        DescriptionText.FontSize = width < 760 ? 15 : 17;
+        EpisodePicker.Width = Math.Min(420, Math.Max(220, width * 0.48));
+
+        // Keep the primary actions and stream list connected as the layout stacks.
+        LoadStreamsButton.XYFocusRight = LibraryButton;
+        LibraryButton.XYFocusLeft = LoadStreamsButton;
+        var streamEntry = EpisodePicker.Visibility == Visibility.Visible ? (Control)EpisodePicker : StreamList;
+        LoadStreamsButton.XYFocusDown = streamEntry;
+        LibraryButton.XYFocusDown = streamEntry;
+        EpisodePicker.XYFocusUp = LoadStreamsButton;
+        EpisodePicker.XYFocusDown = StreamList;
+        StreamList.XYFocusUp = EpisodePicker.Visibility == Visibility.Visible ? EpisodePicker : LoadStreamsButton;
+        BackButton.XYFocusDown = LoadStreamsButton;
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
         ResetStreamOpening();
+
+        // A page instance can be revisited while an earlier metadata request is
+        // still unwinding. Cancel it and give this navigation its own lifetime.
+        _metadataRequest?.Cancel();
+        var metadataRequest = new CancellationTokenSource();
+        _metadataRequest = metadataRequest;
+
         _item = e.Parameter as MetaItem;
-        if (_item is null) return;
-        // Metadata enrichment replaces the compact shelf item, so keep the saved
-        // episode identity separately before fetching the full title details.
+        if (_item is null)
+        {
+            metadataRequest.Dispose();
+            _metadataRequest = null;
+            return;
+        }
+
         _resume = _item.WatchProgress;
         ApplyItem(_item);
         UpdateLibraryButton();
-        LibraryButton.Focus(FocusState.Programmatic);
-
         try
         {
-            var complete = await _client.GetMetaAsync(_item.Type, _item.Id);
-            if (complete is not null)
+            try
             {
-                _item = complete;
-                ApplyItem(complete);
+                var complete = await _client.GetMetaAsync(_item.Type, _item.Id, metadataRequest.Token);
+                metadataRequest.Token.ThrowIfCancellationRequested();
+                if (complete is not null)
+                {
+                    _item = complete;
+                    ApplyItem(complete);
+                }
             }
-        }
-        catch (Exception exception)
-        {
-            DiagnosticsService.Current.Warn("details", "Metadata enrichment failed: " + exception.Message);
-        }
+            catch (OperationCanceledException) when (metadataRequest.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception exception)
+            {
+                DiagnosticsService.Current.Warn("details", "Metadata enrichment failed: " + exception.Message);
+            }
 
-        await LoadStreamsAsync();
+            metadataRequest.Token.ThrowIfCancellationRequested();
+            await LoadStreamsAsync();
+        }
+        catch (OperationCanceledException) when (metadataRequest.IsCancellationRequested)
+        {
+            // Leaving Details cancels both metadata enrichment and stream lookup.
+        }
+        finally
+        {
+            if (ReferenceEquals(_metadataRequest, metadataRequest))
+                _metadataRequest = null;
+            metadataRequest.Dispose();
+        }
     }
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
+        _metadataRequest?.Cancel();
         _request?.Cancel();
         base.OnNavigatedFrom(e);
     }
@@ -83,6 +167,13 @@ public sealed partial class DetailsPage : Page
         EpisodePicker.ItemsSource = item.Videos;
         if (item.Videos.Count > 0)
             EpisodePicker.SelectedItem = item.Videos.FirstOrDefault(video => video.Id == _resume?.VideoId) ?? item.Videos[0];
+
+        // Episode availability is data-driven, so refresh the directional links
+        // after metadata arrives rather than pointing D-pad focus at a hidden control.
+        var streamEntry = EpisodePicker.Visibility == Visibility.Visible ? (Control)EpisodePicker : StreamList;
+        LoadStreamsButton.XYFocusDown = streamEntry;
+        LibraryButton.XYFocusDown = streamEntry;
+        StreamList.XYFocusUp = EpisodePicker.Visibility == Visibility.Visible ? EpisodePicker : LoadStreamsButton;
     }
 
     private void GoBack(object sender, RoutedEventArgs e)
@@ -230,6 +321,17 @@ public sealed partial class DetailsPage : Page
             DiagnosticsService.Current.Warn("streams", $"{addon.Name}: {exception.Message}");
             return Array.Empty<StreamItem>();
         }
+    }
+
+    private void StreamContainerChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+    {
+        if (args.InRecycleQueue || args.ItemIndex != 0) return;
+
+        // Only the first stream returns to the hero controls. Later rows retain
+        // the ListView's natural up/down D-pad sequence.
+        args.ItemContainer.XYFocusUp = EpisodePicker.Visibility == Visibility.Visible
+            ? EpisodePicker
+            : LoadStreamsButton;
     }
 
     private async void PlayStream(object sender, ItemClickEventArgs e)

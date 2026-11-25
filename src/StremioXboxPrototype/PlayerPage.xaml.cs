@@ -40,9 +40,15 @@ public sealed partial class PlayerPage : Page
         var insets = new Thickness(layout.HorizontalInset, layout.VerticalInset,
             layout.HorizontalInset, layout.VerticalInset);
         ControllerHintSurface.Margin = insets;
-        StatusOverlay.Margin = new Thickness(insets.Left, insets.Top + 64, insets.Right, insets.Bottom);
+        ControllerHintSurface.Padding = new Thickness(e.NewSize.Width < 760 ? 10 : 14, 8, e.NewSize.Width < 760 ? 10 : 14, 8);
+        ControllerHintText.FontSize = e.NewSize.Width < 760 ? 12 : e.NewSize.Width < 1200 ? 14 : 16;
+        BackSourcesButton.Margin = new Thickness(layout.HorizontalInset, layout.VerticalInset, 0, 0);
+        BackSourcesButton.FontSize = e.NewSize.Width < 760 ? 14 : 17;
+        LoadingTitle.FontSize = Math.Clamp(e.NewSize.Width * 0.055, 25, 48);
+        StatusOverlay.Margin = new Thickness(insets.Left, insets.Top + (e.NewSize.Height < 600 ? 48 : 64), insets.Right, insets.Bottom);
+        StatusOverlay.Padding = new Thickness(e.NewSize.Width < 760 ? 14 : 24);
         StatusOverlay.MaxWidth = Math.Max(1, Math.Min(760, e.NewSize.Width - layout.HorizontalInset * 2));
-        StatusOverlay.MaxHeight = Math.Max(1, e.NewSize.Height * 0.6);
+        StatusOverlay.MaxHeight = Math.Max(1, e.NewSize.Height * 0.62);
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -299,6 +305,7 @@ public sealed partial class PlayerPage : Page
             return;
         }
 
+        ShowPlaybackChrome(hideAutomatically: true);
         if (e.Key == VirtualKey.GamepadA)
         {
             TogglePlayback();
@@ -365,9 +372,20 @@ public sealed partial class PlayerPage : Page
         DiagnosticsService.Current.Info("player", $"Seeked to {target.TotalSeconds:0} seconds");
     }
 
+    private void ShowPlaybackChrome(bool hideAutomatically)
+    {
+        StatusOverlay.Visibility = Visibility.Visible;
+        BackSourcesButton.Visibility = Visibility.Visible;
+        ControllerHintSurface.Visibility = Visibility.Visible;
+        if (hideAutomatically) HideOverlaySoon();
+        else _overlayTimer?.Stop();
+    }
+
     private void ShowPlayerMessage(string message, bool hideAutomatically)
     {
         StatusOverlay.Visibility = Visibility.Visible;
+        BackSourcesButton.Visibility = Visibility.Visible;
+        ControllerHintSurface.Visibility = Visibility.Visible;
         StatusText.Text = message;
         if (hideAutomatically) HideOverlaySoon();
         else _overlayTimer?.Stop();
@@ -380,6 +398,8 @@ public sealed partial class PlayerPage : Page
         _overlayTimer.Tick += (_, _) =>
         {
             StatusOverlay.Visibility = Visibility.Collapsed;
+            BackSourcesButton.Visibility = Visibility.Collapsed;
+            ControllerHintSurface.Visibility = Visibility.Collapsed;
             _overlayTimer.Stop();
         };
         _overlayTimer.Start();

@@ -8,11 +8,41 @@
     mc:Ignorable="d">
 
     <Page.Resources>
-        <ItemsPanelTemplate x:Key="HorizontalItemsPanel">
+        <ItemsPanelTemplate x:Key="HomeGridItemsPanel">
+            <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="4" />
+        </ItemsPanelTemplate>
+        <ItemsPanelTemplate x:Key="HorizontalCatalogItemsPanel">
             <ItemsStackPanel Orientation="Horizontal" />
         </ItemsPanelTemplate>
         <DataTemplate x:Key="PosterTemplate">
             <controls:PosterCard Item="{Binding}" />
+        </DataTemplate>
+        <ItemsPanelTemplate x:Key="ContinueItemsPanel"><ItemsStackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+        <Style x:Key="ContinueWatchingItemStyle" TargetType="GridViewItem">
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
+            <Setter Property="FocusVisualPrimaryBrush" Value="#00AFFF" />
+            <Setter Property="FocusVisualSecondaryBrush" Value="#00AFFF" />
+            <Setter Property="FocusVisualPrimaryThickness" Value="3" />
+            <Setter Property="FocusVisualSecondaryThickness" Value="2" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+        </Style>
+        <DataTemplate x:Key="ContinueWatchingTemplate">
+            <Border Width="380" Height="126" Margin="0,6,18,10" Padding="10" CornerRadius="12"
+                    Background="{StaticResource PanelBrush}" BorderBrush="#30465D" BorderThickness="1">
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="94" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                    <Border Width="94" Height="106" CornerRadius="8" Background="#202A38">
+                        <Image Source="{Binding Poster}" Stretch="UniformToFill" />
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="5">
+                        <TextBlock Text="{Binding Name}" FontSize="19" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxLines="1" />
+                        <TextBlock Text="{Binding WatchProgress.RemainingText}" FontSize="15" Foreground="{StaticResource MutedTextBrush}" />
+                        <ProgressBar Height="7" Minimum="0" Maximum="100" Value="{Binding WatchProgress.Percent}" Foreground="#00AFFF" Background="#667080" />
+                        <TextBlock Text="Resume watching" FontSize="14" Foreground="{StaticResource AccentTextBrush}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
         </DataTemplate>
         <DataTemplate x:Key="SkeletonTemplate">
             <StackPanel Width="240" Padding="12,14,12,0" Spacing="18" Height="446" AutomationProperties.Name="Loading title">
@@ -21,6 +51,17 @@
                 <Border Height="14" Width="110" HorizontalAlignment="Left" CornerRadius="4" Background="{StaticResource PanelBrush}" />
             </StackPanel>
         </DataTemplate>
+        <Style x:Key="AddonCardItemStyle" TargetType="ListViewItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
+            <Setter Property="FocusVisualPrimaryBrush" Value="White" />
+            <Setter Property="FocusVisualSecondaryBrush" Value="#00AFFF" />
+            <Setter Property="FocusVisualPrimaryThickness" Value="4" />
+            <Setter Property="FocusVisualSecondaryThickness" Value="3" />
+        </Style>
     </Page.Resources>
 
     <Grid x:Name="LayoutRoot" XYFocusKeyboardNavigation="Enabled" KeyDown="MainPageKeyDown" SizeChanged="ViewportSizeChanged">
@@ -57,7 +98,7 @@
                         </Button>
                         <Button x:Name="AddonsButton" Style="{StaticResource IconRailButtonStyle}" Click="ShowAddons"
                                 ToolTipService.ToolTip="Add-ons" AutomationProperties.Name="Add-ons">
-                            <StackPanel Orientation="Horizontal" Spacing="14"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE7FC;" FontSize="23" /><TextBlock Text="Addons" VerticalAlignment="Center" FontSize="16" /></StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="14"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE7FC;" FontSize="23" /><TextBlock Text="Add-ons" VerticalAlignment="Center" FontSize="16" /></StackPanel>
                         </Button>
                     </StackPanel>
                 </ScrollViewer>
@@ -77,50 +118,49 @@
                 </StackPanel>
             </Grid>
         </Border>
-        <Grid x:Name="ContentSurface" Grid.Column="1" Background="{StaticResource HomeSurfaceBrush}" Padding="50,12,45,16">
+        <Grid x:Name="ContentSurface" Grid.Column="1" Background="{StaticResource HomeSurfaceBrush}" Padding="36,8,36,10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Grid x:Name="MainHeader" Margin="0,0,0,14">
-                <Grid.RowDefinitions><RowDefinition Height="76" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+            <Grid x:Name="MainHeader" Margin="0,0,0,8">
+                <Grid.RowDefinitions><RowDefinition Height="84" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                 <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition x:Name="HeaderActionsColumn" Width="Auto" /></Grid.ColumnDefinitions>
                 <Grid Grid.Row="0" Grid.ColumnSpan="2" VerticalAlignment="Center">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                    <StackPanel Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
-                        <Border Width="46" Height="46" CornerRadius="12" Background="{StaticResource FocusBloomBrush}">
-                            <FontIcon Glyph="&#xE768;" FontSize="25" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <Border Width="38" Height="38" CornerRadius="10" Background="{StaticResource FocusBloomBrush}">
+                            <FontIcon Glyph="&#xE768;" FontSize="21" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
-                        <TextBlock Text="OpenStream TV" FontFamily="{StaticResource HeadingFont}" FontSize="27" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,28,0" />
+                        <TextBlock x:Name="TopBrandText" Text="OpenStream TV" FontFamily="{StaticResource HeadingFont}" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Button x:Name="TopHomeButton" Content="Home" Style="{StaticResource TopNavSelectedButtonStyle}" Click="ShowHome" />
-                        <Button x:Name="TopMoviesButton" Content="Movies" Style="{StaticResource TopNavButtonStyle}" Click="ShowMovieCatalog" />
-                        <Button x:Name="TopSeriesButton" Content="Series" Style="{StaticResource TopNavButtonStyle}" Click="ShowSeriesCatalog" />
+                        <Button x:Name="TopSearchButton" Content="Discover" Style="{StaticResource TopNavButtonStyle}" Click="ShowDiscover" />
                         <Button x:Name="TopLibraryButton" Content="Library" Style="{StaticResource TopNavButtonStyle}" Click="ShowLibrary" />
-                        <Button x:Name="TopAddonsButton" Content="Addons" Style="{StaticResource TopNavButtonStyle}" Click="ShowAddons" />
-                        <Button x:Name="TopSearchButton" Content="Search" Style="{StaticResource TopNavButtonStyle}" Click="ShowDiscover" />
+                        <Button x:Name="TopAddonsButton" Content="Add-ons" Style="{StaticResource TopNavButtonStyle}" Click="ShowAddons" />
+                        <Button x:Name="TopSettingsButton" Content="Settings" Style="{StaticResource TopNavButtonStyle}" Click="ShowSettings" />
                     </StackPanel>
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                        <Button Style="{StaticResource HomeHeaderButtonStyle}" Width="46" Height="46" Click="ShowDiscover" AutomationProperties.Name="Search"><FontIcon Glyph="&#xE721;" FontSize="20" /></Button>
-                        <Button Style="{StaticResource HomeHeaderButtonStyle}" Width="46" Height="46" Click="ShowLibrary" AutomationProperties.Name="Library"><FontIcon Glyph="&#xE734;" FontSize="20" /></Button>
-                        <Button Style="{StaticResource HomeHeaderButtonStyle}" Width="46" Height="46" Click="ShowSettings" AutomationProperties.Name="Settings"><FontIcon Glyph="&#xE713;" FontSize="20" /></Button>
-                        <Button x:Name="TopProfileButton" Style="{StaticResource HomeHeaderButtonStyle}" Width="50" Height="46" Click="ShowAccount" AutomationProperties.Name="Profile"><FontIcon Glyph="&#xE77B;" FontSize="22" /></Button>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Button x:Name="TopProfileButton" Style="{StaticResource HomeHeaderButtonStyle}" Width="58" Height="54" Click="ShowAccount" AutomationProperties.Name="Profile"><FontIcon Glyph="&#xE77B;" FontSize="25" /></Button>
                     </StackPanel>
-                </Grid>                <StackPanel x:Name="HeaderText" Grid.Row="1" Spacing="6" Margin="0,0,24,0">
+                </Grid>
+                <StackPanel x:Name="HeaderText" Grid.Row="1" Spacing="6" Margin="0,0,24,0">
 
-                    <TextBlock x:Name="PageTitle" Text="Discover something great to watch today" FontFamily="{StaticResource HeadingFont}" FontSize="28" LineHeight="48" CharacterSpacing="-20" FontWeight="Bold" />
+                    <TextBlock x:Name="PageTitle" Text="Discover something great to watch today" FontFamily="{StaticResource HeadingFont}" FontSize="34" LineHeight="52" CharacterSpacing="-20" FontWeight="Bold" />
                     <TextBlock x:Name="PageSubtitle" Text="Pick up where you left off or find your next favourite" FontSize="16" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
                 </StackPanel>
                 <StackPanel x:Name="HeaderActions" Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Top">
                     <ProgressRing x:Name="BusyIndicator" Width="28" Height="28" IsActive="False" />
-                    <Button x:Name="HomeRefreshButton" Style="{StaticResource HomeHeaderButtonStyle}" Click="RetryHome" AutomationProperties.Name="Refresh popular titles">
+                    <Button x:Name="HomeRefreshButton" Visibility="Collapsed" IsTabStop="False" Style="{StaticResource HomeHeaderButtonStyle}" Click="RetryHome" AutomationProperties.Name="Refresh popular titles">
                         <StackPanel Orientation="Horizontal" Spacing="10"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE72C;" FontSize="20" /><TextBlock Text="Refresh" VerticalAlignment="Center" /></StackPanel>
                     </Button>
-                    <Button x:Name="HeaderSearchButton" Style="{StaticResource HomeHeaderButtonStyle}" Click="ShowDiscover" AutomationProperties.Name="Open search">
+                    <Button x:Name="HeaderSearchButton" Visibility="Collapsed" Style="{StaticResource HomeHeaderButtonStyle}" Click="ShowDiscover" AutomationProperties.Name="Open search">
                         <StackPanel Orientation="Horizontal" Spacing="10"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE721;" FontSize="20" /><TextBlock Text="Search" VerticalAlignment="Center" /></StackPanel>
                     </Button>
-                    <Button x:Name="AccountButton" Style="{StaticResource HomeHeaderButtonStyle}" Click="ShowAccount">
+                    <Button x:Name="AccountButton" Visibility="Collapsed" Style="{StaticResource HomeHeaderButtonStyle}" Click="ShowAccount">
                         <Grid>
                             <TextBlock x:Name="AccountNavLabel" Text="Login" Margin="0,0,28,0" VerticalAlignment="Center" />
                             <Border x:Name="ProfileInitialBadge" Width="23" Height="23" CornerRadius="12" HorizontalAlignment="Right" Background="{StaticResource AccentBrush}" Visibility="Collapsed">
@@ -145,9 +185,9 @@
                         </Grid>
                     </Border>
                     <Grid Grid.Row="1">
-                        <ScrollViewer x:Name="HomeShelves" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Visibility="Collapsed">
+                        <ScrollViewer x:Name="HomeShelves" XYFocusKeyboardNavigation="Enabled" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" Visibility="Collapsed">
                             <StackPanel Spacing="14">
-                                <Border x:Name="FeaturedHero" Height="310" CornerRadius="16" Background="#101B28" BorderBrush="#243447" BorderThickness="1" Margin="0,0,0,0">
+                                <Border x:Name="FeaturedHero" Height="285" CornerRadius="16" Background="#101B28" BorderBrush="#243447" BorderThickness="1" Margin="0,0,0,0">
                                     <Grid>
                                         <Image x:Name="FeaturedArtwork" Stretch="UniformToFill" Opacity="0.96" />
                                         <Rectangle>
@@ -160,74 +200,74 @@
                                                 </LinearGradientBrush>
                                             </Rectangle.Fill>
                                         </Rectangle>
-                                        <StackPanel Margin="14,22,0,22" VerticalAlignment="Center" MaxWidth="610" Spacing="8">
-                                            <TextBlock Text="FEATURED FOR YOU" FontSize="12" CharacterSpacing="170" Foreground="#B8D3F2" FontWeight="SemiBold" />
-                                            <TextBlock x:Name="FeaturedTitleText" Text="Discover something great to watch today" FontFamily="{StaticResource HeadingFont}" FontSize="42" FontWeight="Bold" Foreground="#F5F8FC" TextWrapping="Wrap" MaxLines="2" />
+                                        <StackPanel Margin="22,12,0,12" VerticalAlignment="Center" MaxWidth="610" Spacing="5">
+                                            <TextBlock Text="FEATURED FOR YOU" FontSize="14" CharacterSpacing="170" Foreground="#B8D3F2" FontWeight="SemiBold" />
+                                            <TextBlock x:Name="FeaturedTitleText" Text="Discover something great to watch today" FontFamily="{StaticResource HeadingFont}" FontSize="38" FontWeight="Bold" Foreground="#F5F8FC" TextWrapping="Wrap" MaxLines="2" />
                                             <TextBlock x:Name="FeaturedMetadataText" Text="Discover movies and series from your configured add-ons." FontSize="17" Foreground="#D0DDED" TextWrapping="Wrap" />
                                             <TextBlock x:Name="FeaturedDescriptionText" Text="Your next favourite is waiting." FontSize="17" Foreground="#D0DDED" TextWrapping="Wrap" MaxLines="2" />
                                             <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,10,0,0">
-                                                <Button Content="Play" Style="{StaticResource FeaturedPlayButtonStyle}" Width="190" Click="OpenFeaturedItem" />
-                                                <Button Content="More info" Style="{StaticResource HeaderButtonStyle}" Width="160" Click="OpenFeaturedItem" />
+                                                <Button x:Name="FeaturedPlayButton" Content="Play" Style="{StaticResource FeaturedPlayButtonStyle}" Width="190" Click="OpenFeaturedItem" />
+                                                <Button x:Name="FeaturedDetailsButton" Content="More info" Style="{StaticResource HeaderButtonStyle}" Width="160" Click="OpenFeaturedItem" />
                                             </StackPanel>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,22,18" Spacing="12">
                                             <Ellipse Width="10" Height="10" Fill="#F5F8FC" /><Ellipse Width="10" Height="10" Fill="#708092" /><Ellipse Width="10" Height="10" Fill="#708092" /><Ellipse Width="10" Height="10" Fill="#708092" />
                                         </StackPanel>
                                     </Grid>
-                                </Border>                                <StackPanel x:Name="ContinueWatchingShelf" Visibility="Collapsed" Margin="0,0,0,30">
-                                    <TextBlock Text="Continue Watching" Style="{StaticResource HomeSectionTitleStyle}" />
-                                    <GridView x:Name="ContinueWatchingGrid" SizeChanged="ShelfSizeChanged" ContainerContentChanging="PosterContainerChanging"
+                                </Border>
+                                <StackPanel x:Name="ContinueWatchingShelf" Visibility="Collapsed" Margin="0,0,0,10">
+                                    <Button x:Name="ContinueWatchingHeader" Content="Continue Watching" Style="{StaticResource HomeSectionHeaderButtonStyle}" Click="ShowLibrary" HorizontalAlignment="Left" />
+                                    <GridView x:Name="ContinueWatchingGrid" Height="160" XYFocusKeyboardNavigation="Enabled" SizeChanged="ShelfSizeChanged" ContainerContentChanging="PosterContainerChanging"
                                               IsItemClickEnabled="True" ItemClick="OpenItem" SelectionMode="None"
-                                              ItemsPanel="{StaticResource HorizontalItemsPanel}" ItemTemplate="{StaticResource PosterTemplate}"
-                                              ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.HorizontalScrollMode="Enabled"
+                                              ItemsPanel="{StaticResource ContinueItemsPanel}" ItemTemplate="{StaticResource ContinueWatchingTemplate}"
+                                              ItemContainerStyle="{StaticResource ContinueWatchingItemStyle}"
+                                              ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollMode="Enabled"
                                               ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollMode="Disabled" />
                                 </StackPanel>
                                 <StackPanel>
                                     <Grid Margin="0,0,12,0">
-                                        <TextBlock Text="Recommended For You" Style="{StaticResource HomeSectionTitleStyle}" />
-                                        <Button Content="See all &gt;" Width="120" HorizontalAlignment="Right" Style="{StaticResource ShelfLinkButtonStyle}" Click="ShowMovieCatalog" />
-                                    </Grid>
-                                    <GridView x:Name="MovieGrid" SizeChanged="ShelfSizeChanged" ContainerContentChanging="PosterContainerChanging"
+                                        <Button x:Name="RecommendedHeader" Content="Discover" Style="{StaticResource HomeSectionHeaderButtonStyle}" Click="ShowMovieCatalog" HorizontalAlignment="Left" />
+                                     </Grid>
+                                    <GridView x:Name="MovieGrid"  XYFocusKeyboardNavigation="Enabled" SizeChanged="ShelfSizeChanged" ContainerContentChanging="PosterContainerChanging"
                                               IsItemClickEnabled="True" ItemClick="OpenItem" SelectionMode="None"
-                                              ItemsPanel="{StaticResource HorizontalItemsPanel}" ItemTemplate="{StaticResource PosterTemplate}"
-                                              ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.HorizontalScrollMode="Enabled"
+                                              ItemsPanel="{StaticResource HomeGridItemsPanel}" ItemTemplate="{StaticResource PosterTemplate}"
+                                              ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.HorizontalScrollMode="Disabled"
                                               ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollMode="Disabled" />
                                 </StackPanel>
-                                <StackPanel>
+                                <StackPanel x:Name="TrendingMoviesShelf">
+                                    <Button x:Name="TrendingMoviesHeader" Content="Trending" Style="{StaticResource HomeSectionHeaderButtonStyle}" Click="ShowMovieCatalog" HorizontalAlignment="Left" />
+                                    <GridView x:Name="TrendingMoviesGrid"  XYFocusKeyboardNavigation="Enabled" SizeChanged="ShelfSizeChanged" ContainerContentChanging="PosterContainerChanging"
+                                              IsItemClickEnabled="True" ItemClick="OpenItem" SelectionMode="None"
+                                              ItemsPanel="{StaticResource HomeGridItemsPanel}" ItemTemplate="{StaticResource PosterTemplate}"
+                                              ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.HorizontalScrollMode="Disabled"
+                                              ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollMode="Disabled" />
+                                </StackPanel>
+                                <StackPanel x:Name="PopularSeriesShelf" Visibility="Collapsed">
                                     <Grid Margin="0,0,12,0">
-                                        <TextBlock Text="Trending Series" Style="{StaticResource HomeSectionTitleStyle}" />
-                                        <Button Content="See all &gt;" Width="120" HorizontalAlignment="Right" Style="{StaticResource ShelfLinkButtonStyle}" Click="ShowSeriesCatalog" />
-                                    </Grid>
-                                    <GridView x:Name="SeriesGrid" SizeChanged="ShelfSizeChanged" ContainerContentChanging="PosterContainerChanging"
+                                        <Button x:Name="PopularSeriesHeader" Content="Popular Series" Style="{StaticResource HomeSectionHeaderButtonStyle}" Click="ShowSeriesCatalog" HorizontalAlignment="Left" />
+                                     </Grid>
+                                    <GridView x:Name="SeriesGrid"  XYFocusKeyboardNavigation="Enabled" SizeChanged="ShelfSizeChanged" ContainerContentChanging="PosterContainerChanging"
                                               IsItemClickEnabled="True" ItemClick="OpenItem" SelectionMode="None"
-                                              ItemsPanel="{StaticResource HorizontalItemsPanel}" ItemTemplate="{StaticResource PosterTemplate}"
-                                              ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.HorizontalScrollMode="Enabled"
+                                              ItemsPanel="{StaticResource HomeGridItemsPanel}" ItemTemplate="{StaticResource PosterTemplate}"
+                                              ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.HorizontalScrollMode="Disabled"
                                               ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollMode="Disabled" />
                                 </StackPanel>
-                            <StackPanel>
-                                    <Grid Margin="0,0,12,0"><TextBlock Text="Recently Added" Style="{StaticResource HomeSectionTitleStyle}" /></Grid>
-                                    <GridView x:Name="RecentlyAddedGrid" SizeChanged="ShelfSizeChanged" ContainerContentChanging="PosterContainerChanging" IsItemClickEnabled="True" ItemClick="OpenItem" SelectionMode="None" ItemsPanel="{StaticResource HorizontalItemsPanel}" ItemTemplate="{StaticResource PosterTemplate}" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.HorizontalScrollMode="Enabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollMode="Disabled" />
-                                </StackPanel>
-                            </StackPanel>
+                             </StackPanel>
                         </ScrollViewer>
                         <ScrollViewer x:Name="HomeLoadingPanel" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                         <StackPanel Spacing="14">
                                         <TextBlock Text="Finding something good to watch..." FontSize="18" Foreground="{StaticResource MutedTextBrush}" />
                                 <StackPanel>
                                     <TextBlock Text="Popular movies" Style="{StaticResource SectionTitleStyle}" />
-                                    <ScrollViewer HorizontalScrollMode="Disabled" VerticalScrollMode="Disabled" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden">
-                                        <ItemsControl x:Name="MovieSkeletons" ItemTemplate="{StaticResource SkeletonTemplate}">
-                                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                                        </ItemsControl>
-                                    </ScrollViewer>
+                                    <ItemsControl x:Name="MovieSkeletons" ItemTemplate="{StaticResource SkeletonTemplate}">
+                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    </ItemsControl>
                                 </StackPanel>
                                 <StackPanel>
                                     <TextBlock Text="Popular series" Style="{StaticResource SectionTitleStyle}" />
-                                    <ScrollViewer HorizontalScrollMode="Disabled" VerticalScrollMode="Disabled" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden">
-                                        <ItemsControl x:Name="SeriesSkeletons" ItemTemplate="{StaticResource SkeletonTemplate}">
-                                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                                        </ItemsControl>
-                                    </ScrollViewer>
+                                    <ItemsControl x:Name="SeriesSkeletons" ItemTemplate="{StaticResource SkeletonTemplate}">
+                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    </ItemsControl>
                                 </StackPanel>
                             </StackPanel>
                         </ScrollViewer>
@@ -304,37 +344,34 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <Grid x:Name="AddonsPanel" Visibility="Collapsed" Background="#080B12" Margin="44,26">
+                <Grid x:Name="AddonsPanel" Visibility="Collapsed" Background="Transparent" Margin="28,18">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <StackPanel Spacing="4" Margin="0,0,0,22">
-                        <TextBlock Text="Addons" FontFamily="{StaticResource HeadingFont}" FontSize="46"
-                                   FontWeight="Bold" CharacterSpacing="-18" />
-                        <TextBlock Text="Manage the catalogues and stream providers connected to OpenStream TV."
-                                   FontSize="16" Foreground="{StaticResource MutedTextBrush}" />
+                    <StackPanel Spacing="5" Margin="0,0,0,20">
+                        <TextBlock Text="ADD-ONS" FontFamily="{StaticResource HeadingFont}" FontSize="42"
+                                   FontWeight="Bold" CharacterSpacing="45" />
+                        <TextBlock Text="Manage your installed catalogues and stream providers."
+                                   FontSize="18" Foreground="{StaticResource MutedTextBrush}" />
                     </StackPanel>
 
-                    <Grid Grid.Row="1" Margin="0,0,0,16" ColumnSpacing="14">
+                    <Grid Grid.Row="1" Margin="0,0,0,18" ColumnSpacing="14">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                            <TextBlock Text="Installed Addons" FontSize="25" FontWeight="Bold" />
-                            <TextBlock x:Name="AddonCountText" VerticalAlignment="Center"
-                                       Foreground="{StaticResource MutedTextBrush}" FontSize="15" />
-                        </StackPanel>
-                        <Button x:Name="AddonSyncAccountButton" Grid.Column="1" Content="Sync Add-ons"
-                        Style="{StaticResource TvButtonStyle}" Click="SyncAddonsFromPage" />
-                        <Button x:Name="AddonViewAllButton" Grid.Column="2" Content="View All"
-                        Style="{StaticResource AddonCardActionStyle}" Click="FocusAddonList" />
-                        <Button x:Name="AddProviderButton" Grid.Column="3" Content="Import Manifest"
-                                Style="{StaticResource PrimaryButtonStyle}" Click="ToggleAddProviderForm" />
+                        <TextBlock x:Name="AddonCountText" VerticalAlignment="Center"
+                                   Foreground="{StaticResource MutedTextBrush}" FontSize="21"
+                                   FontWeight="SemiBold" />
+                        <Button x:Name="AddonSyncAccountButton" Grid.Column="1" Content="Sync"
+                                Style="{StaticResource HeaderButtonStyle}" Click="SyncAddonsFromPage"
+                                AutomationProperties.Name="Sync installed add-ons" />
+                        <Button x:Name="AddProviderButton" Grid.Column="2" Content="Import"
+                                Style="{StaticResource PrimaryButtonStyle}" Click="ToggleAddProviderForm"
+                                AutomationProperties.Name="Import add-on manifest" />
                     </Grid>
 
                     <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -360,37 +397,39 @@
                             <Grid x:Name="AddonGridHost" SizeChanged="AddonGridSizeChanged" Loaded="AddonGridHostLoaded">
                                 <ListView x:Name="AddonCards" IsItemClickEnabled="True" ItemClick="AddonTileClicked"
                                           SelectionMode="None" Background="Transparent" BorderThickness="0"
-                                          HorizontalAlignment="Stretch" Loaded="AddonGridHostLoaded">
+                                          HorizontalAlignment="Stretch" Loaded="AddonGridHostLoaded"
+                                          ItemContainerStyle="{StaticResource AddonCardItemStyle}">
                                     <ListView.ItemsPanel>
                                         <ItemsPanelTemplate>
-                                            <ItemsStackPanel Orientation="Vertical" />
+                                            <ItemsWrapGrid Orientation="Horizontal" />
                                         </ItemsPanelTemplate>
                                     </ListView.ItemsPanel>
                                     <ListView.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Background="#171923" BorderBrush="#383B4B" BorderThickness="1"
-                                                    CornerRadius="12" Padding="18,14" Margin="0,0,0,10" MinHeight="112">
-                                                <Grid ColumnSpacing="18">
+                                            <Border Background="#111C2A" BorderBrush="#30445B" BorderThickness="1"
+                                                    CornerRadius="16" Padding="18" Margin="8" MinHeight="154">
+                                                <Grid ColumnSpacing="14">
                                                     <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="88" />
+                                                        <ColumnDefinition Width="76" />
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
-                                                    <Border Width="84" Height="84" Background="#252A3A"
-                                                            BorderBrush="#52647A" BorderThickness="1" CornerRadius="8">
+                                                    <Border Width="72" Height="72" Background="#202F42"
+                                                            BorderBrush="#526A86" BorderThickness="1" CornerRadius="12"
+                                                            VerticalAlignment="Center">
                                                         <Grid>
                                                             <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE7FC;"
-                                                                      FontSize="34" Foreground="#9FC8FF"
+                                                                      FontSize="31" Foreground="#9FC8FF"
                                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                             <Image Source="{Binding LogoSource}" Stretch="Uniform" Margin="8" />
                                                         </Grid>
                                                     </Border>
-                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="5">
-                                                        <TextBlock Text="{Binding Name}" FontSize="21" FontWeight="Bold"
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="6">
+                                                        <TextBlock Text="{Binding Name}" FontSize="22" FontWeight="Bold"
                                                                    TextTrimming="CharacterEllipsis" MaxLines="1" />
-                                                        <TextBlock Text="{Binding Category}" FontSize="14"
+                                                        <TextBlock Text="{Binding Category}" FontSize="15"
                                                                    Foreground="#A9BDD4" />
-                                                        <TextBlock Text="{Binding Description}" FontSize="13"
+                                                        <TextBlock Text="{Binding Description}" FontSize="14"
                                                                    Foreground="{StaticResource MutedTextBrush}"
                                                                    TextTrimming="CharacterEllipsis" MaxLines="2" />
                                                     </StackPanel>
@@ -398,7 +437,7 @@
                                                             Visibility="{Binding RemoveVisibility}"
                                                             Style="{StaticResource AddonCardActionStyle}"
                                                             BorderBrush="#53657B" BorderThickness="1"
-                                                            Padding="20,7" Click="RemoveAddonCard"
+                                                            Padding="14,7" Click="RemoveAddonCard"
                                                             VerticalAlignment="Center" />
                                                 </Grid>
                                             </Border>

@@ -2,8 +2,10 @@
     x:Class="StremioXboxPrototype.DetailsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:models="using:StremioXboxPrototype.Models"
     RequestedTheme="Dark">
-    <Grid Background="#08090E" XYFocusKeyboardNavigation="Enabled" SizeChanged="ViewportSizeChanged">
+    <Grid Background="#08090E" XYFocusKeyboardNavigation="Enabled"
+          KeyDown="DetailsPageKeyDown" SizeChanged="ViewportSizeChanged">
         <Image x:Name="Backdrop" Stretch="UniformToFill" Opacity="0.58" />
         <Rectangle>
             <Rectangle.Fill>
@@ -18,7 +20,7 @@
         <Grid x:Name="DetailsContent" Padding="48,22">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="300" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
@@ -33,7 +35,7 @@
                     <FontIcon Glyph="&#xE8B7;" FontSize="27" Foreground="#8B6CFF" />
                     <TextBlock Text="OpenStream TV" FontSize="25" FontWeight="Bold" VerticalAlignment="Center" />
                 </StackPanel>
-                <TextBlock Grid.Column="1" Text="Discover  &gt;  Details" FontSize="16"
+                <TextBlock x:Name="BreadcrumbText" Grid.Column="1" Text="Discover  &gt;  Details" FontSize="16"
                            Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center"
                            HorizontalAlignment="Center" />
                 <Button x:Name="BackButton" Grid.Column="2" Content="Back" Style="{StaticResource TvButtonStyle}"
@@ -58,17 +60,23 @@
                         <Button x:Name="LibraryButton" Content="Save to Watch Later" Style="{StaticResource TvButtonStyle}"
                                 Click="ToggleLibrary" />
                     </StackPanel>
-                    <ComboBox x:Name="EpisodePicker" Header="Choose episode" FontSize="17" Width="420"
+                    <ComboBox x:Name="EpisodePicker" Header="Choose episode" FontSize="17" MaxWidth="420" Width="420"
                               HorizontalAlignment="Left" SelectionChanged="EpisodeChanged" Visibility="Collapsed" />
                 </StackPanel>
             </Grid>
 
-            <Grid Grid.Row="2" ColumnSpacing="24">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1.05*" />
-                    <ColumnDefinition Width="0.95*" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Spacing="10">
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+                <Grid x:Name="DetailsSections" ColumnSpacing="24">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.05*" />
+                        <ColumnDefinition Width="0.95*" />
+                    </Grid.ColumnDefinitions>
+                <StackPanel x:Name="AboutPanel" Spacing="10">
                     <TextBlock Text="About" FontSize="25" FontWeight="Bold" />
                     <Border Background="#E610121B" BorderBrush="#343544" BorderThickness="1"
                             CornerRadius="12" Padding="18">
@@ -83,7 +91,7 @@
                     </Border>
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Spacing="10">
+                <StackPanel x:Name="StreamsPanel" Grid.Column="1" Spacing="10">
                     <TextBlock Text="Streams from Addons" FontSize="25" FontWeight="Bold" />
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -96,7 +104,8 @@
                                    TextWrapping="Wrap" VerticalAlignment="Center" />
                     </Grid>
                     <ListView x:Name="StreamList" SelectionMode="None" IsItemClickEnabled="True"
-                              ItemClick="PlayStream" IsFocusEngagementEnabled="False"
+                              ItemClick="PlayStream" ContainerContentChanging="StreamContainerChanging"
+                              IsFocusEngagementEnabled="False" XYFocusKeyboardNavigation="Enabled"
                               Background="Transparent" BorderThickness="0"
                               Foreground="#F4F7FB">
                         <ListView.ItemContainerStyle>
@@ -109,7 +118,7 @@
                             </Style>
                         </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate x:DataType="models:StreamItem">
                                 <Border Background="#E61B1D29" BorderBrush="#393B4C" BorderThickness="1"
                                         CornerRadius="12" Padding="12,10" Margin="0,3">
                                     <Grid>
@@ -117,11 +126,19 @@
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <StackPanel VerticalAlignment="Center" Spacing="3">
-                                            <TextBlock Text="{Binding Provider}" FontSize="17" FontWeight="SemiBold"
+                                        <StackPanel VerticalAlignment="Center" Spacing="5">
+                                            <TextBlock Text="{x:Bind CardProvider}" FontSize="13" FontWeight="SemiBold"
+                                                       Foreground="#9D8BFF" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{x:Bind CardTitle}" FontSize="18" FontWeight="SemiBold"
                                                        Foreground="#FFFFFF" TextTrimming="CharacterEllipsis" />
-                                            <TextBlock Text="{Binding DisplayName}" FontSize="13"
-                                                       Foreground="#C7D0DF" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{x:Bind CardSubtitle}" FontSize="13"
+                                                       Foreground="#C7D0DF" TextWrapping="Wrap" />
+                                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                                <TextBlock Text="{x:Bind CardQuality}" FontSize="12"
+                                                           Foreground="#AEB8CC" />
+                                                <TextBlock Text="{x:Bind CardSeeders}" FontSize="12"
+                                                           FontWeight="SemiBold" Foreground="#72D6A0" />
+                                            </StackPanel>
                                         </StackPanel>
                                         <Border Grid.Column="1" Background="#2865E9" CornerRadius="8"
                                                 Padding="16,8" VerticalAlignment="Center">
@@ -134,7 +151,8 @@
                         </ListView.ItemTemplate>
                     </ListView>
                 </StackPanel>
-            </Grid>
+                </Grid>
+            </ScrollViewer>
 
             <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="24" Margin="0,12,0,0">
                 <TextBlock Text="B  Back" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" />

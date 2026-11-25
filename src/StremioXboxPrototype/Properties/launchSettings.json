@@ -12,7 +12,7 @@
       "hotReloadEnabled": false,
       "remoteDebugEnabled": true,
       "authenticationMode": "Universal",
-      "remoteDebugMachine": "192.168.1.103"
+      "remoteDebugMachine": "192.168.1.101"
     },
     "WSL": {
       "commandName": "WSL2",
