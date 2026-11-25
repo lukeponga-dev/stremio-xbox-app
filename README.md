@@ -1,6 +1,15 @@
-# Stremio Xbox feasibility prototype
+# OpenStream TV
 
-This repository contains an x64 UWP/XAML prototype for testing a controller-first Stremio experience on Xbox One and Xbox Series X|S. It is an engineering spike, not a production Stremio client.
+OpenStream TV is a C# UWP/XAML engineering prototype for a controller-first Stremio experience on Xbox One and Xbox Series X|S. It is not yet a production Stremio client.
+
+## Project documentation
+
+- [Architecture and service boundaries](docs/ARCHITECTURE.md)
+- [Add-ons page and provider workflows](docs/ADDONS.md)
+- [Developer setup, builds, tests and Xbox deployment](docs/DEVELOPMENT.md)
+- [Project source map](docs/intro.md)
+- [Validation checklist](docs/validation.md)
+- [Stremio upstream integration notes](docs/upstream-stremio.md)
 
 ## Stremio upstream projects
 
