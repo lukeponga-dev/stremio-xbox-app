@@ -66,8 +66,6 @@ Development signing material and generated packages are local build artifacts. D
 | `tools/Install-DevelopmentCertificate.ps1` | Create/install a local development signing certificate |
 | `tools/Prepare-XboxSideload.ps1` | Prepare Xbox sideload workflow |
 | `tools/Test-ProjectConfiguration.ps1` | Check project configuration |
-| `tools/Generate-AppBranding.ps1` | Generate app branding assets |
-| `tools/Generate-StoreAssets.ps1` | Generate Store artwork assets |
 | `tools/rebrand-openstream-tv.ps1` | Apply the repository's OpenStream TV branding changes |
 
 Inspect a script before running it, particularly if it changes package identity, signing configuration or generated assets.
