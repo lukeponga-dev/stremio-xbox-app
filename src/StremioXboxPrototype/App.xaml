@@ -38,8 +38,12 @@
         <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="White" />
         <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#390093" />
         <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#7867FF" />
+        <!-- TextBlock does not reliably inherit Page.Foreground in UWP.
+             Set an explicit light default so unstyled text remains readable
+             on OpenStream TV's dark surfaces (including diagnostics and cards). -->
         <Style TargetType="TextBlock">
             <Setter Property="FontFamily" Value="{StaticResource BodyFont}" />
+            <Setter Property="Foreground" Value="#F4F7FB" />
         </Style>
 
         <Style TargetType="Page">
@@ -247,7 +251,7 @@
         </Style>
         <Style TargetType="ListViewItem">
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-
+            <Setter Property="Foreground" Value="#F4F7FB" />
             <Setter Property="UseSystemFocusVisuals" Value="True" />
             <Setter Property="FocusVisualPrimaryBrush" Value="White" />
             <Setter Property="FocusVisualSecondaryBrush" Value="{StaticResource AccentBrush}" />

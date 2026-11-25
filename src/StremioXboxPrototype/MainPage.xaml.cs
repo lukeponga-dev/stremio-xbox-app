@@ -353,6 +353,12 @@ public sealed partial class MainPage : Page
         return null;
     }
 
+    private void TopNavigationPointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Control control && control.IsEnabled && control.Visibility == Visibility.Visible)
+            control.Focus(FocusState.Pointer);
+    }
+
     private void SetSelectedNavigation(Button selected)
     {
         if (selected == PlaybackLabButton || selected == ServerButton || selected == DiagnosticsButton)
@@ -986,7 +992,7 @@ public sealed partial class MainPage : Page
     private void ShowServer(object sender, RoutedEventArgs e)
     {
         SetSelectedNavigation(ServerButton);
-        ShowPanel(ServerPanel, "streaming service", "Connect your TV to your streaming server");
+        ShowPanel(ServerPanel, "Streaming Service", "Connect your TV to your streaming server");
         StreamingServiceUrlBox.Focus(FocusState.Programmatic);
     }
 
@@ -1251,7 +1257,7 @@ public sealed partial class MainPage : Page
             _addonMetadata.TryGetValue(addon.ManifestUri.AbsoluteUri, out var manifest);
             cards.Add(new AddonCardView(manifest?.Name ?? addon.ManifestUri.Host,
                 string.IsNullOrWhiteSpace(manifest?.Version) ? "" : "v" + manifest.Version,
-                "Stream provider", manifest?.Description ?? addon.ManifestUri.Host,
+                "Stream provider", GetAddonDescription(manifest?.Description, addon.ManifestUri),
                 addon.ManifestUri.AbsoluteUri, true, GetAddonLogoUri(addon.ManifestUri)));
         }
         AddonSummaryText.Text = cards.Count == 1
@@ -1260,6 +1266,18 @@ public sealed partial class MainPage : Page
         AddonCards.ItemsSource = cards;
         AddonEmptyDetail.Visibility = Visibility.Collapsed;
         UpdateAddonGridLayout(AddonCards.ActualWidth);
+    }
+
+    private static string GetAddonDescription(string? description, Uri manifestUri)
+    {
+        if (!string.IsNullOrWhiteSpace(description) &&
+            (description.Contains("OBSOLETE CONFIGURATION", StringComparison.OrdinalIgnoreCase) ||
+             description.Contains("PLEASE RE-CONFIGURE", StringComparison.OrdinalIgnoreCase)))
+        {
+            return $"This add-on's configuration is obsolete. Generate a fresh manifest at https://comet.elfhosted.com, then import the new manifest. Your existing configuration has been kept.";
+        }
+
+        return string.IsNullOrWhiteSpace(description) ? manifestUri.Host : description;
     }
 
     private Uri? GetAddonLogoUri(Uri manifestUri)
@@ -1315,23 +1333,31 @@ public sealed partial class MainPage : Page
         SyncAccountAddons(sender, e);
     }
 
-    private void AddonGridSizeChanged(object sender, SizeChangedEventArgs e) => UpdateAddonGridLayout(e.NewSize.Width);
-    private void AddonGridHostLoaded(object sender, RoutedEventArgs e) => UpdateAddonGridLayout(AddonGridHost.ActualWidth);
+    private void AddonGridHostLoaded(object sender, RoutedEventArgs e) =>
+        UpdateAddonGridLayout(AddonCards.ActualWidth);
 
     private void UpdateAddonGridLayout(double width)
     {
         if (width <= 0) return;
+
+        // Keep the provider list strictly vertical so D-pad up/down always
+        // moves between predictable rows, regardless of TV viewport width.
         var layout = TvLayout.GetAddonGridLayout(width);
-        AddonCards.Width = width;
-        if (AddonCards.ItemsPanelRoot is ItemsWrapGrid wrapGrid)
-        {
-            // Two large cards across on TV; fall back to a single column on narrow windows.
-            wrapGrid.ItemWidth = width >= 720 ? (width - 24) / 2 : Math.Max(280, width - 16);
-            wrapGrid.ItemHeight = 184;
-        }
         AddonImportActions.Orientation = layout.StackImportActions ? Orientation.Vertical : Orientation.Horizontal;
-        SaveProvidersButton.XYFocusDown = layout.StackImportActions ? SyncProvidersButton : null;
+        SaveProvidersButton.XYFocusDown = layout.StackImportActions ? SyncProvidersButton : AddonCards;
         SyncProvidersButton.XYFocusUp = layout.StackImportActions ? SaveProvidersButton : AddonUrlsBox;
+        AddonSyncAccountButton.XYFocusDown = AddonCards;
+        AddonCards.XYFocusUp = AddonSyncAccountButton;
+    }
+
+    private void AddonCardsPointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        DependencyObject? current = e.OriginalSource as DependencyObject;
+        while (current is not null && current is not ListViewItem)
+            current = VisualTreeHelper.GetParent(current);
+
+        if (current is ListViewItem item && item.IsEnabled && item.Visibility == Visibility.Visible)
+            item.Focus(FocusState.Pointer);
     }
 
     private void FocusAddonList(object sender, RoutedEventArgs e)
@@ -1607,6 +1633,7 @@ public sealed class AddonCardView
         ManifestUrl = manifestUrl;
         RemoveVisibility = removable ? Visibility.Visible : Visibility.Collapsed;
         ShareVisibility = Visibility.Visible;
+        StatusText = removable ? "Installed" : "Built-in";
         LogoSource = logoUri is null ? null : new BitmapImage(logoUri);
     }
 
@@ -1614,6 +1641,7 @@ public sealed class AddonCardView
     public string Version { get; }
     public string Category { get; }
     public string Description { get; }
+    public string StatusText { get; }
     public string ManifestUrl { get; }
     public Visibility RemoveVisibility { get; }
     public Visibility ShareVisibility { get; }
