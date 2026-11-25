@@ -9,6 +9,8 @@ using Windows.Storage;
 
 namespace StremioXboxPrototype.Services;
 
+/// <summary>Handles Stremio account authentication, profile requests, and add-on collection sync.</summary>
+/// <remarks>Session secrets are kept in the Windows credential vault; only the account email is stored in local settings.</remarks>
 public sealed class StremioAccountClient
 {
     private const string CredentialResource = "StremioXboxPrototype.Session";

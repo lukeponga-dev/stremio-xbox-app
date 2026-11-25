@@ -7,6 +7,8 @@ using StremioXboxPrototype.Models;
 
 namespace StremioXboxPrototype.Services;
 
+/// <summary>Reads Stremio add-on manifests and requests catalog, metadata, and stream resources.</summary>
+/// <remarks>Resource requests are checked against each manifest before a URL is constructed.</remarks>
 public sealed class StremioAddonClient
 {
     public static readonly Uri CinemetaManifest = new("https://v3-cinemeta.strem.io/manifest.json");

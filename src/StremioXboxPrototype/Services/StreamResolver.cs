@@ -2,6 +2,8 @@ using StremioXboxPrototype.Models;
 
 namespace StremioXboxPrototype.Services;
 
+/// <summary>Classifies add-on stream objects into playback paths supported by the Xbox app.</summary>
+/// <remarks>Classification is kept separate from playback so the UI can filter unsupported sources before opening the player.</remarks>
 public static class StreamResolver
 {
     public static StreamResolution Resolve(StreamItem stream)

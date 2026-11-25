@@ -7,6 +7,8 @@ using Windows.UI.Xaml.Navigation;
 
 namespace StremioXboxPrototype;
 
+/// <summary>Shows metadata, watchlist actions, and streams returned by the configured providers.</summary>
+/// <remarks>Metadata enrichment and provider lookups have separate cancellation lifetimes.</remarks>
 public sealed partial class DetailsPage : Page
 {
     private readonly StremioAddonClient _client = new();

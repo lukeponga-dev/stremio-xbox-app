@@ -12,6 +12,8 @@ using Windows.UI.Xaml.Media.Imaging;
 
 namespace StremioXboxPrototype;
 
+/// <summary>Owns media preparation, native playback, controller overlays, and resume progress.</summary>
+/// <remarks>All asynchronous preparation is tied to the current navigation so a stale request cannot replace a newer source.</remarks>
 public sealed partial class PlayerPage : Page
 {
     private static readonly HttpClient MediaProbe = new() { Timeout = Timeout.InfiniteTimeSpan };

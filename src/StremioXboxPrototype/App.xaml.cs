@@ -10,6 +10,7 @@ using Windows.UI.Xaml.Controls;
 
 namespace StremioXboxPrototype;
 
+/// <summary>Configures the UWP application lifecycle and creates the root navigation frame.</summary>
 sealed partial class App : Application
 {
     public App()

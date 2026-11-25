@@ -7,6 +7,8 @@ using StremioXboxPrototype.Models;
 
 namespace StremioXboxPrototype.Services;
 
+/// <summary>Communicates with a configured Stremio Streaming Server to prepare torrent playback URLs.</summary>
+/// <remarks>This client deliberately separates server availability checks from the longer torrent preparation operation.</remarks>
 public sealed class StremioStreamingServiceClient
 {
     // Redirects are inspected explicitly when the service returns the prepared

@@ -2,6 +2,8 @@ using System.Text.Json.Serialization;
 
 namespace StremioXboxPrototype.Models;
 
+// NativeAOT-friendly serializers: register every API payload used at runtime so JSON
+// serialization does not depend on reflection-based type discovery.
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(StremioLoginRequest))]
 [JsonSerializable(typeof(StremioAuthenticatedRequest))]

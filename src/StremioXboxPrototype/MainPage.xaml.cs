@@ -16,6 +16,8 @@ using Windows.UI.Xaml.Navigation;
 
 namespace StremioXboxPrototype;
 
+/// <summary>Main controller-first shell for browsing, searching, account settings, and add-on management.</summary>
+/// <remarks>Page-level cancellation sources keep independent UI requests from updating a page after it has moved on.</remarks>
 public sealed partial class MainPage : Page
 {
     private readonly StremioAddonClient _client = new();

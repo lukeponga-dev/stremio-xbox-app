@@ -1,5 +1,7 @@
 namespace StremioXboxPrototype.Services;
 
+/// <summary>Calculates responsive dimensions and grid sizes for TV and desktop viewports.</summary>
+/// <remarks>Values are based on XAML effective pixels, not the physical resolution of the connected display.</remarks>
 public static class TvLayout
 {
     public static TvViewportLayout GetViewportLayout(double width, double height)
