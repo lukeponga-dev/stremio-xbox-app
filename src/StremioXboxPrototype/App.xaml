@@ -22,22 +22,22 @@
         <SolidColorBrush x:Key="PanelHoverBrush" Color="#1A2735" />
         <SolidColorBrush x:Key="ElevatedPanelBrush" Color="#111A25" />
         <SolidColorBrush x:Key="SearchBarBrush" Color="#111A25" />
-        <SolidColorBrush x:Key="AccentBrush" Color="#7867FF" />
-        <SolidColorBrush x:Key="AccentSoftBrush" Color="#337867FF" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#00AFFF" />
+        <SolidColorBrush x:Key="AccentSoftBrush" Color="#3300AFFF" />
         <SolidColorBrush x:Key="AccentTextBrush" Color="#B8C7D9" />
         <SolidColorBrush x:Key="MutedTextBrush" Color="#B8C7D9" />
         <SolidColorBrush x:Key="SubtleBorderBrush" Color="#263648" />
-        <SolidColorBrush x:Key="SecondaryBrush" Color="#9A8CFF" />
+        <SolidColorBrush x:Key="SecondaryBrush" Color="#7BD8FF" />
         <SolidColorBrush x:Key="LiveBrush" Color="#FF3EDB" />
         <SolidColorBrush x:Key="GlassBrush" Color="#D90B111A" />
         <LinearGradientBrush x:Key="FocusBloomBrush" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#8B78FF" Offset="0" />
-            <GradientStop Color="#4A8DFF" Offset="1" />
+            <GradientStop Color="#00AFFF" Offset="0" />
+            <GradientStop Color="#008DDB" Offset="1" />
         </LinearGradientBrush>
-        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#7867FF" />
+        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#00AFFF" />
         <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="White" />
-        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#390093" />
-        <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#7867FF" />
+        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#005A91" />
+        <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#00AFFF" />
         <!-- TextBlock does not reliably inherit Page.Foreground in UWP.
              Set an explicit light default so unstyled text remains readable
              on OpenStream TV's dark surfaces (including diagnostics and cards). -->
@@ -279,12 +279,12 @@
             <Setter Property="FontWeight" Value="Medium" /><Setter Property="CornerRadius" Value="14" />
         </Style>
         <Style x:Key="TopNavSelectedButtonStyle" TargetType="Button" BasedOn="{StaticResource TopNavButtonStyle}">
-            <Setter Property="Background" Value="#267867FF" /><Setter Property="BorderBrush" Value="#7867FF" />
+            <Setter Property="Background" Value="#2620AFFF" /><Setter Property="BorderBrush" Value="#00AFFF" />
             <Setter Property="BorderThickness" Value="1" /><Setter Property="Foreground" Value="#FFFFFF" />
         </Style>
         <Style x:Key="FeaturedPlayButtonStyle" TargetType="Button" BasedOn="{StaticResource TvButtonStyle}">
             <Setter Property="Background" Value="#F0F5FA" /><Setter Property="Foreground" Value="#07111E" />
-            <Setter Property="BorderBrush" Value="#7867FF" /><Setter Property="BorderThickness" Value="2" />
+            <Setter Property="BorderBrush" Value="#00AFFF" /><Setter Property="BorderThickness" Value="2" />
             <Setter Property="FontSize" Value="19" /><Setter Property="FontWeight" Value="Bold" />
             <Setter Property="HorizontalContentAlignment" Value="Center" /><Setter Property="MinHeight" Value="54" />
             <Setter Property="CornerRadius" Value="12" />

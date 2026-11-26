@@ -32,7 +32,7 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                    <FontIcon Glyph="&#xE8B7;" FontSize="27" Foreground="#8B6CFF" />
+                    <FontIcon Glyph="&#xE8B7;" FontSize="27" Foreground="#00AFFF" />
                     <TextBlock Text="OpenStream TV" FontSize="25" FontWeight="Bold" VerticalAlignment="Center" />
                 </StackPanel>
                 <TextBlock x:Name="BreadcrumbText" Grid.Column="1" Text="Discover  &gt;  Details" FontSize="16"
@@ -51,7 +51,7 @@
                     <TextBlock x:Name="TitleText" FontFamily="{StaticResource HeadingFont}" FontSize="52"
                                FontWeight="Bold" TextWrapping="Wrap" MaxLines="2" />
                     <TextBlock x:Name="SubtitleText" FontSize="18" FontWeight="SemiBold"
-                               Foreground="#E2D8FF" TextWrapping="Wrap" />
+                               Foreground="#B8E8FF" TextWrapping="Wrap" />
                     <TextBlock x:Name="DescriptionText" FontSize="17" LineHeight="23"
                                TextWrapping="Wrap" MaxLines="3" />
                     <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,4,0,0">
@@ -81,7 +81,7 @@
                     <Border Background="#E610121B" BorderBrush="#343544" BorderThickness="1"
                             CornerRadius="12" Padding="18">
                         <StackPanel Spacing="12">
-                            <TextBlock Text="Synopsis" FontSize="16" FontWeight="SemiBold" Foreground="#A99AFF" />
+                            <TextBlock Text="Synopsis" FontSize="16" FontWeight="SemiBold" Foreground="#7BD8FF" />
                             <TextBlock x:Name="AboutDescriptionText" FontSize="16" LineHeight="23"
                                        TextWrapping="Wrap" />
                             <Rectangle Height="1" Fill="#343544" />
@@ -140,7 +140,7 @@
                                                            FontWeight="SemiBold" Foreground="#72D6A0" />
                                             </StackPanel>
                                         </StackPanel>
-                                        <Border Grid.Column="1" Background="#2865E9" CornerRadius="8"
+                                        <Border Grid.Column="1" Background="#008DDB" CornerRadius="8"
                                                 Padding="16,8" VerticalAlignment="Center">
                                             <TextBlock Text="Play" FontSize="15" FontWeight="SemiBold"
                                                        Foreground="#FFFFFF" />

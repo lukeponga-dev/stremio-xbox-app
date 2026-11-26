@@ -38,6 +38,7 @@ public sealed partial class MainPage : Page
     private bool _isSyncing;
     private bool _discoverHasResults;
     private readonly Dictionary<string, AddonManifest> _addonMetadata = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _addonMetadataFailures = new(StringComparer.OrdinalIgnoreCase);
     private CancellationTokenSource? _addonMetadataRequest;
 
     public ObservableCollection<DiagnosticEntry> Diagnostics => DiagnosticsService.Current.Entries;
@@ -1209,6 +1210,28 @@ public sealed partial class MainPage : Page
         finally { if (ReferenceEquals(_request, request)) EndRequest(); }
     }
 
+    private async void DiscoverCategoryClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.Tag is not string category)
+            return;
+
+        switch (category)
+        {
+            case "all":
+                ShowDiscover(this, new RoutedEventArgs());
+                return;
+            case "movie":
+                await ShowCatalogAsync("movie");
+                return;
+            case "series":
+                await ShowCatalogAsync("series");
+                return;
+            default:
+                SearchBox.Text = category;
+                Search(this, new RoutedEventArgs());
+                return;
+        }
+    }
     private void ShowLibrary(object sender, RoutedEventArgs e)
     {
         var items = PrototypeSettings.GetLibrary();
@@ -1256,30 +1279,89 @@ public sealed partial class MainPage : Page
         {
             if (string.Equals(addon.ManifestUri.AbsoluteUri, StremioAddonClient.CinemetaManifest.AbsoluteUri,
                     StringComparison.OrdinalIgnoreCase)) continue;
-            _addonMetadata.TryGetValue(addon.ManifestUri.AbsoluteUri, out var manifest);
-            cards.Add(new AddonCardView(manifest?.Name ?? addon.ManifestUri.Host,
+
+            var manifestUrl = addon.ManifestUri.AbsoluteUri;
+            _addonMetadata.TryGetValue(manifestUrl, out var manifest);
+            var unavailable = _addonMetadataFailures.Contains(manifestUrl);
+            var displayName = GetAddonDisplayName(manifest, addon.ManifestUri);
+            var category = GetAddonCategory(manifest);
+            var status = unavailable ? "Unavailable" : manifest is null ? "Checking…" : "Installed";
+            var statusBackground = unavailable ? "#45232B" : manifest is null ? "#3A321D" : "#173A2D";
+            var statusForeground = unavailable ? "#FFC0C8" : manifest is null ? "#FFE29A" : "#9BE7BD";
+
+            var description = unavailable
+                ? "The provider manifest could not be reached. Check the connection or import an updated manifest."
+                : GetAddonDescription(manifest?.Description, addon.ManifestUri, category);
+            cards.Add(new AddonCardView(displayName,
                 string.IsNullOrWhiteSpace(manifest?.Version) ? "" : "v" + manifest.Version,
-                "Stream provider", GetAddonDescription(manifest?.Description, addon.ManifestUri),
-                addon.ManifestUri.AbsoluteUri, true, GetAddonLogoUri(addon.ManifestUri)));
+                category, description,
+                manifestUrl, true, GetAddonLogoUri(addon.ManifestUri), status,
+                statusBackground, statusForeground));
         }
+
+        var installedCount = cards.Count(card => card.StatusText == "Installed" || card.StatusText == "Built-in");
+        var unavailableCount = cards.Count(card => card.StatusText == "Unavailable");
         AddonSummaryText.Text = cards.Count == 1
-            ? "Your built-in catalog is ready. Import a manifest or sync your account to add stream providers."
-            : "Select an addon to view its details, copy its manifest URL, or remove a provider.";
+            ? "Your built-in catalogue is ready. Import a manifest or sync your account to add stream providers."
+            : $"{installedCount} ready  ·  {unavailableCount} unavailable  ·  {cards.Count - 1 - installedCount - unavailableCount} checking. Select a provider for details or actions.";
         AddonCards.ItemsSource = cards;
         AddonEmptyDetail.Visibility = Visibility.Collapsed;
         UpdateAddonGridLayout(AddonCards.ActualWidth);
     }
 
-    private static string GetAddonDescription(string? description, Uri manifestUri)
+    private static string GetAddonDisplayName(AddonManifest? manifest, Uri manifestUri)
+    {
+        if (!string.IsNullOrWhiteSpace(manifest?.Name)) return manifest.Name.Trim();
+        if (!string.IsNullOrWhiteSpace(manifest?.Id))
+        {
+            var id = manifest.Id.Trim();
+            var separator = id.LastIndexOf('.');
+            var candidate = separator >= 0 ? id[(separator + 1)..] : id;
+            if (!string.IsNullOrWhiteSpace(candidate)) return ToDisplayWords(candidate);
+        }
+
+        var host = manifestUri.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase)
+            ? manifestUri.Host[4..] : manifestUri.Host;
+        var labels = host.Split('.', StringSplitOptions.RemoveEmptyEntries);
+        var name = labels.Length > 1 ? labels[^2] : labels[0];
+        return ToDisplayWords(name);
+    }
+
+    private static string ToDisplayWords(string value)
+    {
+        var words = value.Replace('-', ' ').Replace('_', ' ').Trim();
+        return System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(words);
+    }
+
+    private static string GetAddonCategory(AddonManifest? manifest)
+    {
+        if (manifest is null) return "Stremio add-on";
+        var types = manifest.Types.Where(type => !string.IsNullOrWhiteSpace(type))
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        if (types.Count > 0) return string.Join(" · ", types.Select(ToDisplayWords));
+        if (manifest.Resources.Any(resource => resource.ValueKind == System.Text.Json.JsonValueKind.String &&
+                string.Equals(resource.GetString(), "stream", StringComparison.OrdinalIgnoreCase)))
+            return "Stream provider";
+        if (manifest.Catalogs.Count > 0) return "Catalogue provider";
+        return "Stremio add-on";
+    }
+
+    private static string GetAddonDescription(string? description, Uri manifestUri, string category)
     {
         if (!string.IsNullOrWhiteSpace(description) &&
             (description.Contains("OBSOLETE CONFIGURATION", StringComparison.OrdinalIgnoreCase) ||
              description.Contains("PLEASE RE-CONFIGURE", StringComparison.OrdinalIgnoreCase)))
         {
-            return $"This add-on's configuration is obsolete. Generate a fresh manifest at https://comet.elfhosted.com, then import the new manifest. Your existing configuration has been kept.";
+            return "Configuration needs updating. Generate a fresh manifest from the provider, then import it again. Your saved entry has been kept.";
         }
 
-        return string.IsNullOrWhiteSpace(description) ? manifestUri.Host : description;
+        if (!string.IsNullOrWhiteSpace(description)) return description.Trim();
+        return category switch
+        {
+            "Stream provider" => $"Provides stream sources through {manifestUri.Host}.",
+            "Catalogue provider" => $"Provides browseable movie or series catalogues through {manifestUri.Host}.",
+            _ => $"Connected Stremio provider at {manifestUri.Host}."
+        };
     }
 
     private Uri? GetAddonLogoUri(Uri manifestUri)
@@ -1307,10 +1389,16 @@ public sealed partial class MainPage : Page
                 var manifest = await _client.GetManifestAsync(addon.ManifestUri, request.Token);
                 if (request.IsCancellationRequested) break;
                 _addonMetadata[addon.ManifestUri.AbsoluteUri] = manifest;
+                _addonMetadataFailures.Remove(addon.ManifestUri.AbsoluteUri);
                 RenderAddonCards();
             }
             catch (OperationCanceledException) { break; }
-            catch (Exception exception) { DiagnosticsService.Current.Warn("addons", $"Metadata unavailable for {addon.ManifestUri.Host}: {exception.Message}"); }
+            catch (Exception exception)
+            {
+                _addonMetadataFailures.Add(addon.ManifestUri.AbsoluteUri);
+                DiagnosticsService.Current.Warn("addons", $"Metadata unavailable for {addon.ManifestUri.Host}: {exception.Message}");
+                RenderAddonCards();
+            }
         }
         if (ReferenceEquals(_addonMetadataRequest, request)) _addonMetadataRequest = null;
         request.Dispose();
@@ -1626,24 +1714,31 @@ public sealed partial class MainPage : Page
 public sealed class AddonCardView
 {
     public AddonCardView(string name, string version, string category, string description, string manifestUrl,
-        bool removable, Uri? logoUri)
+        bool removable, Uri? logoUri, string? statusText = null,
+        string? statusBackground = null, string? statusForeground = null)
     {
-        Name = name;
+        Name = string.IsNullOrWhiteSpace(name) ? "Unknown provider" : name;
         Version = version;
         Category = category;
-        Description = description;
+        CategoryLine = string.IsNullOrWhiteSpace(version) ? category : $"{category}  ·  {version}";
+        Description = string.IsNullOrWhiteSpace(description) ? "Provider details have not been supplied." : description;
         ManifestUrl = manifestUrl;
         RemoveVisibility = removable ? Visibility.Visible : Visibility.Collapsed;
         ShareVisibility = Visibility.Visible;
-        StatusText = removable ? "Installed" : "Built-in";
+        StatusText = statusText ?? (removable ? "Installed" : "Built-in");
+        StatusBackground = statusBackground ?? (removable ? "#173A2D" : "#12354A");
+        StatusForeground = statusForeground ?? (removable ? "#9BE7BD" : "#8EDBFF");
         LogoSource = logoUri is null ? null : new BitmapImage(logoUri);
     }
 
     public string Name { get; }
     public string Version { get; }
     public string Category { get; }
+    public string CategoryLine { get; }
     public string Description { get; }
     public string StatusText { get; }
+    public string StatusBackground { get; }
+    public string StatusForeground { get; }
     public string ManifestUrl { get; }
     public Visibility RemoveVisibility { get; }
     public Visibility ShareVisibility { get; }

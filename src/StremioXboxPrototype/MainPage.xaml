@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:StremioXboxPrototype.Controls"
+    xmlns:local="using:StremioXboxPrototype"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
@@ -301,18 +302,63 @@
                             <StackPanel x:Name="KeyboardRows" Spacing="6" />
                         </ScrollViewer>
                     </Border>
-                    <TextBlock x:Name="DiscoverStatusText" Grid.Row="2" Text="Type a title, use the on-screen keyboard, or choose Voice." FontSize="18" Margin="0,16,0,12" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
+                    <TextBlock x:Name="DiscoverStatusText" Grid.Row="2" Text="Find something great to watch. Search a title or explore a collection below." FontSize="18" Margin="0,12,0,10" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
                     <ScrollViewer x:Name="DiscoverSuggestions" Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
-                    <StackPanel Spacing="16" Margin="0,22,0,0">
-                        <TextBlock Text="Browse popular titles" FontSize="25" FontWeight="SemiBold" />
-                        <TextBlock Text="Choose a collection or search for a title." FontSize="18" Foreground="{StaticResource MutedTextBrush}" />
-                            <StackPanel x:Name="DiscoverBrowseActions" Orientation="Horizontal" Spacing="16" Margin="0,12,0,0">
-                            <Button Content="Popular movies  &gt;" Style="{StaticResource TvButtonStyle}" Click="ShowMovieCatalog" />
-                            <Button Content="Popular series  &gt;" Style="{StaticResource TvButtonStyle}" Click="ShowSeriesCatalog" />
+                        <StackPanel Spacing="22" Margin="0,10,0,18">
+                            <Border Background="{StaticResource ElevatedPanelBrush}" BorderBrush="{StaticResource SubtleBorderBrush}" BorderThickness="1" CornerRadius="18" Padding="26">
+                                <Grid ColumnSpacing="24">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center" Spacing="8">
+                                        <TextBlock Text="DISCOVER SOMETHING NEW" FontSize="14" FontWeight="Bold" CharacterSpacing="150" Foreground="{StaticResource SecondaryBrush}" />
+                                        <TextBlock Text="Your next favourite starts here." FontSize="30" FontWeight="Bold" TextWrapping="Wrap" />
+                                        <TextBlock Text="Explore films and series from the catalogues provided by your installed add-ons." FontSize="18" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" MaxWidth="760" />
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="104" Height="104" CornerRadius="18" Background="{StaticResource AccentSoftBrush}" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" VerticalAlignment="Center">
+                                        <FontIcon Glyph="&#xE768;" FontSize="46" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="Browse by category" FontSize="24" FontWeight="SemiBold" />
+                                <Grid x:Name="DiscoverCategoryGrid" ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                    <Button x:Name="DiscoverAllCategoryButton" Grid.Column="0" Tag="all" Content="All titles" MinHeight="58" Style="{StaticResource PrimaryButtonStyle}" Click="DiscoverCategoryClick" />
+                                    <Button x:Name="DiscoverMoviesCategoryButton" Grid.Column="1" Tag="movie" Content="Movies" MinHeight="58" Style="{StaticResource TvButtonStyle}" Click="DiscoverCategoryClick" />
+                                    <Button x:Name="DiscoverSeriesCategoryButton" Grid.Column="2" Tag="series" Content="TV shows" MinHeight="58" Style="{StaticResource TvButtonStyle}" Click="DiscoverCategoryClick" />
+                                    <Button x:Name="DiscoverAnimeCategoryButton" Grid.Column="3" Tag="Anime" Content="Anime" MinHeight="58" Style="{StaticResource TvButtonStyle}" Click="DiscoverCategoryClick" />
+                                    <Button x:Name="DiscoverDocsCategoryButton" Grid.Column="4" Tag="Documentaries" Content="Documentaries" MinHeight="58" Style="{StaticResource TvButtonStyle}" Click="DiscoverCategoryClick" />
+                                    <Button x:Name="DiscoverKidsCategoryButton" Grid.Column="5" Tag="Kids" Content="Kids" MinHeight="58" Style="{StaticResource TvButtonStyle}" Click="DiscoverCategoryClick" />
+                                </Grid>
+                            </StackPanel>
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="Popular collections" FontSize="24" FontWeight="SemiBold" />
+                                <StackPanel x:Name="DiscoverBrowseActions" Orientation="Horizontal" Spacing="16">
+                                    <Button MinWidth="560" MinHeight="126" HorizontalContentAlignment="Stretch" Style="{StaticResource TvButtonStyle}" Click="ShowMovieCatalog">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                            <StackPanel VerticalAlignment="Center" Spacing="6">
+                                                <TextBlock Text="POPULAR MOVIES" FontSize="13" FontWeight="Bold" Foreground="{StaticResource SecondaryBrush}" />
+                                                <TextBlock Text="Trending films" FontSize="23" FontWeight="Bold" />
+                                                <TextBlock Text="Explore the most-watched movies" FontSize="16" Foreground="{StaticResource MutedTextBrush}" />
+                                            </StackPanel>
+                                            <FontIcon Grid.Column="1" Glyph="&#xE768;" FontSize="28" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" Margin="16,0,8,0" />
+                                        </Grid>
+                                    </Button>
+                                    <Button MinWidth="560" MinHeight="126" HorizontalContentAlignment="Stretch" Style="{StaticResource TvButtonStyle}" Click="ShowSeriesCatalog">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                            <StackPanel VerticalAlignment="Center" Spacing="6">
+                                                <TextBlock Text="POPULAR SERIES" FontSize="13" FontWeight="Bold" Foreground="{StaticResource SecondaryBrush}" />
+                                                <TextBlock Text="Binge-worthy shows" FontSize="23" FontWeight="Bold" />
+                                                <TextBlock Text="Find your next series to follow" FontSize="16" Foreground="{StaticResource MutedTextBrush}" />
+                                            </StackPanel>
+                                            <FontIcon Grid.Column="1" Glyph="&#xE768;" FontSize="28" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" Margin="16,0,8,0" />
+                                        </Grid>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
                         </StackPanel>
-                    </StackPanel>
-                    </ScrollViewer>
-                    <GridView x:Name="DiscoverGrid" Grid.Row="3" Visibility="Collapsed" IsItemClickEnabled="True" ItemClick="OpenItem" SelectionMode="None" ContainerContentChanging="PosterContainerChanging" ItemTemplate="{StaticResource PosterTemplate}" />
+                    </ScrollViewer>                    <GridView x:Name="DiscoverGrid" Grid.Row="3" Visibility="Collapsed" IsItemClickEnabled="True" ItemClick="OpenItem" SelectionMode="None" ContainerContentChanging="PosterContainerChanging" ItemTemplate="{StaticResource PosterTemplate}" />
                 </Grid>
                 <Grid x:Name="LibraryPanel" Visibility="Collapsed">
                     <StackPanel VerticalAlignment="Top" Margin="0,0,0,16">
@@ -404,51 +450,48 @@
                                     </ItemsPanelTemplate>
                                 </ListView.ItemsPanel>
                                 <ListView.ItemTemplate>
-                                    <DataTemplate>
+                                    <DataTemplate x:DataType="local:AddonCardView">
                                         <Border Background="#111C2A" BorderBrush="#30445B" BorderThickness="1"
-                                                CornerRadius="14" Padding="16,9" Margin="0,0,0,6" MinHeight="78">
-                                            <Grid ColumnSpacing="18">
+                                                CornerRadius="14" Padding="14,10" Margin="0,0,0,7" MinHeight="88">
+                                            <Grid ColumnSpacing="16">
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="70" />
+                                                    <ColumnDefinition Width="64" />
                                                     <ColumnDefinition Width="*" />
                                                     <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="58" />
+                                                    <ColumnDefinition Width="54" />
                                                 </Grid.ColumnDefinitions>
-                                                <Border Width="68" Height="68" Background="#111B29"
-                                                        BorderBrush="#38516D" BorderThickness="1" CornerRadius="13"
+                                                <Border Width="62" Height="62" Background="#17283B"
+                                                        BorderBrush="#38516D" BorderThickness="1" CornerRadius="12"
                                                         VerticalAlignment="Center">
                                                     <Grid>
                                                         <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE7FC;"
-                                                                  FontSize="28" Foreground="#9FC8FF"
+                                                                  FontSize="26" Foreground="#8CCFFF"
                                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                                        <Image Source="{Binding LogoSource}" Stretch="Uniform" Margin="6" />
+                                                        <Image Source="{x:Bind LogoSource}" Stretch="Uniform" Margin="6" />
                                                     </Grid>
                                                 </Border>
-                                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                                    <TextBlock Text="{Binding Name}" FontSize="22" FontWeight="Bold"
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
+                                                    <TextBlock Text="{x:Bind Name}" FontSize="21" FontWeight="Bold"
                                                                Foreground="#FFFFFF" TextTrimming="CharacterEllipsis" MaxLines="1" />
-                                                    <TextBlock Text="{Binding Category}" FontSize="15"
+                                                    <TextBlock Text="{x:Bind Description}" FontSize="14"
                                                                Foreground="#B8CBE1" TextTrimming="CharacterEllipsis"
-                                                               MaxLines="1" />
-                                                    <TextBlock Text="{Binding Description}" FontSize="13"
-                                                               Foreground="#91A8C2" TextTrimming="CharacterEllipsis"
-                                                               MaxLines="1" />
-                                                    <TextBlock Text="{Binding Version}" FontSize="12"
-                                                               Foreground="#7F96B0" TextTrimming="CharacterEllipsis"
+                                                               MaxLines="2" />
+                                                    <TextBlock Text="{x:Bind CategoryLine}" FontSize="12"
+                                                               Foreground="#819BB6" TextTrimming="CharacterEllipsis"
                                                                MaxLines="1" />
                                                 </StackPanel>
-                                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="9"
-                                                            VerticalAlignment="Center" Margin="12,0">
-                                                    <Ellipse Width="15" Height="15" Fill="#54ED78"
-                                                             VerticalAlignment="Center" />
-                                                    <TextBlock Text="{Binding StatusText}" FontSize="17"
-                                                               Foreground="#E8F0FA" VerticalAlignment="Center" />
-                                                </StackPanel>
-                                                <Button Grid.Column="3" Content="•••" Tag="{Binding}"
-                                                        Visibility="{Binding RemoveVisibility}"
+                                                <Border Grid.Column="2" Background="{x:Bind StatusBackground}"
+                                                        BorderBrush="{x:Bind StatusForeground}" BorderThickness="1"
+                                                        CornerRadius="12" Padding="11,6"
+                                                        VerticalAlignment="Center" Margin="8,0">
+                                                    <TextBlock Text="{x:Bind StatusText}" FontSize="14" FontWeight="SemiBold"
+                                                               Foreground="{x:Bind StatusForeground}" VerticalAlignment="Center" />
+                                                </Border>
+                                                <Button Grid.Column="3" Content="•••" Tag="{x:Bind}"
+                                                        Visibility="{x:Bind RemoveVisibility}"
                                                         Style="{StaticResource AddonCardActionStyle}"
                                                         BorderBrush="#53657B" BorderThickness="1"
-                                                        Padding="8,8" MinWidth="54" MinHeight="48"
+                                                        Padding="8,8" MinWidth="50" MinHeight="46"
                                                         AutomationProperties.Name="More options and remove provider"
                                                         Click="RemoveAddonCard" VerticalAlignment="Center" />
                                             </Grid>
