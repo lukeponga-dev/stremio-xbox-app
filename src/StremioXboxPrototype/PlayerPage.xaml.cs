@@ -24,7 +24,11 @@ public sealed partial class PlayerPage : Page
     private bool _active;
     private bool _mediaReady;
     private bool _completed;
-    private readonly DispatcherTimer _progressTimer = new() { Interval = TimeSpan.FromSeconds(15) };
+    private readonly DispatcherTimer _progressTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+    private bool _updatingProgress;
+    private bool _adjustingSeek;
+    private MediaPlaybackItem? _playbackItem;
+    private int _selectedSubtitleTrack = -1;
     private readonly DispatcherTimer _loadingTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private DateTimeOffset _loadingStartedAt;
     private string _loadingStage = "Opening media";
@@ -32,7 +36,11 @@ public sealed partial class PlayerPage : Page
     public PlayerPage()
     {
         InitializeComponent();
-        _progressTimer.Tick += (_, _) => SaveProgress();
+        _progressTimer.Tick += (_, _) =>
+        {
+            SaveProgress();
+            UpdatePlaybackProgress();
+        };
         _loadingTimer.Tick += (_, _) => UpdateLoadingStatus();
     }
 
@@ -115,7 +123,11 @@ public sealed partial class PlayerPage : Page
             }
             opening.Token.ThrowIfCancellationRequested();
             DiagnosticsService.Current.Info("player", $"Open media from {_request.Uri.Host}");
-            Player.Source = MediaSource.CreateFromUri(_request.Uri);
+            var mediaSource = MediaSource.CreateFromUri(_request.Uri);
+            _playbackItem = new MediaPlaybackItem(mediaSource);
+            _playbackItem.AudioTracksChanged += AudioTracksChanged;
+            _playbackItem.TimedMetadataTracksChanged += TimedMetadataTracksChanged;
+            Player.Source = _playbackItem;
         }
         catch (OperationCanceledException) when (opening.IsCancellationRequested) { }
         catch (OperationCanceledException)
@@ -150,6 +162,13 @@ public sealed partial class PlayerPage : Page
         Player.MediaPlayer.PlaybackSession.BufferingEnded -= BufferingEnded;
         Player.MediaPlayer.PlaybackSession.PlaybackStateChanged -= PlaybackStateChanged;
         Player.MediaPlayer.Pause();
+        if (_playbackItem is not null)
+        {
+            _playbackItem.AudioTracksChanged -= AudioTracksChanged;
+            _playbackItem.TimedMetadataTracksChanged -= TimedMetadataTracksChanged;
+            _playbackItem = null;
+        }
+        PlaybackOptionsPanel.Visibility = Visibility.Collapsed;
         Player.Source = null;
         base.OnNavigatedFrom(e);
     }
@@ -164,6 +183,14 @@ public sealed partial class PlayerPage : Page
             {
                 if (!_active) return;
                 _mediaReady = true;
+                var duration = sender.PlaybackSession.NaturalDuration;
+                PlaybackProgressSlider.Maximum = Math.Max(1, duration.TotalSeconds);
+                PlaybackProgressSlider.IsEnabled = sender.PlaybackSession.CanSeek && duration > TimeSpan.Zero;
+                DurationTimeText.Text = FormatPlaybackTime(duration);
+                UpdatePlaybackProgress();
+                UpdatePlayPauseButton();
+                UpdateMuteButton();
+                BuildPlaybackOptionButtons();
                 LoadingArtwork.Visibility = Visibility.Collapsed;
                 ArtworkSpinner.IsActive = false;
                 _loadingTimer.Stop();
@@ -274,6 +301,7 @@ public sealed partial class PlayerPage : Page
         await RunPlaybackUiAsync(() =>
         {
         if (!_active || _completed) return;
+        UpdatePlayPauseButton();
         if (sender.PlaybackState == MediaPlaybackState.Playing)
             StatusText.Text = "Playing";
         else if (sender.PlaybackState == MediaPlaybackState.Paused)
@@ -293,6 +321,228 @@ public sealed partial class PlayerPage : Page
         catch (OperationCanceledException) { }
     }
 
+    private void PlayPauseClicked(object sender, RoutedEventArgs e) => TogglePlayback();
+
+    private void RewindClicked(object sender, RoutedEventArgs e) => SeekBy(TimeSpan.FromSeconds(-10));
+
+    private void ForwardClicked(object sender, RoutedEventArgs e) => SeekBy(TimeSpan.FromSeconds(10));
+
+    private void MuteClicked(object sender, RoutedEventArgs e)
+    {
+        Player.MediaPlayer.IsMuted = !Player.MediaPlayer.IsMuted;
+        UpdateMuteButton();
+        ShowPlayerMessage(Player.MediaPlayer.IsMuted ? "Audio muted" : "Audio on", hideAutomatically: true);
+    }
+
+    private void PlaybackProgressGotFocus(object sender, RoutedEventArgs e) => _adjustingSeek = true;
+
+    private void PlaybackProgressLostFocus(object sender, RoutedEventArgs e) => _adjustingSeek = false;
+
+    private void PlaybackProgressValueChanged(object sender, Windows.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+        if (_updatingProgress || !_adjustingSeek || !_mediaReady || !Player.MediaPlayer.PlaybackSession.CanSeek)
+            return;
+
+        var target = TimeSpan.FromSeconds(Math.Max(0, e.NewValue));
+        Player.MediaPlayer.PlaybackSession.Position = target;
+        CurrentTimeText.Text = FormatPlaybackTime(target);
+        ShowPlaybackChrome(hideAutomatically: true);
+    }
+
+    private void UpdatePlaybackProgress()
+    {
+        if (!_mediaReady) return;
+        var session = Player.MediaPlayer.PlaybackSession;
+        var position = session.Position;
+        var duration = session.NaturalDuration;
+        _updatingProgress = true;
+        try
+        {
+            if (!_adjustingSeek)
+                PlaybackProgressSlider.Value = Math.Clamp(position.TotalSeconds, PlaybackProgressSlider.Minimum, PlaybackProgressSlider.Maximum);
+            CurrentTimeText.Text = FormatPlaybackTime(position);
+            DurationTimeText.Text = FormatPlaybackTime(duration);
+        }
+        finally
+        {
+            _updatingProgress = false;
+        }
+    }
+
+    private static string FormatPlaybackTime(TimeSpan time)
+    {
+        if (time < TimeSpan.Zero || double.IsNaN(time.TotalSeconds) || double.IsInfinity(time.TotalSeconds))
+            return "0:00";
+        return time.TotalHours >= 1
+            ? $"{(int)time.TotalHours}:{time.Minutes:00}:{time.Seconds:00}"
+            : $"{(int)time.TotalMinutes}:{time.Seconds:00}";
+    }
+
+    private void UpdatePlayPauseButton()
+    {
+        if (!_mediaReady) return;
+        var isPlaying = Player.MediaPlayer.PlaybackSession.PlaybackState == MediaPlaybackState.Playing;
+        PlayPauseButton.Content = isPlaying ? "Pause" : "Play";
+        Windows.UI.Xaml.Automation.AutomationProperties.SetName(PlayPauseButton, isPlaying ? "Pause playback" : "Resume playback");
+    }
+
+    private void UpdateMuteButton()
+    {
+        MuteButton.Content = Player.MediaPlayer.IsMuted ? "Unmute" : "Mute";
+        Windows.UI.Xaml.Automation.AutomationProperties.SetName(MuteButton, Player.MediaPlayer.IsMuted ? "Unmute audio" : "Mute audio");
+    }
+
+    private void AudioTracksChanged(MediaPlaybackItem sender, Windows.Foundation.Collections.IVectorChangedEventArgs args)
+    {
+        _ = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, BuildPlaybackOptionButtons);
+    }
+
+    private void TimedMetadataTracksChanged(MediaPlaybackItem sender, Windows.Foundation.Collections.IVectorChangedEventArgs args)
+    {
+        _ = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, BuildPlaybackOptionButtons);
+    }
+
+    private void BuildPlaybackOptionButtons()
+    {
+        if (_playbackItem is null) return;
+
+        AudioTrackOptions.Children.Clear();
+        if (_playbackItem.AudioTracks.Count == 0)
+        {
+            AudioTrackOptions.Children.Add(CreateOptionLabel("No alternate audio tracks reported by this stream"));
+        }
+        else
+        {
+            for (var index = 0; index < _playbackItem.AudioTracks.Count; index++)
+            {
+                var trackIndex = index;
+                var track = _playbackItem.AudioTracks[index];
+                var label = string.IsNullOrWhiteSpace(track.Label) ? $"Audio {index + 1}" : track.Label;
+                var button = CreateOptionButton(label, _playbackItem.AudioTracks.SelectedIndex == index);
+                button.Click += (_, _) =>
+                {
+                    if (_playbackItem is null) return;
+                    _playbackItem.AudioTracks.SelectedIndex = trackIndex;
+                    BuildPlaybackOptionButtons();
+                };
+                AudioTrackOptions.Children.Add(button);
+            }
+        }
+
+        SubtitleTrackOptions.Children.Clear();
+        var offButton = CreateOptionButton("Off", _selectedSubtitleTrack < 0);
+        offButton.Click += (_, _) =>
+        {
+            if (_playbackItem is null) return;
+            for (uint index = 0; index < _playbackItem.TimedMetadataTracks.Count; index++)
+                _playbackItem.TimedMetadataTracks.SetPresentationMode(index, TimedMetadataTrackPresentationMode.Disabled);
+            _selectedSubtitleTrack = -1;
+            BuildPlaybackOptionButtons();
+        };
+        SubtitleTrackOptions.Children.Add(offButton);
+
+        var subtitleCount = _playbackItem.TimedMetadataTracks.Count;
+        if (subtitleCount == 0)
+        {
+            SubtitleTrackOptions.Children.Add(CreateOptionLabel("No subtitle tracks reported by this stream"));
+        }
+        else
+        {
+            for (var index = 0; index < subtitleCount; index++)
+            {
+                var trackIndex = index;
+                var track = _playbackItem.TimedMetadataTracks[index];
+                var label = string.IsNullOrWhiteSpace(track.Label) ? $"Subtitle {index + 1}" : track.Label;
+                var button = CreateOptionButton(label, _selectedSubtitleTrack == index);
+                button.Click += (_, _) =>
+                {
+                    if (_playbackItem is null) return;
+                    for (uint trackNumber = 0; trackNumber < _playbackItem.TimedMetadataTracks.Count; trackNumber++)
+                        _playbackItem.TimedMetadataTracks.SetPresentationMode(trackNumber,
+                            trackNumber == trackIndex ? TimedMetadataTrackPresentationMode.PlatformPresented
+                                : TimedMetadataTrackPresentationMode.Disabled);
+                    _selectedSubtitleTrack = trackIndex;
+                    BuildPlaybackOptionButtons();
+                };
+                SubtitleTrackOptions.Children.Add(button);
+            }
+        }
+
+        PlaybackSpeedOptions.Children.Clear();
+        var currentRate = Player.MediaPlayer.PlaybackSession.PlaybackRate;
+        foreach (var speed in new[] { 0.5, 0.75, 1.0, 1.25, 1.5, 2.0 })
+        {
+            var rate = speed;
+            var button = CreateOptionButton($"{speed:0.##}x", Math.Abs(currentRate - speed) < 0.01);
+            button.MinWidth = 62;
+            button.Click += (_, _) =>
+            {
+                try
+                {
+                    Player.MediaPlayer.PlaybackSession.PlaybackRate = rate;
+                    BuildPlaybackOptionButtons();
+                    StatusText.Text = $"Playback speed · {rate:0.##}x";
+                }
+                catch (Exception exception)
+                {
+                    DiagnosticsService.Current.Info("player", $"Playback rate {rate:0.##}x is not supported: {exception.Message}");
+                    StatusText.Text = $"This stream does not support {rate:0.##}x playback";
+                }
+            };
+            PlaybackSpeedOptions.Children.Add(button);
+        }
+    }
+
+    private static Button CreateOptionButton(string label, bool selected)
+    {
+        var button = new Button
+        {
+            Content = selected ? $"✓  {label}" : label,
+            HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Stretch,
+            MinHeight = 52,
+            FontSize = 17,
+            FontWeight = selected ? Windows.UI.Text.FontWeights.Bold : Windows.UI.Text.FontWeights.SemiBold,
+            Background = selected ? new Windows.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 0, 175, 255))
+                : new Windows.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 35, 47, 64)),
+            Foreground = selected ? new Windows.UI.Xaml.Media.SolidColorBrush(Windows.UI.Colors.Black)
+                : new Windows.UI.Xaml.Media.SolidColorBrush(Windows.UI.Colors.White)
+        };
+        Windows.UI.Xaml.Automation.AutomationProperties.SetName(button, label);
+        return button;
+    }
+
+    private static TextBlock CreateOptionLabel(string text) => new()
+    {
+        Text = text,
+        FontSize = 15,
+        TextWrapping = Windows.UI.Xaml.TextWrapping.Wrap,
+        Foreground = new Windows.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 185, 196, 210)),
+        Margin = new Thickness(4, 6, 4, 6)
+    };
+
+    private void TogglePlaybackOptions()
+    {
+        if (!_mediaReady) return;
+        var show = PlaybackOptionsPanel.Visibility != Visibility.Visible;
+        PlaybackOptionsPanel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        if (show)
+        {
+            _overlayTimer?.Stop();
+            BuildPlaybackOptionButtons();
+            var firstOption = AudioTrackOptions.Children.Count > 0
+                ? AudioTrackOptions.Children[0] as Control
+                : null;
+            firstOption ??= SubtitleTrackOptions.Children.Count > 0
+                ? SubtitleTrackOptions.Children[0] as Control
+                : null;
+            firstOption?.Focus(FocusState.Programmatic);
+        }
+        else
+        {
+            ShowPlaybackChrome(hideAutomatically: true);
+        }
+    }
+
     private void BackToSources(object sender, RoutedEventArgs e)
     {
         if (Frame.CanGoBack) Frame.GoBack();
@@ -300,41 +550,29 @@ public sealed partial class PlayerPage : Page
 
     private void PlayerPageKeyDown(object sender, Windows.UI.Xaml.Input.KeyRoutedEventArgs e)
     {
+        // Leave standard transport input (A, D-pad, shoulders and triggers) to
+        // MediaPlayerElement's built-in Xbox transport controls.
         if (e.Key == VirtualKey.GamepadB || e.Key == VirtualKey.Escape)
         {
-            if (Frame.CanGoBack) Frame.GoBack();
+            if (PlaybackOptionsPanel.Visibility == Visibility.Visible)
+            {
+                PlaybackOptionsPanel.Visibility = Visibility.Collapsed;
+                ShowPlaybackChrome(hideAutomatically: true);
+            }
+            else if (Frame.CanGoBack)
+            {
+                Frame.GoBack();
+            }
             e.Handled = true;
             return;
         }
 
-        ShowPlaybackChrome(hideAutomatically: true);
-        if (e.Key == VirtualKey.GamepadA)
+        if (e.Key == VirtualKey.GamepadY)
         {
-            TogglePlayback();
-            e.Handled = true;
-        }
-        else if (e.Key is VirtualKey.GamepadLeftShoulder or VirtualKey.GamepadDPadLeft)
-        {
-            SeekBy(TimeSpan.FromSeconds(-10));
-            e.Handled = true;
-        }
-        else if (e.Key is VirtualKey.GamepadRightShoulder or VirtualKey.GamepadDPadRight)
-        {
-            SeekBy(TimeSpan.FromSeconds(10));
-            e.Handled = true;
-        }
-        else if (e.Key == VirtualKey.GamepadX)
-        {
-            Player.MediaPlayer.IsMuted = !Player.MediaPlayer.IsMuted;
-            ControllerHintText.Text = Player.MediaPlayer.IsMuted
-                ? "A  Play/Pause     LB/RB  Seek 10s     B  Back     X  Unmute"
-                : "A  Play/Pause     LB/RB  Seek 10s     B  Back     X  Mute";
-            ShowPlayerMessage(Player.MediaPlayer.IsMuted ? "Audio muted" : "Audio on", hideAutomatically: false);
-            DiagnosticsService.Current.Info("player", Player.MediaPlayer.IsMuted ? "Audio muted" : "Audio unmuted");
+            TogglePlaybackOptions();
             e.Handled = true;
         }
     }
-
     private void TogglePlayback()
     {
         if (!_mediaReady) return;
@@ -345,6 +583,7 @@ public sealed partial class PlayerPage : Page
             _completed = false;
             _progressTimer.Start();
             Player.MediaPlayer.Play();
+            UpdatePlayPauseButton();
             ShowPlayerMessage("Replaying", hideAutomatically: true);
             return;
         }
@@ -352,13 +591,25 @@ public sealed partial class PlayerPage : Page
         if (session.PlaybackState == MediaPlaybackState.Playing)
         {
             Player.MediaPlayer.Pause();
+            UpdatePlayPauseButton();
             ShowPlayerMessage("Paused", hideAutomatically: false);
         }
         else
         {
             Player.MediaPlayer.Play();
+            UpdatePlayPauseButton();
             ShowPlayerMessage("Playing", hideAutomatically: true);
         }
+    }
+
+    private void AdjustVolume(double delta)
+    {
+        var player = Player.MediaPlayer;
+        player.IsMuted = false;
+        player.Volume = Math.Clamp(player.Volume + delta, 0, 1);
+        UpdateMuteButton();
+        var percent = (int)Math.Round(player.Volume * 100);
+        ShowPlayerMessage($"Volume · {percent}%", hideAutomatically: true);
     }
 
     private void SeekBy(TimeSpan offset)
@@ -370,7 +621,8 @@ public sealed partial class PlayerPage : Page
         if (session.NaturalDuration > TimeSpan.Zero && target > session.NaturalDuration)
             target = session.NaturalDuration;
         session.Position = target;
-        ShowPlayerMessage($"{(offset < TimeSpan.Zero ? "Rewound" : "Skipped forward")} 10 seconds", hideAutomatically: true);
+        UpdatePlaybackProgress();
+        ShowPlayerMessage($"{(offset < TimeSpan.Zero ? "Rewound" : "Skipped forward")} {Math.Abs(offset.TotalSeconds):0} seconds", hideAutomatically: true);
         DiagnosticsService.Current.Info("player", $"Seeked to {target.TotalSeconds:0} seconds");
     }
 
@@ -378,7 +630,8 @@ public sealed partial class PlayerPage : Page
     {
         StatusOverlay.Visibility = Visibility.Visible;
         BackSourcesButton.Visibility = Visibility.Visible;
-        ControllerHintSurface.Visibility = Visibility.Visible;
+        PlaybackControls.Visibility = Visibility.Collapsed;
+        ControllerHintSurface.Visibility = Visibility.Collapsed;
         if (hideAutomatically) HideOverlaySoon();
         else _overlayTimer?.Stop();
     }
@@ -387,10 +640,18 @@ public sealed partial class PlayerPage : Page
     {
         StatusOverlay.Visibility = Visibility.Visible;
         BackSourcesButton.Visibility = Visibility.Visible;
-        ControllerHintSurface.Visibility = Visibility.Visible;
+        PlaybackControls.Visibility = Visibility.Collapsed;
+        ControllerHintSurface.Visibility = Visibility.Collapsed;
         StatusText.Text = message;
         if (hideAutomatically) HideOverlaySoon();
         else _overlayTimer?.Stop();
+    }
+
+    private bool IsPlaybackControlFocused()
+    {
+        // Only the optional track/speed panel needs to keep the informational
+        // overlay alive. Native transport controls manage their own visibility.
+        return PlaybackOptionsPanel.Visibility == Visibility.Visible;
     }
 
     private void HideOverlaySoon()
@@ -399,14 +660,20 @@ public sealed partial class PlayerPage : Page
         _overlayTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
         _overlayTimer.Tick += (_, _) =>
         {
+            if (IsPlaybackControlFocused())
+            {
+                _overlayTimer.Stop();
+                return;
+            }
+
             StatusOverlay.Visibility = Visibility.Collapsed;
             BackSourcesButton.Visibility = Visibility.Collapsed;
+            PlaybackControls.Visibility = Visibility.Collapsed;
             ControllerHintSurface.Visibility = Visibility.Collapsed;
             _overlayTimer.Stop();
         };
         _overlayTimer.Start();
     }
-
     private void SetLoadingStage(string stage)
     {
         _loadingStage = stage;
